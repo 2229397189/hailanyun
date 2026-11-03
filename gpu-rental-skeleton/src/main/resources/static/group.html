@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多人拼团 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<header class="topnav">
+  <div class="inner">
+    <a class="brand" href="/index.html">
+      <span class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span>
+        <span class="brand-name">Token<span>Ark</span></span>
+        <span class="brand-sub">创元方舟 · 算力云</span>
+      </span>
+    </a>
+    <nav class="navlinks">
+      <a href="/index.html">首页</a>
+      <a href="/market.html">算力市场</a>
+      <a class="soon">大模型 API</a>
+      <a href="/solutions.html">解决方案</a>
+      <a href="/about.html">关于我们</a>
+      <a href="/index.html#pricing">帮助文档</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn-console" href="/portal.html">控制台</a>
+      <span class="avatar">L</span>
+    </div>
+  </div>
+</header>
+
+<main class="grid-bg">
+  <div class="wrap" style="padding:44px 24px 20px;text-align:center">
+    <div class="h1-xl" style="font-size:44px">多人拼团 <span class="grad-text">共享算力</span></div>
+    <div class="lead-2" style="margin:14px auto 0;text-align:center">
+      针对大显存需求（如模型微调、推理）推出拼团服务。<br>
+      一台服务器多人共享显存，资源隔离，价格更优。
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-bottom:26px">
+    <div class="steps">
+      <div class="step"><div class="n">1</div><b>选择配置</b><span>挑选合适的 GPU 型号</span></div>
+      <div class="step"><div class="n">2</div><b>提交信息</b><span>支付拼团预付款</span></div>
+      <div class="step"><div class="n">3</div><b>等待成团</b><span>邀请好友或等待其他同学</span></div>
+      <div class="step"><div class="n">4</div><b>拼团成功</b><span>获取机器信息</span></div>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-bottom:60px">
+    <div class="filter-card">
+      <div class="filter-row">
+        <div class="filter-label">GPU 型号</div>
+        <div class="opts" id="fModel"></div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">显存大小</div>
+        <div class="opts" id="fVram"></div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">地区</div>
+        <div class="opts" id="fZone"></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tool-left"><span class="hint">共 <b id="cnt">0</b> 个拼团中</span></div>
+      <div class="tool-right">
+        <span class="hint">价格排序</span>
+        <select id="sort" style="width:110px;height:32px;font-size:12px" onchange="render()">
+          <option value="default">默认</option>
+          <option value="asc">从低到高</option>
+          <option value="desc">从高到低</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="group-grid" id="grid"></div>
+  </div>
+</main>
+
+<footer style="border-top:1px solid #f3eefc;background:#fff">
+  <div class="wrap" style="padding:26px 24px;display:flex;justify-content:space-between;gap:20px;
+       flex-wrap:wrap;font-size:12px;color:#98a1b3">
+    <div><div style="font-weight:700;color:#0f172a;font-size:13px">TokenArk 创元方舟</div>
+      <div style="margin-top:6px">GPU 算力运营平台 · 私有化交付</div></div>
+    <div>© 2026 TokenArk · 演示环境</div>
+  </div>
+</footer>
+
+<script>
+const DATA = [
+  { m: 'RTX5090', v: 32, price: 1280, brand: 'NVIDIA', zone: '可用区 A', total: 8, done: 2, vcpu: 16, ram: 64, disk: 480 },
+  { m: 'RTX5090', v: 32, price: 1280, brand: 'NVIDIA', zone: '可用区 B', total: 8, done: 5, vcpu: 16, ram: 64, disk: 480 },
+  { m: 'RTX4090', v: 24, price: 880, brand: 'NVIDIA', zone: '可用区 A', total: 8, done: 3, vcpu: 12, ram: 48, disk: 480 },
+  { m: 'RTX4090', v: 24, price: 880, brand: 'NVIDIA', zone: '可用区 B', total: 8, done: 6, vcpu: 12, ram: 48, disk: 480 },
+  { m: 'A100', v: 80, price: 3200, brand: 'NVIDIA', zone: '可用区 B', total: 8, done: 1, vcpu: 24, ram: 128, disk: 960 },
+  { m: 'A100', v: 40, price: 2600, brand: 'NVIDIA', zone: '可用区 A', total: 8, done: 4, vcpu: 24, ram: 128, disk: 960 },
+  { m: 'H800', v: 80, price: 3800, brand: 'NVIDIA', zone: '可用区 B', total: 8, done: 2, vcpu: 32, ram: 192, disk: 1920 },
+  { m: 'L40S', v: 48, price: 1600, brand: 'NVIDIA', zone: '可用区 A', total: 8, done: 7, vcpu: 16, ram: 96, disk: 960 }
+];
+const S = { model: '全部', vram: '全部', zone: '全部' };
+const MODELS = ['全部', 'RTX5090', 'RTX4090', 'A100', 'H800', 'L40S'];
+const VRAMS = ['全部', '24G', '32G', '40G', '48G', '80G'];
+const ZONES = ['全部', '可用区 A', '可用区 B'];
+
+function opts(list, key, fmt) {
+  return list.map(x => `<span class="opt ${S[key] === x ? 'on' : ''}" onclick="pick('${key}','${x}')">${fmt ? fmt(x) : x}</span>`).join('');
+}
+function pick(k, v) { S[k] = v; renderFilters(); render(); }
+function renderFilters() {
+  document.getElementById('fModel').innerHTML = opts(MODELS, 'model');
+  document.getElementById('fVram').innerHTML = opts(VRAMS, 'vram');
+  document.getElementById('fZone').innerHTML = opts(ZONES, 'zone');
+}
+function render() {
+  let list = DATA.filter(d =>
+    (S.model === '全部' || d.m === S.model) &&
+    (S.vram === '全部' || d.v + 'G' === S.vram) &&
+    (S.zone === '全部' || d.zone === S.zone));
+  const sort = document.getElementById('sort').value;
+  if (sort === 'asc') list.sort((a, b) => a.price - b.price);
+  if (sort === 'desc') list.sort((a, b) => b.price - a.price);
+  document.getElementById('cnt').textContent = list.length;
+  document.getElementById('grid').innerHTML = list.map(d => {
+    const pct = Math.round(d.done / d.total * 100);
+    return `<div class="gcard">
+      <div class="top">
+        <div><span class="model">${d.m}</span><span class="vram">${d.v}G</span></div>
+        <div class="price">¥${d.price}<small> /月/卡</small></div>
+      </div>
+      <div class="meta"><span>品牌 ${d.brand}</span><span>${d.zone}</span></div>
+      <div class="kv">
+        <div>vCPU <b>${d.vcpu} 核</b></div><div>内存 <b>${d.ram} GB</b></div>
+        <div>系统盘 <b>${d.disk} GB</b></div><div>显存 <b>${d.v} GB</b></div>
+      </div>
+      <div class="meta" style="margin:0 0 4px"><span>已拼 ${d.done} / ${d.total}</span><span>${pct}%</span></div>
+      <div class="progress"><i style="width:${pct}%"></i></div>
+      <div class="hint" style="font-size:10.5px;margin-top:4px">还差 ${d.total - d.done} 人成团</div>
+      <button class="join" onclick="join('${d.m} ${d.v}G')">立即拼单</button>
+    </div>`;
+  }).join('') || '<div class="card panel" style="grid-column:1/-1"><div class="empty">没有符合条件的拼团</div></div>';
+}
+function join(name) {
+  alert(`演示环境：已选择「${name}」拼团。\n真实流程需接入支付与成团逻辑，当前仅展示交互。`);
+}
+renderFilters(); render();
+</script>
+<script src="/nav.js"></script>
+</body>
+</html>
