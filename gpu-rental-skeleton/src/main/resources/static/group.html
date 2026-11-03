@@ -39,6 +39,13 @@
 </header>
 
 <main class="grid-bg">
+  <div class="wrap" style="padding-top:26px">
+    <div class="mkt-switch">
+      <a href="/portal.html">容器云</a>
+      <a class="on" href="/group.html">拼租卡</a>
+      <a href="/baremetal.html">裸金属</a>
+    </div>
+  </div>
   <div class="wrap" style="padding:44px 24px 20px;text-align:center">
     <div class="h1-xl" style="font-size:44px">多人拼团 <span class="grad-text">共享算力</span></div>
     <div class="lead-2" style="margin:14px auto 0;text-align:center">
@@ -98,7 +105,7 @@
 </footer>
 
 <script>
-const DATA = [
+let DATA = [
   { m: 'RTX5090', v: 32, price: 1280, brand: 'NVIDIA', zone: '可用区 A', total: 8, done: 2, vcpu: 16, ram: 64, disk: 480 },
   { m: 'RTX5090', v: 32, price: 1280, brand: 'NVIDIA', zone: '可用区 B', total: 8, done: 5, vcpu: 16, ram: 64, disk: 480 },
   { m: 'RTX4090', v: 24, price: 880, brand: 'NVIDIA', zone: '可用区 A', total: 8, done: 3, vcpu: 12, ram: 48, disk: 480 },
@@ -116,7 +123,10 @@ const ZONES = ['全部', '可用区 A', '可用区 B'];
 function opts(list, key, fmt) {
   return list.map(x => `<span class="opt ${S[key] === x ? 'on' : ''}" onclick="pick('${key}','${x}')">${fmt ? fmt(x) : x}</span>`).join('');
 }
-function pick(k, v) { S[k] = v; renderFilters(); render(); }
+function pick(k, v) { S[k] = v; renderFilters(); render();
+fetch('/api/catalog/group').then(r => r.json()).then(d => {
+  if (Array.isArray(d) && d.length) { DATA = d; renderFilters(); render(); }
+}).catch(() => {}); }
 function renderFilters() {
   document.getElementById('fModel').innerHTML = opts(MODELS, 'model');
   document.getElementById('fVram').innerHTML = opts(VRAMS, 'vram');

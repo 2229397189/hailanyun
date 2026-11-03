@@ -39,6 +39,13 @@
 </header>
 
 <main>
+  <div class="wrap" style="padding-top:26px">
+    <div class="mkt-switch">
+      <a href="/portal.html">容器云</a>
+      <a href="/group.html">拼租卡</a>
+      <a class="on" href="/baremetal.html">裸金属</a>
+    </div>
+  </div>
   <section class="grid-bg">
     <div class="wrap" style="padding:46px 24px 40px;display:grid;grid-template-columns:1.15fr .85fr;
          gap:40px;align-items:center">
@@ -96,7 +103,7 @@
 </footer>
 
 <script>
-const ROWS = [
+let ROWS = [
   { m: 'RTX5090', zone: '可用区 A', price: 10000, gpu: '32 GB GDDR7', ram: '512 GB', sys: '480 GB SSD *2',
     core: '64 核', data: '3.84 TB NVMe SSD *2', cpu: 'Intel Xeon Gold 6530 *2' },
   { m: 'RTX5090', zone: '可用区 B', price: 10000, gpu: '32 GB GDDR7', ram: '512 GB', sys: '480 GB SSD *2',
@@ -106,7 +113,7 @@ const ROWS = [
   { m: 'RTX4090', zone: '可用区 A', price: 6300, gpu: '24 GB GDDR6X', ram: '512 GB', sys: '960 GB SSD *2',
     core: '64 核', data: '3.84 TB SATA SSD *2', cpu: 'Intel Xeon Gold 6530 *2' }
 ];
-document.getElementById('rows').innerHTML = ROWS.map(r => `
+function renderRows(){ document.getElementById('rows').innerHTML = ROWS.map(r => `
   <div class="metal-row">
     <div class="metal-logo">NV</div>
     <div class="metal-main">
@@ -126,7 +133,12 @@ document.getElementById('rows').innerHTML = ROWS.map(r => `
       <small>月租 / 台</small>
       <div><button onclick="apply('${r.m}')">需求提交</button></div>
     </div>
-  </div>`).join('');
+  </div>`).join(''); }
+
+fetch('/api/catalog/baremetal').then(r => r.json()).then(d => {
+  if (Array.isArray(d) && d.length) { ROWS = d; renderRows(); }
+}).catch(() => {});
+renderRows();
 
 function apply(model) {
   alert(`演示环境：已记录需求${model ? '（' + model + '）' : ''}。\n真实流程会创建工单并通知商务，当前仅展示交互。`);
