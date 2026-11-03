@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>算力市场 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<header class="topnav">
+  <div class="inner">
+    <a class="brand" href="/index.html">
+      <span class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span>
+        <span class="brand-name">Token<span>Ark</span></span>
+        <span class="brand-sub">创元方舟 · 算力云</span>
+      </span>
+    </a>
+    <nav class="navlinks">
+      <a href="/index.html">首页</a>
+      <a class="on" href="/portal.html">算力市场</a>
+      <a class="soon">大模型 API</a>
+      <a href="/solutions.html">解决方案</a>
+      <a href="/about.html">关于我们</a>
+      <a href="/index.html#pricing">帮助文档</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn-console" href="#instances" id="consoleBtn">控制台</a>
+      <div class="usermenu">
+        <button class="usermenu-btn" onclick="toggleMenu(event)">
+          <span class="avatar" id="avatar">L</span>
+        </button>
+        <div class="usermenu-pop" id="umPop">
+          <div class="um-head"><b id="umName">–</b><small id="umTenant">–</small></div>
+          <div class="um-item" onclick="go('instances')">我的实例</div>
+          <div class="um-item" onclick="go('billing')">我的账单</div>
+          <div class="um-item" onclick="openPwd()">修改密码</div>
+          <div class="um-item danger" onclick="logout()">退出登录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main style="max-width:1240px;margin:0 auto;padding:34px 24px 70px">
+
+  <div class="msg" id="msg"></div>
+
+  <!-- ================= 算力市场 ================= -->
+  <section id="view-market">
+    <div class="page-head">
+      <div class="page-title">容器云实例</div>
+      <div class="page-desc">探索丰富的算力资源，秒级启动，预装主流框架。根据您的需求灵活选择，支持按量、包日、包周及包月计费，选择最适合您的解决方案。</div>
+    </div>
+
+    <div class="filter-card">
+      <div class="filter-row">
+        <div class="filter-label">计费方式</div>
+        <div class="opts" id="fBilling"></div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">选择地区</div>
+        <div class="opts" id="fZone"></div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">GPU 型号</div>
+        <div class="opts" id="fModel"></div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">GPU 数量</div>
+        <div class="opts" id="fQty"></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tool-left">
+        <span class="tool-pill plain" style="padding:0 4px">▦</span>
+        <span class="tool-pill on" id="sortDefault" onclick="setSort('default')">综合</span>
+        <span class="tool-pill" id="sortPrice" onclick="toggleSortPrice()">升序 <span id="sortArrow">↑</span></span>
+        <span class="tool-pill" id="onlyStock" onclick="toggleStock()">只看有货</span>
+      </div>
+      <div class="tool-right">
+        <span class="icon-btn" title="刷新" onclick="loadMarket()">↻</span>
+        <span class="icon-btn on" id="viewGrid" title="网格" onclick="setView('grid')">▦</span>
+        <span class="icon-btn" id="viewList" title="列表" onclick="setView('list')">▤</span>
+      </div>
+    </div>
+
+    <div class="product-grid" id="productGrid"></div>
+  </section>
+
+  <!-- ================= 我的实例 ================= -->
+  <section id="view-instances" style="display:none">
+    <div class="page-head">
+      <div class="page-title" style="font-size:28px">我的实例</div>
+      <div class="page-desc">这里是你开通的全部算力实例。释放时按实际使用秒数结算，预扣的差额会退回余额。</div>
+    </div>
+    <div class="grid g4 mb10" id="instKpi"></div>
+    <div class="card panel mt10">
+      <h3>实例列表 <span class="s" id="instCount"></span></h3>
+      <div id="instTable"></div>
+    </div>
+    <div class="card panel mt10">
+      <h3>连接方式</h3>
+      <div class="hint">
+        实例就绪后通过 SSH 连接：<code class="mono">ssh root@10.0.0.11 -p 30022</code>（端口按实例分配）。<br>
+        当前为演示环境，连接命令仅作展示，未真实开放端口。
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 我的账单 ================= -->
+  <section id="view-billing" style="display:none">
+    <div class="page-head">
+      <div class="page-title" style="font-size:28px">我的账单</div>
+      <div class="page-desc">按实例结算，只记录真实占用时长。进行中的实例按当前用量估算，尚未扣费。</div>
+    </div>
+    <div class="grid g3 mb10" id="blKpi"></div>
+    <div class="card panel mb10">
+      <h3>近 7 天消费 <span class="s">按结算日期汇总</span></h3>
+      <div id="blChart" style="display:flex;align-items:flex-end;gap:12px;height:150px"></div>
+    </div>
+    <div class="card panel">
+      <h3>账单明细 <span class="s">按实例结算</span></h3>
+      <div id="blTable"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 下单弹窗 -->
+<div class="modal" id="buyModal">
+  <div class="box">
+    <h3 id="buyTitle">确认开通</h3>
+    <div class="alert err" id="buyAlert" style="display:none"></div>
+    <div class="pc-spec" id="buySpec" style="margin-bottom:14px"></div>
+    <div class="field">
+      <label>租用时长</label>
+      <select id="buyHours" onchange="calcTotal()">
+        <option value="1">1 小时</option>
+        <option value="2" selected>2 小时</option>
+        <option value="8">8 小时</option>
+        <option value="24">24 小时</option>
+        <option value="72">3 天（72 小时）</option>
+      </select>
+    </div>
+    <div class="between" style="padding:12px 14px;background:#fbf8ff;border:1px solid #f1e8ff;border-radius:11px">
+      <span class="hint">预扣金额</span>
+      <b style="font-size:20px;color:#7c3aed" id="buyTotal">¥0.00</b>
+    </div>
+    <div class="tip" style="margin-top:10px">下单即按全时长预扣余额，释放时按实际秒数结算，差额自动退回。</div>
+    <div class="foot">
+      <button class="ghost sm" onclick="closeBuy()">取消</button>
+      <button class="sm" id="buyBtn" onclick="confirmBuy()">确认开通</button>
+    </div>
+  </div>
+</div>
+
+<!-- 改密弹窗 -->
+<div class="modal" id="pwdModal">
+  <div class="box">
+    <h3>修改密码</h3>
+    <div class="alert err" id="pwdAlert" style="display:none"></div>
+    <div class="field"><label>原密码</label><input type="password" id="oldPwd" autocomplete="current-password"></div>
+    <div class="field"><label>新密码</label><input type="password" id="newPwd" autocomplete="new-password"></div>
+    <div class="field"><label>确认新密码</label><input type="password" id="newPwd2" autocomplete="new-password"></div>
+    <div class="tip">至少 8 位，需包含大写字母、小写字母、数字和符号。修改后其它设备上的登录会失效。</div>
+    <div class="foot">
+      <button class="ghost sm" onclick="closePwd()">取消</button>
+      <button class="sm" onclick="submitPwd()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => (Number(n) || 0).toFixed(2);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) { location.replace('/login.html'); throw new Error('no-session'); }
+if (U.role !== 'tenant') { location.replace('/admin.html'); throw new Error('wrong-role'); }
+let TENANT = U.tenantId || 't1';
+
+$('#umName').textContent = U.username;
+$('#avatar').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
+
+/* ---------------- 基础请求 ---------------- */
+async function api(path, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({}, opt.headers || {}, { Authorization: 'Bearer ' + TOKEN });
+  const r = await fetch('/api' + path, opt);
+  if (r.status === 401) {
+    localStorage.removeItem('gu_token'); localStorage.removeItem('gu_user');
+    location.replace('/login.html'); throw new Error('登录已失效');
+  }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) { j = { message: t }; }
+  if (!r.ok) throw new Error(j.message || ('HTTP ' + r.status));
+  return j;
+}
+const post = (p, b) => api(p, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-User': U.username },
+  body: b ? JSON.stringify(b) : undefined
+});
+function toast(text, ok) {
+  const m = $('#msg'); m.textContent = text; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => { m.className = 'msg'; }, 6000);
+}
+async function logout() {
+  try { await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN } }); } catch (e) {}
+  localStorage.removeItem('gu_token'); localStorage.removeItem('gu_user');
+  location.replace('/login.html');
+}
+function toggleMenu(e) { e.stopPropagation(); $('#umPop').classList.toggle('on'); }
+document.addEventListener('click', () => $('#umPop').classList.remove('on'));
+
+/* ---------------- 状态 ---------------- */
+const S = {
+  billing: 'on', zone: 'all', model: 'all', qty: 1,
+  sort: 'default', priceAsc: true, onlyStock: false, view: 'grid',
+  skus: [], me: {}, tenants: [], overview: {}
+};
+
+/* 尚未接入硬件的型号，只做展示，不产生订单 */
+const SOON = [
+  { code: 'soon-a100', name: 'A100 · 80 GB', model: 'A100', brand: 'nv', memGb: 80,
+    desc: '1 × A100 SXM4 · 80 GB 显存<br>NVLink 互联 · 适合千亿参数训练', soon: true },
+  { code: 'soon-h800', name: 'H800 · 80 GB', model: 'H800', brand: 'nv', memGb: 80,
+    desc: '1 × H800 · 80 GB 显存<br>高带宽互联 · 大模型训练首选', soon: true },
+  { code: 'soon-l40s', name: 'L40S · 48 GB', model: 'L40S', brand: 'amd', memGb: 48,
+    desc: '1 × L40S · 48 GB 显存<br>推理与图形渲染兼顾', soon: true }
+];
+
+/* ---------------- 路由 ---------------- */
+const VIEWS = ['market', 'instances', 'billing'];
+function route() {
+  const v = (location.hash || '#market').slice(1);
+  const view = VIEWS.includes(v) ? v : 'market';
+  VIEWS.forEach(x => { $('#view-' + x).style.display = x === view ? '' : 'none'; });
+  if (view === 'market') loadMarket();
+  if (view === 'instances') loadInstances();
+  if (view === 'billing') loadBilling();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function go(v) { location.hash = v; }
+window.addEventListener('hashchange', route);
+
+/* ---------------- 市场 ---------------- */
+const BILLING = [
+  { k: 'on', t: '按量计费', ok: true },
+  { k: 'day', t: '包日', ok: false },
+  { k: 'week', t: '包周', ok: false },
+  { k: 'month', t: '包月', ok: false },
+  { k: 'night', t: '包夜', ok: false }
+];
+function renderFilters() {
+  $('#fBilling').innerHTML = BILLING.map(b =>
+    `<span class="opt ${S.billing === b.k ? 'on' : ''} ${b.ok ? '' : 'dim'}"
+      ${b.ok ? `onclick="setBilling('${b.k}')"` : 'title="规划中"'}>${b.t}</span>`).join('');
+
+  const zones = ['all', 'A', 'B'];
+  $('#fZone').innerHTML = zones.map(z =>
+    `<span class="opt ${S.zone === z ? 'on' : ''}" onclick="setZone('${z}')">${z === 'all' ? '全部' : '可用区 ' + z}</span>`).join('');
+
+  const models = ['all', 'RTX 5090', 'A100', 'H800', 'L40S'];
+  $('#fModel').innerHTML = models.map(m =>
+    `<span class="opt ${S.model === m ? 'on' : ''}" onclick="setModel('${m}')">${m === 'all' ? '全部' : m}</span>`).join('');
+
+  const qtys = [1, 2, 4, 8];
+  $('#fQty').innerHTML = qtys.map(q => {
+    const ok = q === 1 || q === 8;
+    return `<span class="opt ${S.qty === q ? 'on' : ''} ${ok ? '' : 'dim'}"
+      ${ok ? `onclick="setQty(${q})"` : 'title="多卡规格规划中"'}>${q}</span>`;
+  }).join('');
+}
+function setBilling(k) { S.billing = k; renderFilters(); renderProducts(); }
+function setZone(z) { S.zone = z; renderFilters(); renderProducts(); }
+function setModel(m) { S.model = m; renderFilters(); renderProducts(); }
+function setQty(q) { S.qty = q; renderFilters(); renderProducts(); }
+function setSort(s) { S.sort = s; renderProducts(); }
+function toggleSortPrice() {
+  S.sort = 'price'; S.priceAsc = !S.priceAsc;
+  $('#sortArrow').textContent = S.priceAsc ? '↑' : '↓';
+  $('#sortPrice').classList.toggle('on', true);
+  $('#sortDefault').classList.remove('on');
+  renderProducts();
+}
+function toggleStock() {
+  S.onlyStock = !S.onlyStock;
+  $('#onlyStock').classList.toggle('on', S.onlyStock);
+  renderProducts();
+}
+function setView(v) {
+  S.view = v;
+  $('#viewGrid').classList.toggle('on', v === 'grid');
+  $('#viewList').classList.toggle('on', v === 'list');
+  $('#productGrid').classList.toggle('list', v === 'list');
+}
+
+function productCard(p) {
+  const soon = !!p.soon;
+  const isWhole = Number(p.gpuCount) === 8;
+  const unit = Number(p.unitPrice);          // 元 / 卡 / 小时
+  const mult = isWhole ? 8 : 1;
+  const hourly = unit * mult;
+  const day = hourly * 24 * 0.75;
+  const week = hourly * 24 * 7 * 0.68;
+  const month = hourly * 24 * 30 * 0.6;
+  const machines = Math.floor(Number(p.stock || 0) / 8);
+  const stockHtml = soon
+    ? '硬件待接入'
+    : (isWhole
+        ? (machines > 0 ? `可开通 <b>${machines}</b> 台` : '需 8 张同节点卡')
+        : (p.stock > 0 ? `可开通 <b>${p.stock}</b> 张` : '已售罄'));
+  const btn = soon
+    ? `<button class="pc-btn disabled" disabled>敬请期待</button>`
+    : (p.stock > 0
+        ? `<button class="pc-btn" onclick="openBuy('${p.code}')">立即购买</button>`
+        : `<button class="pc-btn disabled" disabled>暂无库存</button>`);
+  const badge = soon ? `<span class="pc-badge">即将上线</span>` : '';
+  const specMap = {
+    'RTX 5090': [['显卡', '1 × RTX 5090'], ['显存', '32 GB'], ['系统盘', '50 GB SSD'], ['数据盘', '200 GB NVMe']],
+    'A100': [['显卡', '1 × A100'], ['显存', '80 GB HBM2'], ['系统盘', '480 GB SSD'], ['数据盘', '1 TB NVMe']],
+    'H800': [['显卡', '1 × H800'], ['显存', '80 GB HBM3'], ['系统盘', '480 GB SSD'], ['数据盘', '1 TB NVMe']],
+    'L40S': [['显卡', '1 × L40S'], ['显存', '48 GB'], ['系统盘', '480 GB SSD'], ['数据盘', '1 TB NVMe']]
+  };
+  const spec = isWhole
+    ? [['显卡', '8 × RTX 5090'], ['显存', '256 GB'], ['系统盘', '480 GB SSD'], ['数据盘', '3.84 TB NVMe']]
+    : (specMap[p.model] || specMap['RTX 5090']);
+  const money = v => v >= 1000 ? String(Math.round(v)) : fmt(v);
+
+  return `<div class="product-card">
+    ${badge}
+    <div class="pc-head">
+      <div class="pc-logo ${p.brand || 'nv'}">${p.brand === 'amd' ? 'AMD' : 'NV'}</div>
+      <div style="flex:1">
+        <div class="pc-title">${p.name}</div>
+        <div class="pc-region"><i></i>${soon ? '可用区 B' : '可用区 A'}　<span style="color:#c3c8d4">|</span>　${stockHtml}</div>
+      </div>
+    </div>
+    <div class="p-specs">
+      ${spec.map(x => `<div>${x[0]}：<b>${x[1]}</b></div>`).join('')}
+    </div>
+    <div class="price-tabs">
+      <div class="ptab" onclick="periodTip('包日')">包日<b>¥${soon ? '—' : money(day)}</b></div>
+      <div class="ptab" onclick="periodTip('包周')">包周<b>¥${soon ? '—' : money(week)}</b></div>
+      <div class="ptab" onclick="periodTip('包月')">包月<b>¥${soon ? '—' : money(month)}</b></div>
+      <div class="ptab on">按量<b>¥${soon ? '—' : money(hourly)}</b></div>
+    </div>
+    ${btn}
+  </div>`;
+}
+
+function periodTip(name) {
+  toast(`${name}计费开发中，当前仅支持按量计费（按秒结算）`, false);
+}
+
+function renderProducts() {
+  let list = S.skus.map(s => ({
+    code: s.code, name: s.name, model: 'RTX 5090', brand: 'nv',
+    memGb: s.memGb, unitPrice: s.unitPrice, stock: s.stock, gpuCount: s.gpuCount,
+    desc: (s.gpuCount === 8 ? '8 × RTX 5090 · 256 GB 显存<br>同节点整机 · 适合大模型训练'
+                           : '1 × RTX 5090 · 32 GB 显存<br>独占整卡 · 适合推理、微调、实验')
+  }));
+  if (S.qty === 1) list = list.concat(SOON);
+
+  if (S.model !== 'all') list = list.filter(p => p.model === S.model);
+  if (S.onlyStock) list = list.filter(p => !p.soon && p.stock > 0);
+  if (S.sort === 'price') {
+    list.sort((a, b) => {
+      const av = a.soon ? 1e9 : Number(a.unitPrice);
+      const bv = b.soon ? 1e9 : Number(b.unitPrice);
+      return S.priceAsc ? av - bv : bv - av;
+    });
+  }
+  $('#productGrid').innerHTML = list.length
+    ? list.map(productCard).join('')
+    : `<div class="card panel" style="grid-column:1/-1"><div class="empty">当前筛选条件下没有可用规格，换个条件试试</div></div>`;
+}
+
+async function loadMarket() {
+  try {
+    const [skus, tenants] = await Promise.all([api('/skus'), api('/tenants')]);
+    S.skus = skus;
+    S.tenants = U.tenantId ? tenants.filter(t => t.id === U.tenantId) : tenants;
+    S.me = S.tenants.find(t => t.id === TENANT) || S.tenants[0] || {};
+    if (S.me.id) TENANT = S.me.id;
+    $('#umTenant').textContent = S.me.name || '未绑定租户';
+    renderFilters();
+    renderProducts();
+  } catch (e) { toast(e.message, false); }
+}
+
+/* ---------------- 下单 ---------------- */
+let buying = null;
+function openBuy(code) {
+  const p = S.skus.find(x => x.code === code);
+  if (!p) return;
+  buying = p;
+  $('#buyTitle').textContent = '开通 · ' + p.name;
+  $('#buySpec').innerHTML = (p.gpuCount === 8 ? '8 × RTX 5090 · 256 GB 显存' : '1 × RTX 5090 · 32 GB 显存')
+    + `<br><span class="hint">单价 ¥${fmt(p.unitPrice)} / 卡 · 小时 · 库存 ${p.stock}</span>`;
+  $('#buyHours').value = '2';
+  $('#buyAlert').style.display = 'none';
+  calcTotal();
+  $('#buyModal').classList.add('on');
+}
+function closeBuy() { $('#buyModal').classList.remove('on'); }
+function calcTotal() {
+  if (!buying) return;
+  const h = Number($('#buyHours').value) || 1;
+  $('#buyTotal').textContent = '¥' + fmt(buying.unitPrice * buying.gpuCount * h);
+}
+async function confirmBuy() {
+  if (!buying) return;
+  const hours = Number($('#buyHours').value) || 1;
+  const orderNo = 'ORD' + Date.now();
+  $('#buyBtn').disabled = true;
+  try {
+    const r = await post('/orders', { tenantId: TENANT, sku: buying.code, hours, orderNo });
+    closeBuy();
+    toast(`开通成功：实例 ${r.instanceId}，占用 ${r.gpuIds.length} 卡，预扣 ¥${fmt(r.prepaid)}。约 3 秒后就绪。`, true);
+    go('instances');
+  } catch (e) {
+    const a = $('#buyAlert'); a.textContent = e.message; a.style.display = 'block';
+  } finally { $('#buyBtn').disabled = false; }
+}
+
+/* ---------------- 我的实例 ---------------- */
+const IST = {
+  provisioning: ['创建中', 'p-amber'], running: ['运行中', 'p-green'],
+  releasing: ['回收中', 'p-purple'], released: ['已释放', 'p-gray'], failed: ['失败', 'p-red']
+};
+async function loadInstances() {
+  try {
+    const [list, tenants, ov] = await Promise.all([
+      api('/instances?tenantId=' + TENANT), api('/tenants'), api('/overview')
+    ]);
+    S.me = tenants.find(t => t.id === TENANT) || S.me;
+    const active = list.filter(i => i.status !== 'released');
+    $('#instKpi').innerHTML = [
+      ['我的配额', (S.me.quota_gpus || 0) + ' 卡', '当前租户上限'],
+      ['已占用', active.reduce((a, b) => a + Number(b.gpu_count), 0) + ' 卡', active.length + ' 个实例'],
+      ['账户余额', '¥' + fmt(S.me.balance_yuan), '可用于预扣'],
+      ['平台空闲卡', (ov.gpuStatus ? ov.gpuStatus.free : 0) + ' 卡', '可立即开通']
+    ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+    $('#instCount').textContent = list.length + ' 个';
+    if (!list.length) {
+      $('#instTable').innerHTML = '<div class="empty">还没有实例，去「算力市场」开通一台</div>';
+      return;
+    }
+    $('#instTable').innerHTML = `<table>
+      <thead><tr><th>实例</th><th>规格</th><th>节点</th><th class="num">GPU</th><th>状态</th>
+      <th class="num">已用</th><th>到期</th><th style="text-align:right">操作</th></tr></thead>
+      <tbody>${list.map(i => {
+        const sec = Number(i.used_seconds || 0);
+        const used = sec < 60 ? sec + ' 秒' : (sec / 60).toFixed(1) + ' 分';
+        const exp = i.expire_at ? new Date(i.expire_at).toLocaleString('zh-CN', { hour12: false }).slice(5) : '–';
+        const spec = Number(i.gpu_count) === 8 ? '整机 8 卡' : '单卡';
+        const st = IST[i.status] || [i.status, 'p-gray'];
+        const act = i.status === 'released' ? '<span class="hint">—</span>'
+          : `<button class="sm ghost" onclick="conn('${i.node_id}')">连接</button>
+             <button class="sm danger" style="margin-left:4px" onclick="releaseInst('${i.id}')">释放</button>`;
+        return `<tr>
+          <td class="mono">${i.id}</td><td>${spec}</td><td>${i.node_id || '–'}</td>
+          <td class="num">${i.gpu_count}</td>
+          <td><span class="pill ${st[1]}">${st[0]}</span></td>
+          <td class="num mono">${used}</td><td class="mono">${exp}</td>
+          <td style="text-align:right;white-space:nowrap">${act}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  } catch (e) { toast(e.message, false); }
+}
+function conn(node) {
+  const ip = node === 'n2' ? '10.0.0.12' : '10.0.0.11';
+  toast(`连接命令：ssh root@${ip} -p 30022（复制到终端执行）`, true);
+}
+async function releaseInst(id) {
+  if (!confirm('确认释放该实例？释放后按实际使用秒数结算，差额退回余额。')) return;
+  try {
+    const r = await post(`/instances/${id}/release`);
+    toast(`已释放：使用 ${r.usedSeconds} 秒，结算 ¥${fmt(r.actualAmount)}，退回 ¥${fmt(r.refund)}`, true);
+    loadInstances();
+  } catch (e) { toast(e.message, false); loadInstances(); }
+}
+
+/* ---------------- 账单 ---------------- */
+async function loadBilling() {
+  try {
+    const [b, tenants] = await Promise.all([api('/billing?tenantId=' + TENANT), api('/tenants')]);
+    const me = tenants.find(t => t.id === TENANT) || {};
+    $('#blKpi').innerHTML = [
+      ['已结算', '¥' + fmt(b.settled), '历史账单合计'],
+      ['进行中（估算）', '¥' + fmt(b.runningEstimate), '按当前用量预估'],
+      ['账户余额', '¥' + fmt(me.balance_yuan), '扣除预扣后的可用余额']
+    ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+    const daily = await api('/billing/daily?tenantId=' + TENANT + '&days=7');
+    const byDay = {};
+    daily.forEach(x => { byDay[String(x.d).slice(0, 10)] = Number(x.amount) || 0; });
+    const key = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const days = [];
+    for (let i = 6; i >= 0; i--) days.push(new Date(Date.now() - i * 86400000));
+    const max = Math.max(...days.map(d => byDay[key(d)] || 0), 1);
+
+    $('#blChart').innerHTML = days.map(d => {
+      const k = key(d), v = byDay[k] || 0;
+      const h = v > 0 ? Math.max(6, Math.round(v / max * 96)) : 3;
+      return `<div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px">
+        <span class="hint" style="font-size:10.5px;height:14px">${v > 0 ? '¥' + fmt(v) : ''}</span>
+        <div style="width:100%;max-width:92px;height:${h}px;border-radius:6px 6px 0 0;
+          background:${v > 0 ? 'linear-gradient(180deg,#c084fc,#7c3aed)' : '#f4f0fd'}"></div>
+        <span class="hint" style="font-size:10.5px;height:14px">${k.slice(5)}</span>
+      </div>`;
+    }).join('');
+
+    $('#blTable').innerHTML = b.records.length ? `<table>
+      <thead><tr><th>实例</th><th class="num">卡数</th><th class="num">时长</th>
+      <th class="num">单价</th><th class="num">金额</th><th>结算时间</th></tr></thead>
+      <tbody>${b.records.map(r => `<tr>
+        <td class="mono">${r.instance_id}</td><td class="num">${r.gpu_count}</td>
+        <td class="num">${(Number(r.seconds) / 60).toFixed(1)} 分</td>
+        <td class="num">¥${fmt(r.unit_price)}</td>
+        <td class="num"><b>¥${fmt(r.amount)}</b></td>
+        <td class="hint">${new Date(r.settled_at).toLocaleString('zh-CN', { hour12: false })}</td>
+      </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无账单</div>';
+  } catch (e) { toast(e.message, false); }
+}
+
+/* ---------------- 改密 ---------------- */
+function openPwd() {
+  $('#pwdAlert').style.display = 'none';
+  ['oldPwd', 'newPwd', 'newPwd2'].forEach(id => $('#' + id).value = '');
+  $('#pwdModal').classList.add('on');
+}
+function closePwd() { $('#pwdModal').classList.remove('on'); }
+function pwdMsg(text, ok) {
+  const a = $('#pwdAlert'); a.textContent = text;
+  a.className = 'alert ' + (ok ? 'ok' : 'err'); a.style.display = 'block';
+}
+async function submitPwd() {
+  const oldPwd = $('#oldPwd').value, newPwd = $('#newPwd').value, again = $('#newPwd2').value;
+  if (!oldPwd || !newPwd) { pwdMsg('请填写原密码和新密码', false); return; }
+  if (newPwd !== again) { pwdMsg('两次输入的新密码不一致', false); return; }
+  try {
+    const r = await post('/auth/password', { oldPassword: oldPwd, newPassword: newPwd });
+    pwdMsg(r.message, true);
+    setTimeout(() => { closePwd(); toast(r.message, true); }, 900);
+  } catch (e) { pwdMsg(e.message, false); }
+}
+
+/* ---------------- 启动 ---------------- */
+route();
+</script>
+<script src="/nav.js"></script>
+</body>
+</html>
