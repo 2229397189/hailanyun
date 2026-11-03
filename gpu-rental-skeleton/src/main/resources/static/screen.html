@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TokenArk 创元方舟 · 算力监控中心</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --bg:#050b15; --pnl:#0b1729; --pnl2:#0e1e34; --line:rgba(90,140,210,.18);
+  --ink:#dbe7f7; --ink2:#7f96b5; --ink3:#4f6785;
+  --blue:#3b82f6; --cyan:#22d3ee; --green:#22c55e; --amber:#f59e0b; --red:#ef4444; --purple:#8b5cf6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:
+  radial-gradient(1200px 600px at 50% -10%, rgba(59,130,246,.13), transparent 60%),
+  var(--bg);
+  color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  font-size:13px;overflow:hidden}
+.wrap{height:100vh;display:flex;flex-direction:column;padding:14px 18px 16px}
+header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;
+  border-bottom:1px solid var(--line);margin-bottom:12px}
+header h1{font-size:20px;font-weight:600;letter-spacing:.06em;
+  background:linear-gradient(90deg,#7dd3fc,#3b82f6);-webkit-background-clip:text;background-clip:text;color:transparent}
+header .sub{font-size:11px;color:var(--ink2);margin-top:3px;letter-spacing:.08em}
+header .right{display:flex;gap:22px;align-items:center;font-size:12px;color:var(--ink2)}
+header .right b{color:var(--ink);font-variant-numeric:tabular-nums}
+.live{display:inline-flex;align-items:center;gap:6px}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(34,197,94,.7);
+  animation:p 1.8s infinite}
+@keyframes p{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+
+.cols{flex:1;display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:12px;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0}
+.pnl{background:linear-gradient(180deg,rgba(20,42,72,.72),rgba(11,23,41,.9));
+  border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;min-height:0;
+  position:relative;overflow:hidden}
+.pnl::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;
+  background:linear-gradient(180deg,var(--blue),transparent)}
+.pnl h2{font-size:12px;font-weight:500;color:#9fb6d4;letter-spacing:.1em;margin-bottom:9px;
+  display:flex;justify-content:space-between;align-items:center}
+.pnl h2 span{color:var(--ink3);font-size:10.5px;letter-spacing:0}
+
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpi{background:rgba(59,130,246,.07);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.kpi .k{font-size:10.5px;color:var(--ink2);letter-spacing:.06em}
+.kpi .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px;
+  color:#eaf2ff;letter-spacing:-.01em}
+.kpi .v small{font-size:11px;color:var(--ink3);font-weight:400;margin-left:3px}
+.bigv{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+  background:linear-gradient(180deg,#cfe4ff,#3b82f6);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.rack{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.cell{aspect-ratio:1/1;border-radius:4px;border:1px solid rgba(120,170,230,.18);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#93aec9}
+.cell b{font-size:10px}
+.cell.free{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.4);color:#7fe0a3}
+.cell.occupied{background:rgba(59,130,246,.22);border-color:rgba(59,130,246,.6);color:#9cc4ff}
+.cell.fault{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.6);color:#ffa3a3}
+.cell.reserved{background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.28);color:#8fa2b8}
+
+.node{display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+  border-bottom:1px solid rgba(90,140,210,.1);font-size:12px}
+.node:last-child{border-bottom:none}
+.bar{height:4px;border-radius:2px;background:rgba(120,170,230,.15);margin-top:5px;overflow:hidden}
+.bar div{height:100%;background:linear-gradient(90deg,#3b82f6,#22d3ee)}
+
+.alist{overflow:hidden;flex:1}
+.alert{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(90,140,210,.1);font-size:11.5px;align-items:flex-start}
+.alert:last-child{border-bottom:none}
+.lv{font-size:9.5px;padding:1px 5px;border-radius:3px;white-space:nowrap;font-weight:600}
+.lv.P0{background:rgba(239,68,68,.2);color:#ff9b9b;border:1px solid rgba(239,68,68,.45)}
+.lv.P1{background:rgba(245,158,11,.18);color:#fbc46b;border:1px solid rgba(245,158,11,.4)}
+.lv.P2{background:rgba(148,163,184,.15);color:#9fb3c8;border:1px solid rgba(148,163,184,.3)}
+.alert .t{flex:1;min-width:0}
+.alert .d{color:var(--ink3);font-size:10.5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{text-align:left;color:var(--ink3);font-weight:400;font-size:10.5px;padding:5px 4px;border-bottom:1px solid var(--line)}
+td{padding:6px 4px;border-bottom:1px solid rgba(90,140,210,.08);color:#c3d5ec}
+tr:last-child td{border-bottom:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+.chart{width:100%;flex:1;min-height:70px}
+.chart .gl{stroke:rgba(90,140,210,.14);stroke-width:1}
+.chart .ln{fill:none;stroke:#3b82f6;stroke-width:1.8;stroke-linejoin:round}
+.chart .ar{fill:rgba(59,130,246,.16);stroke:none}
+
+.donutwrap{display:flex;align-items:center;gap:16px}
+.donutwrap .lg div{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);margin-bottom:5px}
+.donutwrap .lg i{width:7px;height:7px;border-radius:2px;display:inline-block}
+.footerline{margin-top:8px;font-size:10.5px;color:var(--ink3);display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>TokenArk 创元方舟 · 算力监控中心</h1>
+      <div class="sub">TOKENARK · K8S NATIVE GPU SCHEDULING · NOC</div>
+    </div>
+    <div class="right">
+      <span class="live"><i class="pulse"></i>实时</span>
+      <span>集群 <b id="hNode">–</b></span>
+      <span>GPU <b id="hGpu">–</b></span>
+      <span>利用率 <b id="hUtil">–</b></span>
+      <span id="hTime">--:--:--</span>
+    </div>
+  </header>
+
+  <div class="cols">
+    <!-- 左 -->
+    <div class="col">
+      <div class="pnl" style="flex:1.25">
+        <h2>卡池实时状态 <span id="poolSub"></span></h2>
+        <div id="racks" style="flex:1"></div>
+        <div class="footerline"><span>空闲 / 占用 / 故障 / 预留</span><span id="poolSum"></span></div>
+      </div>
+      <div class="pnl" style="flex:1">
+        <h2>GPU 利用率趋势 <span>近 30 分钟</span></h2>
+        <div id="utilChart" class="chart"></div>
+      </div>
+      <div class="pnl" style="flex:1">
+        <h2>节点资源 <span>2 节点</span></h2>
+        <div id="nodeList"></div>
+      </div>
+    </div>
+
+    <!-- 中 -->
+    <div class="col">
+      <div class="pnl" style="flex:0 0 auto">
+        <h2>核心指标 <span>实时</span></h2>
+        <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:10px">
+          <div class="bigv" id="bigUtil">0%</div>
+          <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">
+            整体算力利用率<br><span id="bigSub">已分配 0 / 共 0 卡</span>
+          </div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="k">运行实例</div><div class="v" id="kInst">0<small>个</small></div></div>
+          <div class="kpi"><div class="k">活跃租户</div><div class="v" id="kTenant">0<small>个</small></div></div>
+          <div class="kpi"><div class="k">今日收入</div><div class="v" id="kRev">¥0<small></small></div></div>
+          <div class="kpi"><div class="k">活跃告警</div><div class="v" id="kAlert">0<small>条</small></div></div>
+        </div>
+      </div>
+      <div class="pnl" style="flex:1">
+        <h2>卡池状态分布 <span id="donutTotal"></span></h2>
+        <div class="donutwrap" style="flex:1;justify-content:center"><div id="donut"></div><div class="lg" id="donutLg"></div></div>
+      </div>
+      <div class="pnl" style="flex:1.15">
+        <h2>租户用量 <span>按占用卡数</span></h2>
+        <div id="tenantTable" style="flex:1"></div>
+      </div>
+    </div>
+
+    <!-- 右 -->
+    <div class="col">
+      <div class="pnl" style="flex:1.3">
+        <h2>实时告警 <span id="alertSub"></span></h2>
+        <div class="alist" id="alerts"></div>
+      </div>
+      <div class="pnl" style="flex:0 0 auto">
+        <h2>健康度评分 <span>巡检结果</span></h2>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div id="gauge"></div>
+          <div style="font-size:11.5px;color:var(--ink2);line-height:1.7" id="healthText"></div>
+        </div>
+      </div>
+      <div class="pnl" style="flex:1">
+        <h2>功耗与温度 <span>全卡合计</span></h2>
+        <div id="pwChart" class="chart"></div>
+        <div class="footerline"><span>平均温度</span><span id="avgTemp">–</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => (Number(n)||0).toFixed(2);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if(!TOKEN || !U){ location.replace('/login.html'); throw new Error('no-session'); }
+// 大屏只对平台侧开放；租户访问直接送回用户端
+if(U.role === 'tenant'){ location.replace('/portal.html'); throw new Error('forbidden'); }
+
+async function api(p){
+  const r = await fetch('/api'+p, {headers:{Authorization:'Bearer ' + TOKEN}});
+  if(r.status === 401){
+    localStorage.removeItem('gu_token');
+    localStorage.removeItem('gu_user');
+    location.replace('/login.html');
+    throw new Error('401');
+  }
+  return await r.json();
+}
+
+function line(box, data, opts){
+  opts = opts || {};
+  const W = 400, H = opts.h || 100, P = 4;
+  const max = Math.max(...data, 1) * 1.2;
+  const x = i => P + i*(W-P*2)/Math.max(data.length-1,1);
+  const y = v => H - P - v/max*(H-P*2);
+  const d = data.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  box.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    ${[0,1,2,3].map(k=>`<line class="gl" x1="${P}" y1="${P+k*(H-P*2)/3}" x2="${W-P}" y2="${P+k*(H-P*2)/3}"/>`).join('')}
+    <path class="ar" d="${d} L ${x(data.length-1)} ${H-P} L ${P} ${H-P} Z"/>
+    <path class="ln" d="${d}" vector-effect="non-scaling-stroke"/>
+  </svg>`;
+}
+
+function donut(box, segs){
+  const R = 46, C = 2*Math.PI*R, total = segs.reduce((a,b)=>a+b.v,0)||1;
+  let off = 0, s = `<svg width="118" height="118" viewBox="0 0 118 118"><g transform="translate(59,59) rotate(-90)">`;
+  s += `<circle r="${R}" fill="none" stroke="rgba(120,170,230,.12)" stroke-width="11"/>`;
+  segs.forEach(g=>{
+    const len = g.v/total*C; if(len<=0) return;
+    s += `<circle r="${R}" fill="none" stroke="${g.c}" stroke-width="11"
+          stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}"/>`;
+    off += len;
+  });
+  s += `</g><text x="59" y="56" text-anchor="middle" font-size="20" font-weight="600" fill="#eaf2ff">${total}</text>
+        <text x="59" y="73" text-anchor="middle" font-size="10" fill="#7f96b5">总卡数</text></svg>`;
+  box.innerHTML = s;
+}
+
+function gauge(box, score){
+  const R = 42, C = Math.PI*R, pct = Math.max(0,Math.min(100,score))/100;
+  box.innerHTML = `<svg width="112" height="70" viewBox="0 0 112 70">
+    <path d="M14 60 A42 42 0 0 1 98 60" fill="none" stroke="rgba(120,170,230,.15)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M14 60 A42 42 0 0 1 98 60" fill="none" stroke="${score>=85?'#22c55e':(score>=70?'#f59e0b':'#ef4444')}"
+      stroke-width="9" stroke-linecap="round" stroke-dasharray="${C*pct} ${C}"/>
+    <text x="56" y="52" text-anchor="middle" font-size="21" font-weight="600" fill="#eaf2ff">${score}</text>
+  </svg>`;
+}
+
+async function refresh(){
+  const [ov, pool, m, al, ts, ins] = await Promise.all([
+    api('/admin/overview'), api('/pool'), api('/admin/metrics?minutes=30'),
+    api('/admin/alerts'), api('/admin/tenants'), api('/admin/inspections')
+  ]);
+
+  $('#hNode').textContent = ov.nodeReady + '/' + ov.nodeTotal;
+  $('#hGpu').textContent = ov.gpuTotal;
+  $('#hUtil').textContent = ov.gpuUtilization + '%';
+  $('#hTime').textContent = new Date().toLocaleTimeString('zh-CN',{hour12:false});
+
+  $('#bigUtil').textContent = ov.gpuUtilization + '%';
+  $('#bigSub').textContent = `已分配 ${ov.gpuStatus.occupied} / 共 ${ov.gpuTotal} 卡`;
+  $('#kInst').innerHTML = ov.runningInstances + '<small>个</small>';
+  $('#kTenant').innerHTML = ov.tenantActive + '<small>个</small>';
+  $('#kRev').innerHTML = '¥' + fmt(ov.todayRevenue);
+  $('#kAlert').innerHTML = ov.activeAlerts + '<small>条</small>';
+
+  // 卡池
+  const byNode = {};
+  pool.gpus.forEach(g => (byNode[g.node_id] = byNode[g.node_id] || []).push(g));
+  const label = {free:'空闲',occupied:'占用',fault:'故障',reserved:'预留'};
+  $('#racks').innerHTML = pool.nodes.map(n => `
+    <div style="margin-bottom:9px">
+      <div style="font-size:11px;color:#8aa4c4;margin-bottom:5px">${n.hostname} · ${n.ip}</div>
+      <div class="rack">${(byNode[n.id]||[]).sort((a,b)=>a.idx-b.idx).map(g=>`
+        <div class="cell ${g.status}" title="${g.id} ${label[g.status]}">
+          <b>${g.idx}</b><span>${g.temp_c}°</span>
+        </div>`).join('')}</div>
+    </div>`).join('');
+  $('#poolSum').textContent = `空闲 ${ov.gpuStatus.free} · 占用 ${ov.gpuStatus.occupied} · 故障 ${ov.gpuStatus.fault}`;
+
+  line($('#utilChart'), m.gpuUtil, {h:110});
+  line($('#pwChart'), m.powerW, {h:90});
+
+  donut($('#donut'), [
+    {v:ov.gpuStatus.free, c:'#22c55e'}, {v:ov.gpuStatus.occupied, c:'#3b82f6'},
+    {v:ov.gpuStatus.fault, c:'#ef4444'}, {v:ov.gpuStatus.reserved, c:'#94a3b8'}
+  ]);
+  $('#donutLg').innerHTML = [
+    ['空闲',ov.gpuStatus.free,'#22c55e'],['占用',ov.gpuStatus.occupied,'#3b82f6'],
+    ['故障',ov.gpuStatus.fault,'#ef4444'],['预留',ov.gpuStatus.reserved,'#94a3b8']
+  ].map(x=>`<div><i style="background:${x[2]}"></i>${x[0]} <b style="color:#dbe7f7;margin-left:2px">${x[1]}</b></div>`).join('');
+
+  // 节点
+  const nodes = await api('/admin/nodes');
+  $('#nodeList').innerHTML = nodes.map(n=>{
+    const used = (n.gpus||[]).filter(g=>g.status==='occupied').length;
+    const pct = Math.round(used*100/Math.max((n.gpus||[]).length,1));
+    return `<div class="node" style="display:block">
+      <div style="display:flex;justify-content:space-between">
+        <span>${n.hostname}</span>
+        <span style="color:${n.status==='Ready'?'#22c55e':'#f59e0b'}">${n.status} · GPU ${used}/${(n.gpus||[]).length}</span>
+      </div>
+      <div class="bar"><div style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  // 租户
+  const top = ts.slice().sort((a,b)=>b.used_gpus-a.used_gpus).slice(0,5);
+  $('#tenantTable').innerHTML = `<table>
+    <thead><tr><th>租户</th><th class="num">配额</th><th class="num">占用</th><th class="num">消费</th></tr></thead>
+    <tbody>${top.map(t=>`<tr><td>${t.name}</td><td class="num">${t.quota_gpus}</td>
+      <td class="num" style="color:#7dd3fc">${t.used_gpus}</td><td class="num">¥${fmt(t.spent)}</td></tr>`).join('')}</tbody></table>`;
+
+  // 告警
+  const act = al.alerts.filter(a=>a.status==='active');
+  $('#alertSub').textContent = act.length + ' 条待处理';
+  $('#alerts').innerHTML = act.length ? act.map(a=>`
+    <div class="alert"><span class="lv ${a.level}">${a.level}</span>
+      <div class="t">${a.title}<div class="d">${a.target} · ${a.detail||''}</div></div></div>`).join('')
+    : '<div style="color:#4f6785;font-size:11.5px;padding:14px 0;text-align:center">暂无活跃告警</div>';
+
+  // 健康度
+  const last = (ins.inspections||[])[0];
+  gauge($('#gauge'), ov.healthScore);
+  $('#healthText').innerHTML = last
+    ? `最近巡检 ${new Date(last.run_at).toLocaleTimeString('zh-CN',{hour12:false})}<br>
+       发现 <b style="color:#fbc46b">${last.total_issues}</b> 项问题<br>
+       <span style="color:#4f6785">${last.summary||''}</span>`
+    : '暂无巡检记录';
+
+  const temps = pool.gpus.filter(g=>g.status!=='fault').map(g=>g.temp_c||0);
+  $('#avgTemp').textContent = temps.length ? Math.round(temps.reduce((a,b)=>a+b,0)/temps.length) + ' °C' : '–';
+}
+
+refresh();
+setInterval(refresh, 8000);
+</script>
+</body>
+</html>

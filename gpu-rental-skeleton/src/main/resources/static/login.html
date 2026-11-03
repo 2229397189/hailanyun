@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登录 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<style>
+.field .eye{position:absolute;right:12px;bottom:12px;font-size:11px;color:#98a1b3;cursor:pointer;
+  user-select:none;padding:2px 5px}
+.field{position:relative}
+.row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;font-size:12.5px;color:#5b6478}
+.row label{display:flex;align-items:center;gap:6px;cursor:pointer;margin:0;font-size:12.5px;color:#5b6478}
+.row input[type=checkbox]{width:14px;height:14px;accent-color:#7c3aed;cursor:pointer}
+.demo{margin-top:22px;padding-top:16px;border-top:1px dashed #efeaf9}
+.demo summary{font-size:11.5px;color:#98a1b3;cursor:pointer;outline:none}
+.demo table{width:100%;margin-top:9px;font-size:11.5px;border-collapse:collapse}
+.demo td{padding:4px 2px;color:#5b6478;border:none}
+.demo code{background:#faf7ff;padding:1px 5px;border-radius:3px;font-size:11px;color:#6d28d9}
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="login-left">
+    <div style="display:flex;align-items:center;gap:11px">
+      <span class="brand-mark" style="width:38px;height:38px;border-radius:11px">
+        <svg width="20" height="20" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div>
+        <div class="brand-name" style="font-size:16px">Token<span>Ark</span></div>
+        <div class="brand-sub" style="font-size:11px">创元方舟 · 算力运营平台</div>
+      </div>
+    </div>
+
+    <div>
+      <h2>释放科研想象力<br>让算力<span class="grad">川流不息</span></h2>
+      <p>面向私有化环境的 K8s 原生 GPU 管理与租赁系统。集群纳管、配额调度、实例交付、计量计费一体化。</p>
+      <ul style="list-style:none;padding:0;margin:24px 0 0">
+        <li style="font-size:12.5px;color:#6b6480;margin-bottom:10px;padding-left:20px;position:relative">
+          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#7c3aed,#d946ef)"></span>
+          多租户隔离与 GPU 配额硬限制
+        </li>
+        <li style="font-size:12.5px;color:#6b6480;margin-bottom:10px;padding-left:20px;position:relative">
+          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#7c3aed,#d946ef)"></span>
+          实例全生命周期自动下发与回收
+        </li>
+        <li style="font-size:12.5px;color:#6b6480;margin-bottom:10px;padding-left:20px;position:relative">
+          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#7c3aed,#d946ef)"></span>
+          操作审计与在线会话管理
+        </li>
+      </ul>
+    </div>
+
+    <div style="font-size:11px;color:#9a93ab">v1.0.0 · Kubernetes v1.31 · 私有化部署版</div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-box">
+      <h3>账号登录</h3>
+      <div class="sub">请使用平台分配的账号登录，忘记密码请联系管理员</div>
+
+      <div class="alert" id="alert"></div>
+
+      <form id="form" autocomplete="on">
+        <div class="field">
+          <label for="username">账号</label>
+          <input id="username" name="username" type="text" placeholder="请输入账号"
+                 autocomplete="username" autofocus required>
+        </div>
+        <div class="field">
+          <label for="password">密码</label>
+          <input id="password" name="password" type="password" placeholder="请输入密码"
+                 autocomplete="current-password" required>
+          <span class="eye" id="eye">显示</span>
+        </div>
+        <div class="row">
+          <label><input type="checkbox" id="remember"> 7 天内免登录</label>
+          <span id="capsHint" style="color:#d97706;display:none">大写锁定已开启</span>
+        </div>
+        <button class="btn-primary btn-login" id="submit" type="submit">登 录</button>
+      </form>
+
+      <details class="demo">
+        <summary>演示账号（点击展开）</summary>
+        <table>
+          <tr><td>平台管理员</td><td><code>admin</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td>值班运维</td><td><code>ops</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td>租户用户</td><td><code>tenant_a</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td colspan="3" style="color:#98a1b3;padding-top:6px">连续 5 次密码错误将锁定 10 分钟</td></tr>
+        </table>
+      </details>
+
+      <div class="login-tip">© 2026 TokenArk 创元方舟 · 保留所有权利</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const alertBox = $('#alert');
+
+function showAlert(msg, ok){
+  alertBox.textContent = msg;
+  alertBox.className = 'alert ' + (ok ? 'ok' : 'err');
+}
+
+const lastUser = localStorage.getItem('gu_last_user');
+if(lastUser) { $('#username').value = lastUser; $('#password').focus(); }
+
+$('#eye').onclick = () => {
+  const p = $('#password');
+  const show = p.type === 'password';
+  p.type = show ? 'text' : 'password';
+  $('#eye').textContent = show ? '隐藏' : '显示';
+};
+
+$('#password').addEventListener('keyup', e => {
+  if(typeof e.getModifierState === 'function'){
+    $('#capsHint').style.display = e.getModifierState('CapsLock') ? 'inline' : 'none';
+  }
+});
+
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('#submit');
+  const username = $('#username').value.trim();
+  const password = $('#password').value;
+  if(!username || !password){ showAlert('请输入账号和密码'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '登录中…';
+  alertBox.className = 'alert';
+
+  try{
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password, remember: $('#remember').checked})
+    });
+    const j = await r.json().catch(() => ({}));
+
+    if(!r.ok){
+      showAlert(j.message || ('登录失败（HTTP ' + r.status + '）'));
+      btn.disabled = false;
+      btn.textContent = '登 录';
+      return;
+    }
+
+    localStorage.setItem('gu_token', j.token);
+    localStorage.setItem('gu_user', JSON.stringify(j.user));
+    localStorage.setItem('gu_last_user', username);
+    showAlert('登录成功，正在进入…', true);
+
+    const to = (j.user.role === 'tenant') ? '/portal.html' : '/admin.html';
+    setTimeout(() => location.replace(to), 300);
+  }catch(err){
+    showAlert('无法连接服务器，请检查网络或稍后重试');
+    btn.disabled = false;
+    btn.textContent = '登 录';
+  }
+});
+</script>
+</body>
+</html>
