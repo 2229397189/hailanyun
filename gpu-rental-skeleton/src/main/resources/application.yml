@@ -1,0 +1,43 @@
+server:
+  port: 8099
+
+spring:
+  application:
+    name: gpu-rental-skeleton
+  datasource:
+    url: jdbc:h2:mem:rental;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: never
+      encoding: UTF-8
+  h2:
+    console:
+      enabled: true
+      path: /h2
+
+logging:
+  level:
+    root: warn
+    com.example.rental: info
+
+rental:
+  k8s:
+    # fake = 模拟 Pod 生命周期（无需集群）；real = 真连 K8s apiserver
+    mode: fake
+    image: busybox:1.36
+
+# 可观测性：Prometheus 抓取端点（/actuator/prometheus）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: gpu-rental
