@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的订单 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body data-active="orders">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="cbody">
+      <div class="msg" id="msg"></div>
+
+      <div class="card panel mb10">
+        <h3>我的订单 <span class="s">共 <b id="cnt">0</b> 笔</span></h3>
+        <div class="tabbar" id="filterBar">
+          <span class="on" data-f="all">全部</span>
+          <span data-f="paid">已支付</span>
+          <span data-f="closed">已完成</span>
+          <span data-f="cancelled">已取消</span>
+        </div>
+        <div id="table"><div class="empty">加载中…</div></div>
+      </div>
+
+      <div class="grid g3">
+        <div class="card panel"><div class="ck2"><div class="k">订单总额</div>
+          <div class="v" id="sumAll">¥0.00</div></div></div>
+        <div class="card panel"><div class="ck2"><div class="k">已支付金额</div>
+          <div class="v" id="sumPaid">¥0.00</div></div></div>
+        <div class="card panel"><div class="ck2"><div class="k">进行中实例</div>
+          <div class="v" id="sumRun">0<small> 个</small></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login.html');
+const TENANT = U.tenantId || 't1';
+const fmt = n => (Number(n) || 0).toFixed(2);
+const OS = { created: ['已创建', 'p-blue'], paid: ['已支付', 'p-green'], closed: ['已完成', 'p-gray'], cancelled: ['已取消', 'p-gray'] };
+let ALL = [], FILTER = 'all';
+
+async function api(p) {
+  const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
+  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  setTimeout(() => m.className = 'msg', 5000);
+}
+
+function render() {
+  const list = FILTER === 'all' ? ALL : ALL.filter(o => o.status === FILTER);
+  $('#cnt').textContent = ALL.length;
+  if (!list.length) { $('#table').innerHTML = '<div class="empty">没有符合条件的订单</div>'; return; }
+  $('#table').innerHTML = `<table>
+    <thead><tr><th>订单号</th><th>规格</th><th class="num">卡数</th><th class="num">时长</th>
+    <th class="num">金额</th><th>状态</th><th>下单时间</th></tr></thead>
+    <tbody>${list.map(o => {
+      const st = OS[o.status] || [o.status, 'p-gray'];
+      const spec = Number(o.gpu_count) === 8 ? '整机 8 卡' : '单卡';
+      return `<tr>
+        <td class="mono">${o.order_no}</td><td>${spec}</td>
+        <td class="num">${o.gpu_count}</td><td class="num">${o.hours} 小时</td>
+        <td class="num mono">¥${fmt(o.amount)}</td>
+        <td><span class="pill ${st[1]}">${st[0]}</span></td>
+        <td class="hint">${new Date(o.created_at).toLocaleString('zh-CN', { hour12: false })}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+document.querySelectorAll('#filterBar span').forEach(s => {
+  s.onclick = () => {
+    document.querySelectorAll('#filterBar span').forEach(x => x.classList.toggle('on', x === s));
+    FILTER = s.dataset.f; render();
+  };
+});
+
+(async function () {
+  try {
+    const [orders, inst] = await Promise.all([
+      api('/orders?tenantId=' + TENANT), api('/instances?tenantId=' + TENANT)
+    ]);
+    ALL = orders || [];
+    $('#sumAll').textContent = '¥' + fmt(ALL.reduce((a, o) => a + Number(o.amount || 0), 0));
+    $('#sumPaid').textContent = '¥' + fmt(ALL.filter(o => o.status === 'paid' || o.status === 'closed')
+      .reduce((a, o) => a + Number(o.amount || 0), 0));
+    $('#sumRun').innerHTML = inst.filter(i => i.status === 'running').length + '<small> 个</small>';
+    render();
+  } catch (e) { toast(e.message, false); }
+})();
+</script>
+</body>
+</html>

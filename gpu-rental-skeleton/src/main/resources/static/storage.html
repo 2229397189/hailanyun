@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文件存储 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body data-active="store">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="cbody">
+      <div class="grid g3 mb10">
+        <div class="card panel"><div class="ck2"><div class="k">已用空间</div>
+          <div class="v">12.4<small> GB</small></div></div></div>
+        <div class="card panel"><div class="ck2"><div class="k">配额</div>
+          <div class="v">100<small> GB</small></div></div></div>
+        <div class="card panel"><div class="ck2"><div class="k">文件数</div>
+          <div class="v">6<small> 个</small></div></div></div>
+      </div>
+
+      <div class="card panel">
+        <h3>我的文件 <span class="s">挂载到实例 /data 目录</span>
+          <button class="sm" onclick="tip('上传文件')">上传文件</button>
+        </h3>
+        <div id="list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js"></script>
+<script>
+const FILES = [
+  { n: 'llama3-8b', t: '目录', size: '—', time: '2026-11-03 10:22' },
+  { n: 'dataset-mini', t: '目录', size: '—', time: '2026-11-02 18:05' },
+  { n: 'train.py', t: 'Python', size: '12 KB', time: '2026-11-02 16:31' },
+  { n: 'requirements.txt', t: '文本', size: '2 KB', time: '2026-11-02 16:30' },
+  { n: 'checkpoint-1200.safetensors', t: '模型权重', size: '8.4 GB', time: '2026-11-01 22:14' },
+  { n: 'eval-result.csv', t: 'CSV', size: '318 KB', time: '2026-11-01 21:02' }
+];
+document.getElementById('list').innerHTML = `<table>
+  <thead><tr><th>名称</th><th>类型</th><th class="num">大小</th><th>更新时间</th><th style="text-align:right">操作</th></tr></thead>
+  <tbody>${FILES.map(f => `<tr>
+    <td><b>${f.n}</b></td><td class="hint">${f.t}</td>
+    <td class="num">${f.size}</td><td class="hint">${f.time}</td>
+    <td style="text-align:right"><button class="sm ghost" onclick="tip('下载 ${f.n}')">下载</button></td>
+  </tr>`).join('')}</tbody></table>`;
+function tip(n) { alert('演示环境：' + n + ' 需要接入对象存储，当前仅展示目录。'); }
+</script>
+</body>
+</html>

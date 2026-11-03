@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的钱包 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body data-active="wallet">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="cbody">
+      <div class="msg" id="msg"></div>
+
+      <div class="grid g3 mb10">
+        <div class="card panel" style="background:linear-gradient(120deg,#faf5ff,#fdf2fb);border-color:#f2e6ff">
+          <div class="ck2" style="background:transparent;border:none;padding:0">
+            <div class="k">账户总余额</div>
+            <div class="v" style="font-size:30px;color:#7c3aed" id="bal">¥0.00</div>
+            <div class="hint" style="margin-top:8px">可用于下单预扣</div>
+          </div>
+        </div>
+        <div class="card panel"><div class="ck2" style="background:transparent;border:none;padding:0">
+          <div class="k">已结算消费</div><div class="v" id="settled">¥0.00</div>
+          <div class="hint" style="margin-top:8px">历史账单合计</div></div></div>
+        <div class="card panel"><div class="ck2" style="background:transparent;border:none;padding:0">
+          <div class="k">进行中（估算）</div><div class="v" id="running">¥0.00</div>
+          <div class="hint" style="margin-top:8px">按当前用量预估</div></div></div>
+      </div>
+
+      <div class="card panel mb10">
+        <h3>收支明细 <span class="s">按结算时间倒序</span>
+          <a class="btn-primary" href="/recharge.html" style="height:32px;padding:0 16px;font-size:12px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center">去充值</a>
+        </h3>
+        <div id="table"><div class="empty">加载中…</div></div>
+      </div>
+
+      <div class="card panel">
+        <h3>充值记录 <span class="s">演示环境未接入支付</span></h3>
+        <div class="empty" style="padding:24px 0">暂无充值记录，充值通道接入后自动同步</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login.html');
+const TENANT = U.tenantId || 't1';
+const fmt = n => (Number(n) || 0).toFixed(2);
+
+async function api(p) {
+  const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
+  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+
+(async function () {
+  try {
+    const [bill, tenants] = await Promise.all([api('/billing?tenantId=' + TENANT), api('/tenants')]);
+    const me = tenants.find(t => t.id === TENANT) || {};
+    $('#bal').textContent = '¥' + fmt(me.balance_yuan);
+    $('#settled').textContent = '¥' + fmt(bill.settled);
+    $('#running').textContent = '¥' + fmt(bill.runningEstimate);
+
+    const rec = bill.records || [];
+    $('#table').innerHTML = rec.length ? `<table>
+      <thead><tr><th>类型</th><th>实例</th><th class="num">卡数</th><th class="num">时长</th>
+      <th class="num">金额</th><th>时间</th></tr></thead>
+      <tbody>${rec.map(r => `<tr>
+        <td><span class="pill p-purple">消费</span></td>
+        <td class="mono">${r.instance_id}</td>
+        <td class="num">${r.gpu_count}</td>
+        <td class="num">${(Number(r.seconds) / 60).toFixed(1)} 分</td>
+        <td class="num" style="color:#b91c1c">-¥${fmt(r.amount)}</td>
+        <td class="hint">${new Date(r.settled_at).toLocaleString('zh-CN', { hour12: false })}</td>
+      </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无收支记录</div>';
+  } catch (e) {
+    $('#table').innerHTML = '<div class="empty">' + e.message + '</div>';
+  }
+})();
+</script>
+</body>
+</html>

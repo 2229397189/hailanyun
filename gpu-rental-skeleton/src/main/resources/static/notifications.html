@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>消息通知 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body data-active="msg">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="cbody">
+      <div class="card panel">
+        <h3>消息通知 <span class="s">共 <b id="cnt">0</b> 条，未读 <b id="unread">0</b> 条</span>
+          <button class="ghost sm" onclick="readAll()">全部标为已读</button>
+        </h3>
+        <div id="list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!localStorage.getItem('gu_token') || !U) location.replace('/login.html');
+
+const MSGS = [
+  { id: 'm1', type: '系统', title: '平台已升级至 v1.0.0', body: '新增资源对账、审计导出与在线会话管理。', time: '2026-11-03 09:12', unread: true },
+  { id: 'm2', type: '账单', title: '本月消费提醒', body: '您本月已产生消费，可在「我的钱包 → 收支明细」查看明细。', time: '2026-11-02 20:40', unread: true },
+  { id: 'm3', type: '实例', title: '实例已释放', body: '实例已按实际使用秒数结算，预扣差额已退回余额。', time: '2026-11-02 15:08', unread: false },
+  { id: 'm4', type: '安全', title: '新设备登录', body: '检测到您的账号在新的浏览器登录，如非本人操作请立即修改密码。', time: '2026-11-01 10:26', unread: false }
+];
+const KEY = 'gu_read_msgs';
+const read = JSON.parse(localStorage.getItem(KEY) || '[]');
+
+function render() {
+  const list = MSGS.map(m => ({ ...m, unread: m.unread && read.indexOf(m.id) < 0 }));
+  $('#cnt').textContent = list.length;
+  $('#unread').textContent = list.filter(m => m.unread).length;
+  $('#list').innerHTML = list.map(m => `
+    <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px dashed #f3f1f9;align-items:flex-start">
+      <span style="width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;
+            justify-content:center;background:#f6efff;color:#a855f7">◔</span>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <b style="font-size:13px">${m.title}</b>
+          <span class="pill p-gray">${m.type}</span>
+          ${m.unread ? '<span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span>' : ''}
+        </div>
+        <div class="hint" style="margin-top:4px">${m.body}</div>
+      </div>
+      <div class="hint" style="white-space:nowrap">${m.time}</div>
+    </div>`).join('');
+}
+function readAll() {
+  localStorage.setItem(KEY, JSON.stringify(MSGS.map(m => m.id)));
+  render();
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>账号管理 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body data-active="acc">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="cbody">
+
+      <div class="grid" style="grid-template-columns:1fr 1.2fr;gap:14px;align-items:start">
+        <div class="card panel">
+          <h3>个人资料</h3>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+            <span style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#ec4899);
+                 color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700"
+                 id="ava">U</span>
+            <div>
+              <b style="font-size:16px" id="uname">–</b>
+              <div class="hint" id="urole">–</div>
+            </div>
+          </div>
+          <div class="ck2" style="margin-bottom:8px"><div class="k">所属租户</div><b id="utenant">–</b></div>
+          <div class="ck2" style="margin-bottom:8px"><div class="k">GPU 配额</div><b id="uquota">–</b></div>
+          <div class="ck2"><div class="k">账户余额</div><b id="ubal">–</b></div>
+        </div>
+
+        <div class="card panel">
+          <h3>修改密码 <span class="s">修改后其它设备登录会失效</span></h3>
+          <div class="alert err" id="pwdAlert" style="display:none"></div>
+          <div class="field"><label>原密码</label><input type="password" id="oldPwd" autocomplete="current-password"></div>
+          <div class="field"><label>新密码</label><input type="password" id="newPwd" autocomplete="new-password"></div>
+          <div class="field"><label>确认新密码</label><input type="password" id="newPwd2" autocomplete="new-password"></div>
+          <div class="hint">至少 8 位，需包含大写字母、小写字母、数字和符号。</div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button onclick="submitPwd()">确认修改</button>
+            <button class="ghost" onclick="tip('退出所有设备')">退出所有设备</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card panel" style="margin-top:14px">
+        <h3>安全设置</h3>
+        <div class="help-row" style="display:flex;gap:11px;padding:12px 0;border-bottom:1px dashed #f3f1f9">
+          <span style="width:30px;height:30px;border-radius:9px;background:#e8f9f1;color:#10b981;
+                display:flex;align-items:center;justify-content:center">◈</span>
+          <div><b style="font-size:12.5px;display:block">登录保护</b>
+            <span class="hint">连续 5 次密码错误锁定 10 分钟，失败次数与锁定时间落库</span></div>
+        </div>
+        <div class="help-row" style="display:flex;gap:11px;padding:12px 0;border-bottom:1px dashed #f3f1f9">
+          <span style="width:30px;height:30px;border-radius:9px;background:#eaf2fe;color:#3b82f6;
+                display:flex;align-items:center;justify-content:center">◉</span>
+          <div><b style="font-size:12.5px;display:block">会话时长</b>
+            <span class="hint">默认 8 小时；勾选「7 天内免登录」后为 7 天</span></div>
+        </div>
+        <div class="help-row" style="display:flex;gap:11px;padding:12px 0">
+          <span style="width:30px;height:30px;border-radius:9px;background:#f3ecff;color:#7c3aed;
+                display:flex;align-items:center;justify-content:center">⚙</span>
+          <div><b style="font-size:12.5px;display:block">密码存储</b>
+            <span class="hint">BCrypt 哈希，数据库中不保存明文</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login.html');
+const TENANT = U.tenantId || 't1';
+
+$('#ava').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
+$('#uname').textContent = U.username;
+$('#urole').textContent = U.role === 'admin' ? '平台管理员' : U.role === 'ops' ? '值班运维' : '租户用户';
+
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({}, opt.headers || {}, { Authorization: 'Bearer ' + TOKEN });
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function tip(n) { alert('演示环境：「' + n + '」需要后端会话管理接口。'); }
+function pwdMsg(t, ok) {
+  const a = $('#pwdAlert'); a.textContent = t; a.className = 'alert ' + (ok ? 'ok' : 'err'); a.style.display = 'block';
+}
+async function submitPwd() {
+  const oldPwd = $('#oldPwd').value, np = $('#newPwd').value, again = $('#newPwd2').value;
+  if (!oldPwd || !np) { pwdMsg('请填写原密码和新密码', false); return; }
+  if (np !== again) { pwdMsg('两次输入的新密码不一致', false); return; }
+  try {
+    const r = await api('/auth/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-User': U.username },
+      body: JSON.stringify({ oldPassword: oldPwd, newPassword: np })
+    });
+    pwdMsg(r.message, true);
+    ['oldPwd', 'newPwd', 'newPwd2'].forEach(id => $('#' + id).value = '');
+  } catch (e) { pwdMsg(e.message, false); }
+}
+
+(async function () {
+  try {
+    const ts = await api('/tenants');
+    const me = ts.find(t => t.id === TENANT) || {};
+    $('#utenant').textContent = me.name || '–';
+    $('#uquota').textContent = (me.quota_gpus || 0) + ' 卡';
+    $('#ubal').textContent = '¥' + Number(me.balance_yuan || 0).toFixed(2);
+  } catch (e) { console.error(e); }
+})();
+</script>
+</body>
+</html>
