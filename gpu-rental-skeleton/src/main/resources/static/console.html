@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>主控制台 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<div class="console">
+  <aside class="cside">
+    <a class="logo brand" href="/index.html">
+      <span class="brand-mark" style="width:28px;height:28px;border-radius:9px">
+        <svg width="15" height="15" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span><span class="brand-name" style="font-size:13.5px">Token<span>Ark</span></span>
+      <span class="brand-sub" style="font-size:9.5px">创元方舟</span></span>
+    </a>
+    <nav>
+      <a class="on"><span class="ic">▦</span>主控制台</a>
+      <a href="#instances" onclick="return go('instances')"><span class="ic">▤</span>实例队列</a>
+      <a onclick="return tip('文件存储')"><span class="ic">▧</span>文件存储</a>
+      <a onclick="return tip('我的镜像')"><span class="ic">◫</span>我的镜像</a>
+      <a onclick="return tip('大模型 API')"><span class="ic">✦</span>大模型 API</a>
+      <div class="grp">财务管理</div>
+      <a href="/recharge.html"><span class="ic">¥</span>在线充值</a>
+      <a onclick="return tip('我的钱包')"><span class="ic">◉</span>我的钱包</a>
+      <a onclick="return tip('我的订单')"><span class="ic">▤</span>我的订单</a>
+      <a href="/portal.html#billing"><span class="ic">◔</span>消费账单</a>
+      <a onclick="return tip('收支明细')"><span class="ic">◈</span>收支明细</a>
+      <div class="grp">账号管理</div>
+      <a onclick="return tip('账号设置')"><span class="ic">⚙</span>账号设置</a>
+    </nav>
+  </aside>
+
+  <div class="cmain">
+    <div class="ctop">
+      <div class="ctabs">
+        <span class="ctab on">主控制台</span>
+        <span class="ctab" onclick="go('instances')">实例队列</span>
+      </div>
+      <div class="right">
+        <span class="hint">文档</span>
+        <span class="hint">消息</span>
+        <span class="avatar" id="ava">L</span>
+        <a class="hint" href="#" onclick="logout();return false">退出</a>
+      </div>
+    </div>
+
+    <div class="cbody">
+      <div class="welcome">
+        <span class="ava" id="wAva">L</span>
+        <div>下午好，<b id="wName">–</b>！如果卡住了，就找个角度问问那朵云！</div>
+        <span class="close">×</span>
+      </div>
+
+      <div class="cgrid">
+        <div class="card panel">
+          <h3>实例信息 <span class="s" onclick="load()" style="cursor:pointer">↻ 刷新</span></h3>
+          <div class="grid g2" id="instKpi"></div>
+        </div>
+
+        <div class="card panel">
+          <h3>账户概览 <span class="s">¥ 人民币</span></h3>
+          <div class="grid g2">
+            <div class="ckpi"><div class="k">账户总余额</div><div class="v" id="bal">¥0.00</div></div>
+            <div class="ckpi"><div class="k">可用余额</div><div class="v" id="bal2">¥0.00</div></div>
+            <div class="ckpi"><div class="k">本月消费</div><div class="v" id="month">¥0.00</div></div>
+            <div class="ckpi" style="background:#fffaf0;border-color:#fbe8d6">
+              <div class="k">代金券余额</div><div class="v" style="color:#d97706">¥0.00</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cgrid2" style="margin-top:16px">
+        <div class="card panel">
+          <h3>帮助文档 <span class="s">共 4 篇</span></h3>
+          <div class="help-grid">
+            <div class="help-item" onclick="tip('快速开始')"><span class="ic">◈</span>快速开始</div>
+            <div class="help-item" onclick="tip('GPU 选型')"><span class="ic">▦</span>GPU 选型指南</div>
+            <div class="help-item" onclick="tip('连接实例')"><span class="ic">⚡</span>连接实例</div>
+            <div class="help-item" onclick="tip('常见问题')"><span class="ic">?</span>常见问题</div>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <h3>邀请福利 <span class="s">最高 8,000 元</span></h3>
+          <div class="invite">
+            新用户首次充值满 <b>1 元</b>，即得 <b>5 元代金券</b>。邀请好友再得 <b>3 元</b>！<br>
+            <span style="font-size:11px;color:#98a1b3">被邀请人首单消费后，奖励自动到账；同一设备/手机号视为同一用户。</span>
+            <div style="margin-top:10px">我的邀请码：<code id="code">AHH2QJ9G</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => (Number(n) || 0).toFixed(2);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login.html');
+let TENANT = U.tenantId || 't1';
+
+$('#wName').textContent = U.username;
+$('#wAva').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
+$('#ava').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
+$('#code').textContent = 'AHH' + (U.username || 'USER').slice(0, 3).toUpperCase() + '9G';
+
+async function api(path) {
+  const r = await fetch('/api' + path, { headers: { Authorization: 'Bearer ' + TOKEN } });
+  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) { j = {}; }
+  if (!r.ok) throw new Error(j.message || ('HTTP ' + r.status));
+  return j;
+}
+function tip(name) { alert('演示环境：「' + name + '」页面尚未实现，当前只做导航占位。'); return false; }
+function go(v) { location.href = '/portal.html#' + v; return false; }
+async function logout() {
+  try { await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN } }); } catch (e) {}
+  localStorage.clear(); location.replace('/login.html');
+}
+
+async function load() {
+  try {
+    const [list, tenants, ov, bill] = await Promise.all([
+      api('/instances?tenantId=' + TENANT), api('/tenants'), api('/overview'),
+      api('/billing?tenantId=' + TENANT)
+    ]);
+    const me = tenants.find(t => t.id === TENANT) || {};
+    const active = list.filter(i => i.status !== 'released');
+    const running = list.filter(i => i.status === 'running');
+    const soon = list.filter(i => i.expire_at && (new Date(i.expire_at) - Date.now()) < 86400000 && i.status !== 'released');
+
+    $('#instKpi').innerHTML = [
+      ['实例总数', list.length, '含已释放'],
+      ['运行中', running.length, '当前可用'],
+      ['即将到期', soon.length, '24 小时内'],
+      ['租期预定', 0, '待开通']
+    ].map(k => `<div class="ckpi"><div class="k">${k[0]}</div>
+      <div class="v">${k[1]}<small> 个</small></div>
+      <div class="hint" style="font-size:10px">${k[2]}</div></div>`).join('');
+
+    $('#bal').textContent = '¥' + fmt(me.balance_yuan);
+    $('#bal2').textContent = '¥' + fmt(me.balance_yuan);
+    $('#month').textContent = '¥' + fmt(bill.settled);
+  } catch (e) { console.error(e); }
+}
+load();
+</script>
+</body>
+</html>
