@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TokenArk 创元方舟 · 管理控制台</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="logo">
+      <span class="mark">
+        <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div>
+        <b>TokenArk</b>
+        <small>创元方舟 · 管理控制台</small>
+      </div>
+    </div>
+    <nav>
+      <div class="grp">概览</div>
+      <a class="on" data-p="overview"><span class="ic">▦</span>集群总览</a>
+      <div class="grp">算力资源</div>
+      <a data-p="nodes"><span class="ic">▤</span>节点管理</a>
+      <a data-p="workloads"><span class="ic">▥</span>工作负载</a>
+      <a data-p="resources"><span class="ic">◧</span>资源对象</a>
+      <a data-p="pools"><span class="ic">◈</span>资源池与调度</a>
+      <div class="grp">租户与运营</div>
+      <a data-p="tenants"><span class="ic">◉</span>租户管理</a>
+      <a data-p="alerts"><span class="ic">◔</span>监控告警</a>
+      <a data-p="inspections"><span class="ic">✦</span>智能巡检</a>
+      <div class="grp">系统</div>
+      <a data-p="system" data-roles="admin"><span class="ic">⚙</span>系统管理</a>
+      <a href="/screen.html" target="_blank" rel="noopener"><span class="ic">▣</span>监控大屏</a>
+      <a href="/portal.html"><span class="ic">◫</span>返回用户端</a>
+    </nav>
+    <div class="foot">K8s v1.34.1+k3s1<br>Node 2 · GPU 16</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pTitle">集群总览</h1>
+        <div class="crumb" id="pCrumb">集群 / 总览</div>
+      </div>
+      <div class="right">
+        <span class="pill p-amber" id="k8sBadge">运行时检测中</span>
+        <span><span class="dot"></span><span id="syncAt">同步中</span></span>
+        <div class="usermenu">
+          <button class="usermenu-btn" onclick="toggleMenu(event)">
+            <span class="avatar" id="avatar">A</span>
+            <span id="who">–</span>
+            <span style="font-size:9px;color:#8b98ab">▾</span>
+          </button>
+          <div class="usermenu-pop" id="menuPop">
+            <div class="um-head">
+              <b id="umName">–</b>
+              <div class="hint" id="umRole">–</div>
+            </div>
+            <div class="um-item" onclick="openPwd()">修改密码</div>
+            <div class="um-item danger" onclick="logout()">退出登录</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="msg" id="msg"></div>
+
+      <!-- 1 集群总览 -->
+      <div class="page on" id="page-overview">
+        <div class="card panel mb10" style="padding:10px 14px">
+          <div class="flex" style="gap:8px;flex-wrap:wrap" id="healthBar">
+            <span class="hint">控制面组件健康检测中…</span>
+          </div>
+        </div>
+        <div class="grid g6 mb10" id="ovKpi"></div>
+        <div class="grid g21 mb10">
+          <div class="card panel">
+            <h3>GPU 利用率（近 30 分钟）<span class="s" id="utilLabel"></span></h3>
+            <div id="utilChart"></div>
+          </div>
+          <div class="card panel">
+            <h3>卡池状态分布</h3>
+            <div id="donut" style="display:flex;align-items:center;justify-content:center;gap:18px;height:150px"></div>
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="card panel">
+            <h3>节点健康 <span class="s">2 台</span></h3>
+            <div id="ovNodes"></div>
+          </div>
+          <div class="card panel">
+            <h3>活跃告警 <span class="s"><a href="#" onclick="go('alerts');return false" style="color:var(--blue)">全部 →</a></span></h3>
+            <div id="ovAlerts"></div>
+          </div>
+        </div>
+        <div class="grid g2 mt10">
+          <div class="card panel"><h3>租户用量 <span class="s">按占用卡数</span></h3><div id="ovTenants"></div></div>
+          <div class="card panel"><h3>资源池 <span class="s" id="ovPoolSub"></span></h3><div id="ovPools"></div></div>
+        </div>
+        <div class="card panel mt10">
+          <h3>K8s 原生五层架构 <span class="s">接入层 / 平台运营层 / GPU 调度层 / GPU 接入层 / K8s 底座</span></h3>
+          <div id="archView"></div>
+        </div>
+      </div>
+
+      <!-- 2 节点管理 -->
+      <div class="page" id="page-nodes">
+        <div class="card panel">
+          <h3><span>节点列表 <span class="s">点击显卡格子可标记故障 / 修复</span></span>
+            <button class="sm" onclick="addNodePrompt()">接入节点</button></h3>
+          <div id="nodeList"></div>
+        </div>
+      </div>
+
+      <!-- 3 工作负载 -->
+      <div class="page" id="page-workloads">
+        <div class="grid g4 mb10" id="wlKpi"></div>
+        <div class="grid g12 mb10">
+          <div class="card panel">
+            <h3>部署新工作负载</h3>
+            <div class="field"><label>负载名称</label><input id="dName" placeholder="例如 qwen-infer"></div>
+            <div class="grid g2" style="gap:10px">
+              <div class="field"><label>类型</label>
+                <select id="dKind"><option>Deployment</option><option>StatefulSet</option><option>Job</option></select>
+              </div>
+              <div class="field"><label>租户</label><select id="dTenant" onchange="syncNs()"></select></div>
+            </div>
+            <div class="field"><label>命名空间</label><input id="dNs" class="mono" readonly></div>
+            <div class="field"><label>镜像地址</label><input id="dImage" class="mono" placeholder="registry.local/ai/vllm:0.6.3"></div>
+            <div class="grid g3" style="gap:10px">
+              <div class="field"><label>GPU 数量</label>
+                <select id="dGpu"><option>1</option><option>2</option><option>4</option><option>8</option></select>
+              </div>
+              <div class="field"><label>显存上限</label>
+                <select id="dMem"><option value="whole">整卡</option><option value="half">1/2</option><option value="quarter">1/4</option></select>
+              </div>
+              <div class="field"><label>调度策略</label>
+                <select id="dPolicy"><option value="binpack">Bin-pack</option><option value="spread">Spread</option><option value="gang">Gang</option></select>
+              </div>
+            </div>
+            <button onclick="deploy()">提交部署</button>
+            <div class="hint mt10">提交后 3 秒转 Running。整数卡可调度，1/2、1/4 显存档位为切分预留（5090 无 MIG，POC 仅演示）。</div>
+          </div>
+          <div class="card panel"><h3>工作负载对象 <span class="s">Deployment / StatefulSet / Job</span></h3><div id="deployTable"></div></div>
+        </div>
+        <div class="card panel mb10"><h3>算力实例 <span class="s">租户下单产生，落到具体 Pod 与卡</span></h3>
+          <div id="wlTable"></div>
+        </div>
+        <div class="card panel"><h3>命名空间与配额 <span class="s">Namespace + ResourceQuota</span></h3>
+          <div id="nsTable"></div>
+        </div>
+      </div>
+
+      <!-- 4 资源池与调度 -->
+      <div class="page" id="page-pools">
+        <div class="between mb10">
+          <span class="hint">资源池决定节点归属与默认调度策略；池下还有节点时不允许删除。</span>
+          <button class="sm" onclick="createPoolPrompt()">新建资源池</button>
+        </div>
+        <div class="grid g3 mb10" id="poolCards"></div>
+        <div class="card panel mb10">
+          <h3>机架视图 <span class="s">每格一张卡 · 颜色表示占用状态 · 数字为温度</span></h3>
+          <div id="rackView"></div>
+        </div>
+        <div class="grid g2">
+          <div class="card panel"><h3>队列与配额</h3><div id="queueTable"></div></div>
+          <div class="card panel"><h3>调度策略</h3>
+            <table>
+              <tr><th style="width:34%">策略</th><th>当前值</th></tr>
+              <tr><td>调度器</td><td>Volcano（gang / 队列 / 优先级）</td></tr>
+              <tr><td>装箱策略</td><td><b>Bin-packing</b>：优先填满单节点，保留整机可售</td></tr>
+              <tr><td>抢占</td><td>仅对平台任务开启，<b>租户实例不抢占</b></td></tr>
+              <tr><td>整机约束</td><td>单 Pod 申请 8 卡，保证同节点</td></tr>
+              <tr><td>GPU 共享</td><td>关闭（5090 无 MIG，客户不需要切分）</td></tr>
+            </table>
+            <div class="hint mt10">注意：对外租赁场景下，跨队列借用与抢占默认关闭——客户买的卡被别的租户借走属于违约。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 资源对象 -->
+      <div class="page" id="page-resources">
+        <div class="grid g21">
+          <div class="card panel">
+            <h3>应用 YAML <span class="s">校验 apiVersion / kind / metadata</span></h3>
+            <textarea id="yamlInput" spellcheck="false" style="width:100%;height:320px;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.75;border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical;outline:none"></textarea>
+            <div class="btnrow mt10">
+              <button onclick="applyYaml()">应用</button>
+              <button class="ghost" onclick="loadTemplate('Deployment')">Deployment</button>
+              <button class="ghost" onclick="loadTemplate('Namespace')">Namespace</button>
+              <button class="ghost" onclick="loadTemplate('Job')">Job</button>
+              <button class="ghost" onclick="loadTemplate('Service')">Service</button>
+            </div>
+            <div class="hint mt10">同 kind + namespace + name 再次应用视为更新。校验只做结构与必填字段，不连真集群——真集群里这一步就是 <code class="mono">kubectl apply</code>。</div>
+          </div>
+          <div class="card panel"><h3>已注册资源 <span class="s" id="resCount"></span></h3><div id="resTable"></div></div>
+        </div>
+      </div>
+
+      <!-- 系统管理 -->
+      <div class="page" id="page-system">
+        <div class="grid g2 mb10">
+          <div class="card panel"><h3>集群信息</h3><div id="sysCluster"></div></div>
+          <div class="card panel"><h3>在线会话 <span class="s" id="sysSessionSub"></span></h3><div id="sysSessions"></div></div>
+        </div>
+        <div class="card panel mb10">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">资源对账 <span class="s" id="orphanSub">比对集群 Pod 与平台实例</span></h3>
+            <button class="sm ghost" onclick="loadOrphans()">重新检查</button>
+          </div>
+          <div id="orphanList"></div>
+        </div>
+        <div class="card panel mb10"><h3>平台账号 <span class="s">RBAC · 可停用 / 解锁</span></h3><div id="sysUsers"></div></div>
+        <div class="card panel mb10"><h3>系统参数 <span class="s">改动立即生效并写审计</span></h3><div id="sysSettings"></div></div>
+        <div class="card panel">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">操作审计 <span class="s" id="auditSub">所有写操作留痕</span></h3>
+            <div class="btnrow">
+              <input id="auditQ" placeholder="搜索操作人 / 对象 / 详情"
+                     style="width:220px;padding:6px 9px;font-size:12px"
+                     onkeydown="if(event.key==='Enter')loadAudit(1)">
+              <select id="auditAction" style="width:158px;padding:6px 9px;font-size:12px" onchange="loadAudit(1)"></select>
+              <button class="sm" onclick="loadAudit(1)">查询</button>
+              <button class="sm ghost" onclick="exportAudit()">导出 CSV</button>
+            </div>
+          </div>
+          <div id="sysAudit"></div>
+          <div class="between mt10">
+            <span class="hint" id="auditPageInfo"></span>
+            <div class="btnrow" id="auditPager"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 租户管理 -->
+      <div class="page" id="page-tenants">
+        <div class="grid g12">
+          <div class="card panel"><h3>开通租户 <span class="s">记录 + 命名空间 + 配额 + 账号</span></h3>
+            <div id="tForm">
+              <div class="field"><label>租户名称</label><input id="tName" placeholder="例如：智眸科技"></div>
+              <div class="grid g2" style="gap:10px">
+                <div class="field"><label>GPU 配额（卡）</label><input id="tQuota" type="number" value="4" min="1" max="64"></div>
+                <div class="field"><label>计费方式</label>
+                  <select id="tMode">
+                    <option value="card_hour">按卡时</option>
+                    <option value="monthly">包月套餐</option>
+                    <option value="trial">免费试用 7 天</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field"><label>管理员账号（留空自动生成）</label><input id="tUser" placeholder="例如 zhimo_admin"></div>
+              <button onclick="provisionTenant()">开通并下发</button>
+              <div class="hint mt10">会同时创建租户记录、K8s 命名空间、GPU 配额和租户管理员账号。初始密码只显示一次。</div>
+            </div>
+            <div id="tResult" style="display:none"></div>
+          </div>
+          <div class="card panel"><h3>租户列表 <span class="s" id="tCount"></span></h3><div id="tenantTable"></div></div>
+        </div>
+      </div>
+
+      <!-- 6 监控告警 -->
+      <div class="page" id="page-alerts">
+        <div class="grid g4 mb10" id="alKpi"></div>
+        <div class="grid g21 mb10">
+          <div class="card panel"><h3>GPU 利用率 / 显存占用</h3><div id="alChart"></div></div>
+          <div class="card panel"><h3>功耗（W）</h3><div id="pwChart"></div></div>
+        </div>
+        <div class="card panel"><h3>告警列表</h3><div id="alertTable"></div></div>
+        <div class="card panel mt10">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">告警规则 <span class="s">命中阈值即生成告警，级别决定通知渠道</span></h3>
+            <button class="sm" onclick="createRulePrompt()">新建规则</button>
+          </div>
+          <div id="ruleTable"></div>
+          <div class="hint mt10">注意：租户实例之间<b>不配置抢占类自动动作</b>——对客户实例做自动干预属于违约，只告警不处置。</div>
+        </div>
+      </div>
+
+      <!-- 7 智能巡检 -->
+      <div class="page" id="page-inspections">
+        <div class="card panel mb10">
+          <div class="between">
+            <h3 style="margin:0">巡检报告 <span class="s">基于当前集群真实状态生成</span></h3>
+            <button onclick="runInspection()">立即巡检</button>
+          </div>
+          <div id="insList" class="mt10"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="drawer" style="display:none;position:fixed;inset:0;background:rgba(10,20,35,.45);z-index:99">
+  <div style="position:absolute;right:0;top:0;bottom:0;width:540px;max-width:92vw;background:#fff;padding:16px 18px;overflow:auto">
+    <div class="between" style="margin-bottom:12px">
+      <b id="drawerTitle">节点 YAML</b>
+      <button class="ghost sm" onclick="closeDrawer()">关闭</button>
+    </div>
+    <div class="hint mb10">与 kubectl get node -o yaml 的字段对应，用来证明底层是标准 K8s 对象。</div>
+    <pre id="drawerBody" style="font-family:ui-monospace,Consolas,monospace;font-size:11.5px;line-height:1.75;
+      background:#f7f8fb;border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;margin:0"></pre>
+  </div>
+</div>
+
+<div class="modal" id="pwdModal">
+  <div class="box">
+    <h3>修改密码</h3>
+    <div class="alert" id="pwdAlert" style="display:none"></div>
+    <div class="field"><label>原密码</label><input type="password" id="oldPwd" autocomplete="current-password"></div>
+    <div class="field"><label>新密码</label><input type="password" id="newPwd" autocomplete="new-password"></div>
+    <div class="field"><label>确认新密码</label><input type="password" id="newPwd2" autocomplete="new-password"></div>
+    <div class="tip">至少 8 位，需包含大写字母、小写字母、数字和符号。修改后其它设备上的登录会失效。</div>
+    <div class="foot">
+      <button class="ghost sm" onclick="closePwd()">取消</button>
+      <button class="sm" onclick="submitPwd()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => (Number(n) || 0).toFixed(2);
+
+// ---- 会话守卫：没 token 直接回登录页 ----
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if(!TOKEN || !U){ location.replace('/login.html'); throw new Error('no-session'); }
+if(U.role === 'tenant'){ location.replace('/portal.html'); throw new Error('wrong-role'); }
+
+$('#who').textContent = U.displayName || U.username;
+$('#umName').textContent = U.displayName || U.username;
+$('#umRole').textContent = U.username + ' · ' + ({admin:'平台管理员', ops:'值班运维'}[U.role] || U.role);
+$('#avatar').textContent = (U.displayName || U.username).slice(0, 1).toUpperCase();
+// 导航按角色收敛：data-roles 未列出的角色看不到该入口
+document.querySelectorAll('.side a[data-roles]').forEach(a => {
+  if(!a.dataset.roles.split(',').includes(U.role)) a.remove();
+});
+
+function toggleMenu(e){
+  e.stopPropagation();
+  $('#menuPop').classList.toggle('on');
+}
+document.addEventListener('click', () => $('#menuPop').classList.remove('on'));
+
+async function logout(){
+  try{ await post('/auth/logout'); }catch(e){ /* 忽略 */ }
+  localStorage.removeItem('gu_token');
+  localStorage.removeItem('gu_user');
+  location.replace('/login.html');
+}
+
+function openPwd(){
+  $('#menuPop').classList.remove('on');
+  $('#pwdAlert').style.display = 'none';
+  ['oldPwd','newPwd','newPwd2'].forEach(id => $('#' + id).value = '');
+  $('#pwdModal').classList.add('on');
+}
+function closePwd(){ $('#pwdModal').classList.remove('on'); }
+function pwdMsg(text, ok){
+  const a = $('#pwdAlert');
+  a.textContent = text;
+  a.className = 'alert ' + (ok ? 'ok' : 'err');
+  a.style.display = 'block';
+}
+async function submitPwd(){
+  const oldPwd = $('#oldPwd').value, newPwd = $('#newPwd').value, again = $('#newPwd2').value;
+  if(!oldPwd || !newPwd){ pwdMsg('请填写原密码和新密码', false); return; }
+  if(newPwd !== again){ pwdMsg('两次输入的新密码不一致', false); return; }
+  try{
+    const r = await post('/auth/password', {oldPassword: oldPwd, newPassword: newPwd});
+    pwdMsg(r.message, true);
+    setTimeout(() => { closePwd(); toast(r.message, true); }, 900);
+  }catch(e){ pwdMsg(e.message, false); }
+}
+const TITLES = {overview:['集群总览','集群 / 总览'],nodes:['节点管理','集群 / 节点'],workloads:['工作负载','集群 / 工作负载'],
+  resources:['资源对象','集群 / 资源对象'],pools:['资源池与调度','集群 / 资源池'],tenants:['租户管理','运营 / 租户'],
+  alerts:['监控告警','运营 / 告警'],inspections:['智能巡检','运营 / 巡检'],system:['系统管理','运营 / 系统']};
+
+async function api(path, opt){
+  opt = opt || {};
+  opt.headers = Object.assign({}, opt.headers || {}, {Authorization: 'Bearer ' + TOKEN});
+  const r = await fetch('/api' + path, opt);
+  if(r.status === 401){
+    localStorage.removeItem('gu_token');
+    localStorage.removeItem('gu_user');
+    location.replace('/login.html');
+    throw new Error('登录已失效，请重新登录');
+  }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch(e) { j = {message:t}; }
+  if(!r.ok) throw new Error(j.message || ('HTTP ' + r.status));
+  return j;
+}
+function post(path, body){
+  return api(path, {method:'POST',
+    headers:{'Content-Type':'application/json','X-User': U.username},
+    body: body ? JSON.stringify(body) : undefined});
+}
+function del(path){
+  return api(path, {method:'DELETE', headers:{'X-User': U.username}});
+}
+function toast(text, ok){
+  const m = $('#msg'); m.textContent = text; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>{ m.className = 'msg'; }, 4500);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------- 简易 SVG 折线 ---------- */
+function lineChart(box, series, opts){
+  opts = opts || {};
+  const W = 600, H = opts.height || 130, P = 6;
+  let all = [].concat(...series.map(s => s.data));
+  const max = Math.max(...all, 1) * 1.15, min = 0;
+  const n = Math.max(...series.map(s => s.data.length));
+  const x = i => P + i * (W - P*2) / Math.max(n-1,1);
+  const y = v => H - P - (v - min) / (max - min) * (H - P*2);
+
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  for(let k=0;k<=3;k++){
+    const yy = P + k*(H-P*2)/3;
+    s += `<line class="grid-l" x1="${P}" y1="${yy}" x2="${W-P}" y2="${yy}"/>`;
+  }
+  series.forEach((ser, idx) => {
+    const d = ser.data.map((v,i) => (i?'L':'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    if(idx === 0 && opts.area !== false){
+      s += `<path class="area" d="${d} L ${x(ser.data.length-1).toFixed(1)} ${H-P} L ${P} ${H-P} Z"/>`;
+    }
+    s += `<path class="${ser.cls || 'ln'}" d="${d}" vector-effect="non-scaling-stroke"/>`;
+  });
+  s += '</svg>';
+  box.innerHTML = s;
+}
+
+function donut(box, segs){
+  const R = 54, C = 2 * Math.PI * R;
+  const total = segs.reduce((a,b)=>a+b.v,0) || 1;
+  let off = 0, s = `<svg width="130" height="130" viewBox="0 0 130 130"><g transform="translate(65,65) rotate(-90)">`;
+  s += `<circle class="bgc" r="${R}" cx="0" cy="0"/>`;
+  segs.forEach(g => {
+    const len = g.v / total * C;
+    if(len > 0){
+      s += `<circle r="${R}" cx="0" cy="0" fill="none" stroke="${g.c}" stroke-width="10"
+             stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}"/>`;
+      off += len;
+    }
+  });
+  s += `</g><text x="65" y="62" text-anchor="middle" font-size="19" font-weight="600" fill="#182434">${total}</text>
+        <text x="65" y="79" text-anchor="middle" font-size="10.5" fill="#8b98ab">总卡数</text></svg>`;
+  const legend = segs.map(g => `<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#54637a;margin-bottom:6px">
+      <i style="width:8px;height:8px;border-radius:2px;background:${g.c};display:inline-block"></i>${g.n}
+      <b style="color:#182434;margin-left:2px">${g.v}</b></div>`).join('');
+  box.innerHTML = s + `<div>${legend}</div>`;
+}
+
+/* ---------- 导航 ---------- */
+function go(p){
+  document.querySelectorAll('.side a[data-p]').forEach(a => a.classList.toggle('on', a.dataset.p === p));
+  document.querySelectorAll('.page').forEach(el => el.classList.toggle('on', el.id === 'page-' + p));
+  $('#pTitle').textContent = TITLES[p][0];
+  $('#pCrumb').textContent = TITLES[p][1];
+  const fn = {overview:loadOverview, nodes:loadNodes, workloads:loadWorkloads, resources:loadResources,
+    pools:loadPools, tenants:loadTenants, alerts:loadAlerts, inspections:loadInspections, system:loadSystem}[p];
+  if(fn) fn();
+}
+document.querySelectorAll('.side a[data-p]').forEach(a => a.onclick = () => go(a.dataset.p));
+
+/* ---------- 1 总览 ---------- */
+const STAT = {free:['空闲','p-green'],occupied:['占用','p-blue'],fault:['故障','p-red'],reserved:['预留','p-gray']};
+
+async function loadOverview(){
+  const [ov, m, nodes, tns, pls, comps] = await Promise.all([
+    api('/admin/overview'), api('/admin/metrics?minutes=30'), api('/admin/nodes'),
+    api('/admin/tenants'), api('/admin/pools'), api('/admin/components')
+  ]);
+  $('#ovKpi').innerHTML = [
+    ['节点', ov.nodeReady + '/' + ov.nodeTotal, 'Ready / 总数'],
+    ['GPU 总数', ov.gpuTotal, '张 RTX 5090'],
+    ['已分配', ov.gpuStatus.occupied + '/' + ov.gpuTotal, '利用率 ' + ov.gpuUtilization + '%'],
+    ['运行实例', ov.runningInstances, '个'],
+    ['活跃租户', ov.tenantActive, '个'],
+    ['今日收入', '¥' + fmt(ov.todayRevenue), '已结算'],
+  ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+  $('#utilLabel').textContent = '平均 ' + m.baseUtil + '% · 峰值 ' + Math.max(...m.gpuUtil) + '%';
+  lineChart($('#utilChart'), [{data:m.gpuUtil, cls:'ln'}], {height:130});
+
+  donut($('#donut'), [
+    {n:'空闲', v:ov.gpuStatus.free, c:'#15a24d'},
+    {n:'占用', v:ov.gpuStatus.occupied, c:'#2563eb'},
+    {n:'故障', v:ov.gpuStatus.fault, c:'#dc2828'},
+    {n:'预留', v:ov.gpuStatus.reserved, c:'#8b98ab'},
+  ]);
+
+  $('#ovNodes').innerHTML = nodes.map(n => {
+    const gs = n.gpus || [];
+    const used = gs.filter(g => g.status === 'occupied').length;
+    const pct = gs.length ? Math.round(used * 100 / gs.length) : 0;
+    return `<div style="padding:9px 0;border-bottom:1px solid var(--line2)">
+      <div class="between" style="margin-bottom:6px">
+        <div><b>${n.hostname}</b> <span class="hint">${n.ip} · ${n.k8s_version}</span></div>
+        <span class="pill ${n.status==='Ready'?'p-green':(n.status==='NotReady'?'p-red':'p-amber')}">${n.status}</span>
+      </div>
+      <div style="height:5px;background:#eef2f7;border-radius:3px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:var(--blue)"></div>
+      </div>
+      <div class="hint" style="margin-top:4px">GPU ${used}/${gs.length} 已分配 · Pod ${n.pod_count} · ${n.cpu_cores} 核 / ${n.mem_gb} GB</div>
+    </div>`;
+  }).join('');
+
+  const al = await api('/admin/alerts');
+  const act = al.alerts.filter(a => a.status === 'active').slice(0, 4);
+  $('#ovAlerts').innerHTML = act.length ? act.map(a => `
+    <div style="padding:9px 0;border-bottom:1px solid var(--line2)">
+      <div class="flex" style="gap:7px;margin-bottom:3px">
+        <span class="pill ${a.level==='P0'?'p-red':(a.level==='P1'?'p-amber':'p-gray')}">${a.level}</span>
+        <b style="font-size:12.5px">${a.title}</b>
+      </div>
+      <div class="hint">${a.target} · ${a.detail}</div>
+    </div>`).join('') : '<div class="empty">没有活跃告警</div>';
+
+  $('#ovTenants').innerHTML = `<table>
+    <thead><tr><th>租户</th><th class="num">配额</th><th class="num">占用</th><th class="num">余额</th><th class="num">消费</th></tr></thead>
+    <tbody>${tns.slice().sort((a,b)=>b.used_gpus-a.used_gpus).map(t=>`<tr>
+      <td>${t.name}</td><td class="num">${t.quota_gpus}</td>
+      <td class="num"><b>${t.used_gpus}</b></td>
+      <td class="num mono">¥${fmt(t.balance_yuan)}</td>
+      <td class="num mono">¥${fmt(t.spent)}</td>
+    </tr>`).join('')}</tbody></table>`;
+
+  $('#ovPoolSub').textContent = pls.pools.length + ' 个池 · ' + pls.queues.length + ' 个队列';
+  $('#ovPools').innerHTML = pls.pools.map(p=>{
+    const pct = p.gpu_total ? Math.round(p.gpu_used*100/p.gpu_total) : 0;
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--line2)">
+      <div class="between" style="margin-bottom:5px">
+        <span><b>${p.name}</b> <span class="pill ${p.policy==='binpack'?'p-blue':'p-purple'}">${p.policy}</span></span>
+        <span class="hint">${p.gpu_used}/${p.gpu_total} 卡 · ${p.node_count} 节点</span>
+      </div>
+      <div style="height:5px;background:#eef2f7;border-radius:3px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:var(--blue)"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  $('#healthBar').innerHTML = comps.map(c => {
+    const ok = c.status === 'Healthy';
+    return `<span class="pill ${ok ? 'p-green' : 'p-amber'}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px">
+      <i style="width:6px;height:6px;border-radius:50%;background:${ok ? '#15a24d' : '#d97a0c'};display:inline-block"></i>
+      ${c.name}</span>`;
+  }).join('') + `<span class="hint" style="margin-left:6px">降级 ${comps.filter(c=>c.status !== 'Healthy').length} / 共 ${comps.length}</span>`;
+
+  const layers = [
+    ['接入层', ['用户控制台', '租户自助商城', 'OpenAPI / SDK', '监控大屏']],
+    ['平台运营层', ['租户与配额', '计量计费', '订单与账单', '告警与巡检']],
+    ['GPU 调度层', ['Volcano 队列', 'Bin-pack / Spread', 'Gang 调度', '优先级与抢占']],
+    ['GPU 接入层', ['GPU Operator', 'Device Plugin', 'DCGM Exporter', '时间片共享']],
+    ['K8s 底座', ['k3s 控制面', 'containerd', 'Calico / Flannel', '本地存储']],
+  ];
+  $('#archView').innerHTML = layers.map(([name, items]) => `
+    <div style="margin-bottom:10px">
+      <div style="font-size:11.5px;color:var(--ink3);margin-bottom:5px">${name}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${items.map(i => `<span style="flex:1;min-width:104px;text-align:center;padding:9px 6px;border-radius:7px;
+          background:#f5f8fc;border:1px solid var(--line);font-size:12px">${i}</span>`).join('')}
+      </div>
+    </div>`).join('');
+
+  $('#syncAt').textContent = '已同步 ' + new Date().toLocaleTimeString('zh-CN',{hour12:false});
+}
+
+/* ---------- 2 节点 ---------- */
+async function loadNodes(){
+  const nodes = await api('/admin/nodes');
+  $('#nodeList').innerHTML = nodes.map(n => {
+    const gs = (n.gpus || []).sort((a,b)=>a.idx-b.idx);
+    const used = gs.filter(g=>g.status==='occupied').length;
+    const lbl = (n.labels||'').split(',').filter(Boolean);
+    return `<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px">
+      <div class="between" style="margin-bottom:10px">
+        <div class="flex" style="gap:10px">
+          <b style="font-size:14px">${n.hostname}</b>
+          <span class="hint">${n.ip}</span>
+          <span class="pill ${n.status==='Ready'?'p-green':(n.status==='NotReady'?'p-red':'p-amber')}">${n.status}</span>
+          <span class="pill p-gray">${n.role}</span>
+        </div>
+        <div class="btnrow">
+          <button class="sm ghost" onclick='openNodeYaml(${JSON.stringify(n).replace(/'/g,"&#39;")})'>YAML</button>
+          ${n.status==='Ready'
+            ? `<button class="sm ghost" onclick="nodeAct('${n.id}','cordon')">Cordon</button>
+               <button class="sm warn" onclick="nodeAct('${n.id}','drain')">Drain</button>`
+            : `<button class="sm ghost" onclick="nodeAct('${n.id}','uncordon')">恢复调度</button>`}
+          <button class="sm danger" onclick="removeNode('${n.id}')">下线</button>
+        </div>
+      </div>
+      <div class="hint mb10">GPU ${used}/${gs.length} 已分配 · CPU ${n.cpu_cores} 核 · 内存 ${n.mem_gb} GB · 磁盘 ${n.disk_gb} GB · Pod ${n.pod_count}</div>
+      <div class="gpugrid">${gs.map(g => `
+        <div class="gcell ${g.status}" onclick="gpuAct('${g.id}','${g.status}')" title="${g.id} ${g.model} ${g.mem_gb}GB 温度${g.temp_c}°C">
+          <b>#${g.idx}</b>${STAT[g.status][0]}
+        </div>`).join('')}</div>
+      <div class="legend" style="margin-top:8px">
+        ${lbl.map(l=>`<span style="background:#f4f6fa;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:10.5px">${l}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function nodeAct(id, act){
+  try { const r = await post(`/admin/nodes/${id}/${act}`); toast(r.message, true); loadNodes(); }
+  catch(e){ toast(e.message, false); }
+}
+
+async function addNodePrompt(){
+  const hostname = prompt('节点主机名（同时作为节点 ID）', 'gpu-node-3');
+  if(!hostname) return;
+  const ip = prompt('节点内网 IP', '10.0.0.13');
+  if(!ip) return;
+  try{
+    const r = await post('/admin/nodes', {hostname, ip, role:'agent', poolId:'p1'});
+    toast(r.message, true);
+    $('#drawerTitle').textContent = '节点接入命令 · ' + hostname;
+    $('#drawerBody').textContent = r.joinCommand +
+      '\n\n# 在目标节点执行上述命令后：\nkubectl get nodes\n# 期望看到 ' + hostname + ' 状态为 Ready\n'
+      + '# 注意：token 默认 24 小时过期，过期后重新 kubeadm token create --print-join-command';
+    $('#drawer').style.display = 'block';
+    loadNodes();
+  }catch(e){ toast(e.message, false); }
+}
+
+async function removeNode(id){
+  if(!confirm('确认下线节点 ' + id + '？\n会移除该节点的 8 张显卡，且不可恢复。')) return;
+  try{ const r = await del('/admin/nodes/' + id); toast(r.message, r.deleted > 0); loadNodes(); }
+  catch(e){ toast(e.message, false); }
+}
+async function gpuAct(id, st){
+  try {
+    if(st === 'occupied'){ toast('该卡正在被租户占用，需先释放实例', false); return; }
+    const r = await post(`/admin/gpus/${id}/${st === 'fault' ? 'repair' : 'fault'}`);
+    toast(r.message, r.changed > 0); loadNodes();
+  } catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 3 工作负载 ---------- */
+const IST = {provisioning:['创建中','p-amber'],running:['运行中','p-green'],releasing:['回收中','p-purple'],released:['已释放','p-gray'],failed:['失败','p-red']};
+async function loadWorkloads(){
+  const [list, deps, nss, tns] = await Promise.all([
+    api('/admin/workloads'), api('/admin/deployments'), api('/admin/namespaces'), api('/admin/tenants')
+  ]);
+
+  if($('#dTenant').options.length === 0){
+    $('#dTenant').innerHTML = tns.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+    syncNs();
+  }
+
+  const running = list.filter(i=>i.status==='running').length;
+  const gpus = list.filter(i=>i.status==='running').reduce((a,b)=>a+Number(b.gpu_count),0);
+  $('#wlKpi').innerHTML = [
+    ['工作负载对象', deps.length, 'Deployment / Job'],
+    ['算力实例', list.length, running + ' 个运行中'],
+    ['占用 GPU', gpus, '张'],
+    ['命名空间', nss.length, nss.filter(n=>n.kind==='tenant').length + ' 个租户空间'],
+  ].map(k=>`<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+  const WST = {Pending:['调度中','p-amber'], Running:['运行中','p-green'], Failed:['失败','p-red'], Stopped:['已停止','p-gray']};
+  $('#deployTable').innerHTML = deps.length ? `<table>
+    <thead><tr><th>名称</th><th>类型</th><th>命名空间</th><th>镜像</th><th class="num">GPU</th><th>策略</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${deps.map(d=>`<tr>
+      <td><b>${d.name}</b></td><td>${d.kind}</td><td class="mono">${d.namespace}</td>
+      <td class="mono hint">${d.image}</td><td class="num">${d.gpu_count}</td>
+      <td><span class="pill p-blue">${d.policy}</span></td>
+      <td><span class="pill ${WST[d.status]?WST[d.status][1]:'p-gray'}">${WST[d.status]?WST[d.status][0]:d.status}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="sm ghost" onclick="wLogs('${d.id}','${d.name}')">日志</button>
+        <button class="sm ghost" style="margin-left:4px" onclick="wRestart('${d.id}')">重启</button>
+        <button class="sm warn" style="margin-left:4px" onclick="wStop('${d.id}')">停止</button>
+        <button class="sm danger" style="margin-left:4px" onclick="undeploy('${d.id}')">删除</button>
+      </td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">还没有工作负载，左边提交一个</div>';
+
+  $('#wlTable').innerHTML = list.length ? `<table>
+    <thead><tr><th>实例</th><th>租户</th><th>节点</th><th>GPU</th><th>Pod</th><th>状态</th><th>已用</th><th>到期</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(i=>{
+      const sec = Number(i.used_seconds||0);
+      const used = sec < 60 ? sec + ' 秒' : (sec/60).toFixed(1) + ' 分';
+      const exp = i.expire_at ? new Date(i.expire_at).toLocaleString('zh-CN',{hour12:false}).slice(5) : '–';
+      return `<tr>
+        <td class="mono">${i.id}</td><td>${i.tenant_name||i.tenant_id}</td><td>${i.node_id||'–'}</td>
+        <td>${i.gpu_count}</td><td class="mono">${i.pod_name||'–'}</td>
+        <td><span class="pill ${IST[i.status]?IST[i.status][1]:'p-gray'}">${IST[i.status]?IST[i.status][0]:i.status}</span></td>
+        <td class="mono">${used}</td><td class="mono">${exp}</td>
+        <td style="text-align:right;white-space:nowrap">${i.status==='released'?'<span class="hint">—</span>'
+          :`<button class="sm ghost" onclick="instAccess('${i.id}')">连接</button>
+            <button class="sm danger" style="margin-left:4px" onclick="releaseInst('${i.id}')">强制释放</button>`}</td>
+      </tr>`;}).join('')}</tbody></table>` : '<div class="empty">暂无实例</div>';
+
+  $('#nsTable').innerHTML = `<table>
+    <thead><tr><th>命名空间</th><th>类型</th><th class="num">GPU 配额</th><th class="num">已用</th><th>说明</th></tr></thead>
+    <tbody>${nss.map(n=>`<tr>
+      <td class="mono">${n.name}</td>
+      <td><span class="pill ${n.kind==='system'?'p-gray':'p-blue'}">${n.kind==='system'?'系统':'租户'}</span></td>
+      <td class="num">${n.quota>0 ? n.quota + ' 卡' : '—'}</td>
+      <td class="num">${n.quota>0 ? '<b>'+n.used+'</b>' : '—'}</td>
+      <td class="hint">${n.note||''}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function syncNs(){ $('#dNs').value = 'tenant-' + $('#dTenant').value; }
+
+async function deploy(){
+  try{
+    const r = await post('/admin/deployments', {
+      name: $('#dName').value, kind: $('#dKind').value, tenantId: $('#dTenant').value,
+      namespace: $('#dNs').value, image: $('#dImage').value,
+      gpuCount: Number($('#dGpu').value), memLimit: $('#dMem').value, policy: $('#dPolicy').value
+    });
+    toast(r.message, true);
+    $('#dName').value = ''; $('#dImage').value = '';
+    loadWorkloads();
+  }catch(e){ toast(e.message, false); }
+}
+
+async function undeploy(id){
+  try{
+    const rr = await fetch('/api/admin/deployments/' + id, {method:'DELETE'});
+    const j = await rr.json();
+    toast(j.message, rr.ok);
+    loadWorkloads();
+  }catch(e){ toast(e.message, false); }
+}
+
+async function wLogs(id, name){
+  try{
+    const r = await api('/admin/deployments/' + id + '/logs');
+    $('#drawerTitle').textContent = '日志 · ' + r.pod;
+    $('#drawerBody').textContent = r.lines.join('\n');
+    $('#drawer').style.display = 'block';
+  }catch(e){ toast(e.message, false); }
+}
+async function wRestart(id){
+  try{ const r = await post(`/admin/deployments/${id}/restart`); toast(r.message, true); loadWorkloads(); }
+  catch(e){ toast(e.message, false); }
+}
+async function wStop(id){
+  try{ const r = await post(`/admin/deployments/${id}/stop`); toast(r.message, true); loadWorkloads(); }
+  catch(e){ toast(e.message, false); }
+}
+async function releaseInst(id){
+  try { const r = await post(`/instances/${id}/release`); toast(`已释放 · 用量 ${r.usedSeconds} 秒 · ¥${fmt(r.actualAmount)} · 退回 ¥${fmt(r.refund)}`, true); loadWorkloads(); }
+  catch(e){ toast(e.message, false); loadWorkloads(); }
+}
+
+async function instAccess(id){
+  try{
+    const a = await api(`/admin/instances/${id}/access`);
+    $('#drawerTitle').textContent = '实例接入 · ' + id;
+    $('#drawerBody').textContent =
+`状态       : ${a.status}
+节点       : ${a.node}  (${a.ip})
+GPU        : ${a.gpuIds}
+到期时间   : ${a.expireAt}
+
+# SSH 连接
+${a.ssh}
+
+# JupyterLab
+${a.jupyter}
+
+# 已注入公钥
+${a.publicKey}
+
+# 说明
+${a.note}`;
+    $('#drawer').style.display = 'block';
+  }catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 4 资源池 ---------- */
+async function loadPools(){
+  const d = await api('/admin/pools');
+  $('#poolCards').innerHTML = d.pools.map(p => `
+    <div class="card kpi">
+      <div class="k">${p.name} <span class="pill ${p.policy==='binpack'?'p-blue':'p-purple'}">${p.policy}</span></div>
+      <div class="v">${p.gpu_used}/${p.gpu_total}<small>卡</small></div>
+      <div class="sub">${p.node_count} 节点 · ${p.description||''}</div>
+      <div class="btnrow" style="margin-top:9px">
+        <button class="sm ghost" onclick="setPoolPolicy('${p.id}','${p.policy}')">改策略</button>
+        <button class="sm danger" onclick="delPool('${p.id}')">删除</button>
+      </div>
+    </div>`).join('');
+
+  $('#rackView').innerHTML = d.nodes.map(n => {
+    const gs = (d.gpus || []).filter(g => g.node_id === n.id).sort((a,b)=>a.idx-b.idx);
+    return `<div style="margin-bottom:12px">
+      <div class="between" style="margin-bottom:6px">
+        <span class="hint"><b style="color:var(--ink)">${n.hostname}</b> · ${n.ip} · ${n.labels}</span>
+        <span class="pill ${n.status==='Ready'?'p-green':'p-amber'}">${n.status}</span>
+      </div>
+      <div class="gpugrid">${gs.map(g=>`
+        <div class="gcell ${g.status}" title="${g.id} ${g.model} ${g.mem_gb}GB 温度${g.temp_c}°C 功耗${g.power_w}W">
+          <b>#${g.idx}</b>${g.temp_c}°
+        </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+
+  $('#queueTable').innerHTML = `<table>
+    <thead><tr><th>队列</th><th class="num">配额</th><th class="num">已用</th><th class="num">权重</th><th class="num">优先级</th></tr></thead>
+    <tbody>${d.queues.map(q=>`<tr>
+      <td class="mono">${q.name}</td><td class="num">${q.gpu_quota}</td>
+      <td class="num"><b>${q.gpu_used}</b></td><td class="num">${q.weight}</td><td class="num">${q.priority}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+async function createPoolPrompt(){
+  const name = prompt('资源池名称', 'inference-pool');
+  if(!name) return;
+  const policy = prompt('调度策略：binpack / spread / gang', 'binpack');
+  if(!policy) return;
+  try{
+    const r = await post('/admin/pools', {name, policy, description:'手工创建'});
+    toast(r.message, true); loadPools();
+  }catch(e){ toast(e.message, false); }
+}
+async function setPoolPolicy(id, cur){
+  const next = prompt('新的调度策略：binpack / spread / gang', cur);
+  if(!next) return;
+  try{ const r = await post(`/admin/pools/${id}/policy`, {policy: next}); toast(r.message, r.changed>0); loadPools(); }
+  catch(e){ toast(e.message, false); }
+}
+async function delPool(id){
+  if(!confirm('确认删除资源池 ' + id + '？池下还有节点时会被拒绝。')) return;
+  try{ const r = await del('/admin/pools/' + id); toast(r.message, r.deleted>0); loadPools(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 5 租户 ---------- */
+async function loadTenants(){
+  const list = await api('/admin/tenants');
+  $('#tCount').textContent = list.length + ' 个';
+  $('#tenantTable').innerHTML = `<table>
+    <thead><tr><th>租户</th><th>配额</th><th>已用</th><th>余额</th><th>累计消费</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(t=>`<tr>
+      <td><b>${t.name}</b><br><span class="hint mono">${t.id} · ${t.owner||''}</span></td>
+      <td>${t.quota_gpus} 卡</td>
+      <td><b>${t.used_gpus}</b></td>
+      <td class="mono">¥${fmt(t.balance_yuan)}</td>
+      <td class="mono">¥${fmt(t.spent)}</td>
+      <td><span class="pill ${t.status==='active'?'p-green':'p-gray'}">${t.status==='active'?'正常':'冻结'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="sm ghost" onclick="editQuota('${t.id}',${t.quota_gpus})">调配额</button>
+        <button class="sm ${t.status==='active'?'danger':'ghost'}" style="margin-left:4px"
+          onclick="toggleTenant('${t.id}','${t.status}')">${t.status==='active'?'冻结':'解冻'}</button>
+      </td></tr>`).join('')}</tbody></table>`;
+}
+async function provisionTenant(){
+  const name = $('#tName').value.trim();
+  if(!name){ toast('请填写租户名称', false); return; }
+  try{
+    const r = await post('/admin/tenants/provision', {
+      name,
+      quotaGpus: Number($('#tQuota').value),
+      mode: $('#tMode').value,
+      username: $('#tUser').value.trim()
+    });
+    $('#tForm').style.display = 'none';
+    $('#tResult').style.display = 'block';
+    $('#tResult').innerHTML = `
+      <div class="alert ok" style="display:block;margin-bottom:12px">${r.message}</div>
+      <table>
+        <tr><td class="hint">租户 ID</td><td class="mono">${r.tenantId}</td></tr>
+        <tr><td class="hint">命名空间</td><td class="mono">${r.namespace}</td></tr>
+        <tr><td class="hint">管理员账号</td><td class="mono"><b>${r.username}</b></td></tr>
+        <tr><td class="hint">初始密码</td><td class="mono"><b style="color:#a32d2d">${r.password}</b></td></tr>
+        <tr><td class="hint">GPU 配额</td><td>${r.quotaGpus} 卡</td></tr>
+        <tr><td class="hint">赠送余额</td><td>¥${fmt(r.balance)}</td></tr>
+        <tr><td class="hint">集群侧</td><td>${r.namespaceStatus}</td></tr>
+      </table>
+      <div class="tip" style="margin-top:10px">初始密码只显示这一次，请立即交付给客户。</div>
+      <div class="foot"><button class="sm" onclick="resetTenantForm()">继续开通</button></div>`;
+    loadTenants();
+  }catch(e){ toast(e.message, false); }
+}
+function resetTenantForm(){
+  $('#tForm').style.display = 'block';
+  $('#tResult').style.display = 'none';
+  $('#tName').value = '';
+  $('#tUser').value = '';
+  $('#tQuota').value = '4';
+}
+async function editQuota(id, cur){
+  const v = prompt('新的配额（卡）', cur);
+  if(v === null) return;
+  try{ const r = await post(`/admin/tenants/${id}/quota`, {quota:Number(v)}); toast(r.message, true); loadTenants(); }
+  catch(e){ toast(e.message, false); }
+}
+async function toggleTenant(id, st){
+  try{ const r = await post(`/admin/tenants/${id}/status`, {status: st==='active'?'frozen':'active'}); toast(r.message, true); loadTenants(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 6 告警 ---------- */
+async function loadAlerts(){
+  const [d, m, rules] = await Promise.all([api('/admin/alerts'), api('/admin/metrics?minutes=30'), api('/admin/alert-rules')]);
+  const active = d.alerts.filter(a=>a.status==='active');
+  const p0 = active.filter(a=>a.level==='P0').length, p1 = active.filter(a=>a.level==='P1').length;
+  $('#alKpi').innerHTML = [
+    ['活跃告警', active.length, '条'],
+    ['P0 紧急', p0, '条'],
+    ['P1 重要', p1, '条'],
+    ['已解决', d.alerts.filter(a=>a.status==='resolved').length, '条'],
+  ].map(k=>`<div class="card kpi"><div class="k">${k[0]}</div><div class="v" style="${k[0].includes('P0')?'color:#dc2828':''}">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+  lineChart($('#alChart'), [{data:m.gpuUtil, cls:'ln'}, {data:m.memUtil, cls:'ln2'}], {height:130});
+  lineChart($('#pwChart'), [{data:m.powerW, cls:'ln'}], {height:130});
+
+  $('#alertTable').innerHTML = d.alerts.length ? `<table>
+    <thead><tr><th>级别</th><th>标题</th><th>来源</th><th>对象</th><th>详情</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${d.alerts.map(a=>`<tr>
+      <td><span class="pill ${a.level==='P0'?'p-red':(a.level==='P1'?'p-amber':'p-gray')}">${a.level}</span></td>
+      <td><b>${a.title}</b></td><td>${a.source}</td><td class="mono">${a.target}</td>
+      <td class="hint" style="max-width:280px">${a.detail||''}</td>
+      <td><span class="pill ${a.status==='active'?'p-red':(a.status==='acked'?'p-amber':'p-green')}">${a.status==='active'?'待处理':(a.status==='acked'?'已确认':'已解决')}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        ${a.status==='active'?`<button class="sm ghost" onclick="alertAct('${a.id}','ack')">确认</button>`:''}
+        ${a.status!=='resolved'?`<button class="sm ghost" style="margin-left:4px" onclick="alertAct('${a.id}','resolve')">解决</button>`:'<span class="hint">—</span>'}
+      </td></tr>`).join('')}</tbody></table>` : '<div class="empty">没有告警</div>';
+
+  $('#ruleTable').innerHTML = rules.length ? `<table>
+    <thead><tr><th>规则</th><th>对象</th><th>条件</th><th>级别</th><th>通知</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${rules.map(r=>`<tr>
+      <td><b>${r.name}</b></td><td>${r.target}</td>
+      <td><code class="mono">${r.expr}</code></td>
+      <td><span class="pill ${r.level==='P0'?'p-red':(r.level==='P1'?'p-amber':'p-gray')}">${r.level}</span></td>
+      <td class="hint">${r.notify}</td>
+      <td><span class="pill ${r.enabled?'p-green':'p-gray'}">${r.enabled?'启用':'停用'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="sm ghost" onclick="toggleRule('${r.id}',${!r.enabled})">${r.enabled?'停用':'启用'}</button>
+        <button class="sm danger" style="margin-left:4px" onclick="delRule('${r.id}')">删除</button>
+      </td></tr>`).join('')}</tbody></table>` : '<div class="empty">还没有规则</div>';
+}
+
+async function createRulePrompt(){
+  const name = prompt('规则名称', '新告警规则');
+  if(!name) return;
+  const expr = prompt('触发条件（PromQL 风格）', 'temp_c > 85 持续 5min');
+  if(!expr) return;
+  const level = prompt('级别：P0 / P1 / P2', 'P1');
+  try{
+    const r = await post('/admin/alert-rules', {name, expr, level: level || 'P1', target:'gpu', notify:'群'});
+    toast(r.message, true); loadAlerts();
+  }catch(e){ toast(e.message, false); }
+}
+async function toggleRule(id, enabled){
+  try{ const r = await post(`/admin/alert-rules/${id}/toggle`, {enabled}); toast(r.message, r.changed>0); loadAlerts(); }
+  catch(e){ toast(e.message, false); }
+}
+async function delRule(id){
+  try{ const r = await del('/admin/alert-rules/' + id); toast(r.message, r.deleted>0); loadAlerts(); }
+  catch(e){ toast(e.message, false); }
+}
+async function alertAct(id, act){
+  try{ const r = await post(`/admin/alerts/${id}/${act}`); toast(r.message, true); loadAlerts(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 7 巡检 ---------- */
+async function loadInspections(){
+  const d = await api('/admin/inspections');
+  $('#insList').innerHTML = d.inspections.map(i=>`
+    <div style="border:1px solid var(--line);border-radius:9px;padding:13px;margin-bottom:10px">
+      <div class="between" style="margin-bottom:8px">
+        <div class="flex">
+          <b>健康度 ${i.health_score}</b>
+          <span class="pill ${i.total_issues===0?'p-green':(i.total_issues>2?'p-amber':'p-blue')}">${i.total_issues} 项问题</span>
+          <span class="hint">${new Date(i.run_at).toLocaleString('zh-CN',{hour12:false})}</span>
+        </div>
+        <span class="hint mono">${i.id}</span>
+      </div>
+      <div class="hint mb10">${i.summary||''}</div>
+      ${(i.items||[]).length ? `<table>
+        <thead><tr><th>级别</th><th>检查项</th><th>对象</th><th>建议</th><th>状态</th></tr></thead>
+        <tbody>${i.items.map(it=>`<tr>
+          <td><span class="pill ${it.level==='P0'?'p-red':(it.level==='P1'?'p-amber':'p-gray')}">${it.level}</span></td>
+          <td>${it.item}</td><td class="mono">${it.target}</td>
+          <td class="hint">${it.suggestion}</td>
+          <td><span class="pill ${it.fixed?'p-green':'p-amber'}">${it.fixed?'已处理':'待处理'}</span></td>
+        </tr>`).join('')}</tbody></table>` : '<div class="hint">本次巡检未发现问题</div>'}
+    </div>`).join('') || '<div class="empty">还没有巡检记录</div>';
+}
+async function runInspection(){
+  try{ const r = await post('/admin/inspections/run'); toast(`巡检完成：健康度 ${r.healthScore}，${r.summary}`, true); loadInspections(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 节点 YAML 抽屉 ---------- */
+function openNodeYaml(n){
+  const labels = (n.labels||'').split(',').filter(Boolean)
+    .map(l => { const p = l.split('='); return `    ${p[0]}: "${p[1]||''}"`; }).join('\n');
+  const gpuLines = (n.gpus||[]).map(g =>
+    `  - id: ${g.id}        # index ${g.idx} · ${g.model} ${g.mem_gb}GB\n` +
+    `    status: ${g.status}${g.instance_id ? '  # 实例 ' + g.instance_id : ''}`
+  ).join('\n');
+  const yaml =
+`apiVersion: v1
+kind: Node
+metadata:
+  name: ${n.hostname}
+  labels:
+${labels}
+spec:
+  podCIDR: 10.42.${n.id === 'n2' ? 1 : 0}.0/24
+status:
+  nodeInfo:
+    kubeletVersion: ${n.k8s_version}
+    operatingSystem: linux
+    architecture: amd64
+    capacity:
+      cpu: "${n.cpu_cores}"
+      memory: "${n.mem_gb}Gi"
+      nvidia.com/gpu: "${n.gpu_count}"
+  allocatable:
+    nvidia.com/gpu: "${n.gpu_count}"
+  conditions:
+  - type: Ready
+    status: "${n.status === 'NotReady' ? 'False' : 'True'}"
+  gpus:            # 由 nvidia device plugin 上报
+${gpuLines}`;
+  $('#drawerTitle').textContent = n.hostname + ' · YAML';
+  $('#drawerBody').textContent = yaml;
+  $('#drawer').style.display = 'block';
+}
+function closeDrawer(){ $('#drawer').style.display = 'none'; }
+
+/* ---------- 资源对象（YAML） ---------- */
+const TPL = {
+  Deployment: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-infer
+  namespace: tenant-t1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-infer
+  template:
+    metadata:
+      labels:
+        app: my-infer
+    spec:
+      schedulerName: volcano
+      containers:
+      - name: engine
+        image: registry.local/ai/vllm:0.6.3
+        resources:
+          limits:
+            nvidia.com/gpu: 1`,
+  Namespace: `apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-demo
+  labels:
+    tenant: demo`,
+  Job: `apiVersion: batch/v1
+kind: Job
+metadata:
+  name: train-once
+  namespace: tenant-t1
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: registry.local/ai/pytorch:2.4-cu124
+        resources:
+          limits:
+            nvidia.com/gpu: 4`,
+  Service: `apiVersion: v1
+kind: Service
+metadata:
+  name: my-infer
+  namespace: tenant-t1
+spec:
+  selector:
+    app: my-infer
+  ports:
+  - port: 8000
+    targetPort: 8000`
+};
+function loadTemplate(k){ $('#yamlInput').value = TPL[k] || ''; }
+
+async function loadResources(){
+  if(!$('#yamlInput').value) loadTemplate('Deployment');
+  const list = await api('/admin/resources');
+  $('#resCount').textContent = list.length + ' 个';
+  $('#resTable').innerHTML = list.length ? `<table>
+    <thead><tr><th>对象</th><th>命名空间</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(r=>`<tr>
+      <td><span class="pill p-blue">${r.kind}</span><div style="margin-top:2px;white-space:nowrap"><b>${r.name}</b></div>
+        <div class="hint mono">${r.api_version}</div></td>
+      <td class="mono" style="white-space:nowrap">${r.namespace}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="sm ghost" onclick="viewYaml('${r.id}')">查看</button>
+        <button class="sm danger" style="margin-left:4px" onclick="delRes('${r.id}')">删除</button>
+      </td></tr>`).join('')}</tbody></table>` : '<div class="empty">还没有资源，左侧应用一段 YAML</div>';
+}
+function parseYamlText(y){
+  const top = k => { const m = y.match(new RegExp('^' + k + ':\\s*(.+)$', 'm')); return m ? m[1].trim() : null; };
+  const meta = k => {
+    const m = y.match(new RegExp('metadata:[\\s\\S]*?\\n\\s*' + k + ':\\s*(.+?)\\s*(?:\\n|$)'));
+    return m ? m[1].trim().replace(/^["']|["']$/g, '') : null;
+  };
+  return {apiVersion: top('apiVersion'), kind: top('kind'), name: meta('name'), namespace: meta('namespace')};
+}
+
+async function applyYaml(){
+  const y = $('#yamlInput').value;
+  const p = parseYamlText(y);
+  if(!p.apiVersion){ toast('校验失败：缺少 apiVersion', false); return; }
+  if(!p.kind){ toast('校验失败：缺少 kind', false); return; }
+  if(!p.name){ toast('校验失败：metadata.name 不能为空', false); return; }
+  if(p.kind !== 'Namespace' && !p.namespace){ toast('校验失败：' + p.kind + ' 必须指定 metadata.namespace', false); return; }
+  try{
+    const r = await post('/admin/resources', {
+      yaml: y, apiVersion: p.apiVersion, kind: p.kind, name: p.name, namespace: p.namespace || '-'
+    });
+    toast(r.message + (r.created ? '（新建）' : '（更新）'), true);
+    loadResources();
+  }catch(e){ toast('校验失败：' + e.message, false); }
+}
+async function viewYaml(id){
+  try{
+    const r = await api('/admin/resources/' + id);
+    $('#drawerTitle').textContent = r.kind + ' / ' + r.name;
+    $('#drawerBody').textContent = r.yaml_text;
+    $('#drawer').style.display = 'block';
+  }catch(e){ toast(e.message, false); }
+}
+async function delRes(id){
+  try{ const r = await del('/admin/resources/' + id); toast(r.message, r.deleted > 0); loadResources(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 系统管理 ---------- */
+async function loadSystem(){
+  const d = await api('/admin/settings');
+  const isAdmin = U.role === 'admin';
+  const users = isAdmin ? await api('/admin/users') : [];
+  const sessions = isAdmin ? await api('/admin/sessions') : [];
+  const c = d.cluster;
+  $('#sysCluster').innerHTML = `<table>
+    <tr><th style="width:38%">项</th><th>值</th></tr>
+    <tr><td>集群名称</td><td class="mono">${c.name}</td></tr>
+    <tr><td>Kubernetes 版本</td><td class="mono">${c.k8s}</td></tr>
+    <tr><td>容器运行时</td><td class="mono">${c.runtime}</td></tr>
+    <tr><td>CNI</td><td class="mono">${c.cni}</td></tr>
+    <tr><td>节点数</td><td class="mono">${c.nodes}</td></tr>
+    <tr><td>调度器</td><td class="mono">volcano</td></tr>
+  </table>
+  <div class="hint mt10">当前为单集群版；多集群切换列入企业版路线图。</div>`;
+
+  const ROLE = {admin:['平台管理员','p-red'], ops:['值班运维','p-amber'], tenant:['租户用户','p-blue']};
+
+  $('#sysSessionSub').textContent = sessions.length + ' 个活跃会话';
+  $('#sysSessions').innerHTML = sessions.length ? `<table>
+    <thead><tr><th>用户</th><th>IP</th><th>登录时间</th><th>最后活动</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${sessions.map(s=>`<tr>
+      <td>${s.display_name||s.username}<div class="hint mono">${s.username}</div></td>
+      <td class="mono">${s.ip||'—'}</td>
+      <td class="hint">${new Date(s.created_at).toLocaleString('zh-CN',{hour12:false}).slice(5)}</td>
+      <td class="hint">${new Date(s.last_seen).toLocaleTimeString('zh-CN',{hour12:false})}</td>
+      <td style="text-align:right"><button class="sm danger" onclick="kickSession('${s.id}')">下线</button></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无在线会话</div>';
+
+  $('#sysUsers').innerHTML = `<table>
+    <thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>租户</th><th>状态</th><th class="num">失败</th><th>最后登录</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${users.map(u=>{
+      const locked = u.locked_until && new Date(u.locked_until).getTime() > Date.now();
+      const st = u.status === 'disabled' ? ['已停用','p-gray'] : (locked ? ['锁定中','p-red'] : ['正常','p-green']);
+      const last = u.last_login_at ? new Date(u.last_login_at).toLocaleString('zh-CN',{hour12:false}).slice(5) : '从未登录';
+      return `<tr>
+        <td class="mono">${u.username}</td>
+        <td>${u.display_name}</td>
+        <td><span class="pill ${ROLE[u.role]?ROLE[u.role][1]:'p-gray'}">${ROLE[u.role]?ROLE[u.role][0]:u.role}</span></td>
+        <td class="mono">${u.tenant_id||'—'}</td>
+        <td><span class="pill ${st[1]}">${st[0]}</span></td>
+        <td class="num">${u.fail_count||0}</td>
+        <td class="hint">${last}</td>
+        <td style="text-align:right;white-space:nowrap">
+          ${locked?`<button class="sm ghost" onclick="unlockUser('${u.id}')">解锁</button>`:''}
+          <button class="sm ${u.status==='active'?'danger':'ghost'}" style="margin-left:4px"
+            onclick="toggleUser('${u.id}','${u.status}')">${u.status==='active'?'停用':'启用'}</button>
+        </td></tr>`;}).join('')}</tbody></table>
+  <div class="hint mt10">admin：全部权限；ops：无系统管理；tenant：仅用户端。停用后已签发的会话立即失效。</div>`;
+
+  $('#sysSettings').innerHTML = `<table>
+    <thead><tr><th style="width:26%">参数</th><th>值</th><th style="width:30%">说明</th><th style="width:9%"></th></tr></thead>
+    <tbody>${d.settings.map(s=>`<tr>
+      <td class="mono">${s.k}</td>
+      <td><input value="${s.v}" data-k="${s.k}" style="padding:5px 8px;font-size:12px"></td>
+      <td class="hint">${s.note||''}</td>
+      <td><button class="sm ghost" onclick="saveSetting('${s.k}')">保存</button></td>
+    </tr>`).join('')}</tbody></table>`;
+
+  await loadAudit(1);
+  await loadOrphans();
+}
+
+/* ---------- 资源对账 ---------- */
+async function loadOrphans(){
+  try{
+    const d = await api('/admin/orphans');
+    const sub = $('#orphanSub');
+    if(d.mode === 'fake'){
+      sub.textContent = '模拟运行时，无真实 Pod';
+      $('#orphanList').innerHTML = '<div class="empty">当前是 fake 模式，没有真实集群可对账</div>';
+      return;
+    }
+    sub.textContent = d.total === 0 ? '集群与数据库一致' : ('发现 ' + d.total + ' 个孤儿 Pod');
+    $('#orphanList').innerHTML = d.total === 0
+      ? '<div class="empty" style="color:#0e7a39">没有孤儿资源，集群与平台数据一致</div>'
+      : `<table>
+          <thead><tr><th>命名空间</th><th>Pod</th><th>原因</th><th style="text-align:right">操作</th></tr></thead>
+          <tbody>${d.items.map(o=>`<tr>
+            <td class="mono">${o.namespace}</td>
+            <td class="mono">${o.pod}</td>
+            <td class="hint">${o.reason}</td>
+            <td style="text-align:right"><button class="sm danger" onclick="cleanOrphan('${o.namespace}','${o.pod}')">清理</button></td>
+          </tr>`).join('')}</tbody></table>`;
+  }catch(e){ toast(e.message, false); }
+}
+async function cleanOrphan(ns, pod){
+  if(!confirm('确认删除孤儿 Pod ' + pod + '？删除后会释放它占用的 GPU。')) return;
+  try{
+    const r = await del(`/admin/orphans/${ns}/${pod}`);
+    toast(r.message, r.deleted > 0);
+    loadOrphans();
+  }catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 审计：筛选 + 分页 + 导出 ---------- */
+async function loadAudit(page){
+  const p = page || 1;
+  const q = $('#auditQ') ? $('#auditQ').value.trim() : '';
+  const action = $('#auditAction') ? $('#auditAction').value : '';
+  const d = await api(`/admin/audit?page=${p}&size=10&q=${encodeURIComponent(q)}&action=${encodeURIComponent(action)}`);
+
+  const sel = $('#auditAction');
+  if(sel.options.length <= 1){
+    sel.innerHTML = '<option value="">全部动作</option>'
+      + d.actions.map(a=>`<option value="${a}">${a}</option>`).join('');
+    sel.value = action;
+  }
+
+  $('#auditSub').textContent = '共 ' + d.total + ' 条';
+  $('#sysAudit').innerHTML = d.items.length ? `<table>
+    <thead><tr><th>时间</th><th>操作人</th><th>动作</th><th>对象</th><th>详情</th></tr></thead>
+    <tbody>${d.items.map(l=>`<tr>
+      <td class="mono hint">${new Date(l.created_at).toLocaleString('zh-CN',{hour12:false})}</td>
+      <td>${l.actor}</td>
+      <td><span class="pill p-blue">${l.action}</span></td>
+      <td class="mono">${l.target}</td>
+      <td class="hint">${l.detail||''}</td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">没有匹配的记录</div>';
+
+  const pages = d.pages || 1;
+  $('#auditPageInfo').textContent = `第 ${d.page} / ${pages} 页 · 每页 ${d.size} 条`;
+  $('#auditPager').innerHTML = `
+    <button class="sm ghost" ${d.page<=1?'disabled':''} onclick="loadAudit(${d.page-1})">上一页</button>
+    <button class="sm ghost" ${d.page>=pages?'disabled':''} onclick="loadAudit(${d.page+1})">下一页</button>`;
+}
+
+async function exportAudit(){
+  const q = $('#auditQ').value.trim();
+  const action = $('#auditAction').value;
+  const r = await fetch(`/api/admin/audit/export?q=${encodeURIComponent(q)}&action=${encodeURIComponent(action)}`,
+    {headers:{Authorization:'Bearer ' + TOKEN}});
+  if(!r.ok){ toast('导出失败', false); return; }
+  const blob = await r.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'audit-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已导出 CSV（可用 Excel 直接打开）', true);
+}
+async function kickSession(id){
+  if(!confirm('确认强制下线该会话？')) return;
+  try{ const r = await del('/admin/sessions/' + id); toast(r.message, r.deleted > 0); loadSystem(); }
+  catch(e){ toast(e.message, false); }
+}
+async function unlockUser(id){
+  try{ const r = await post(`/admin/users/${id}/unlock`); toast(r.message, r.changed > 0); loadSystem(); }
+  catch(e){ toast(e.message, false); }
+}
+async function toggleUser(id, status){
+  const next = status === 'active' ? 'disabled' : 'active';
+  if(!confirm(next === 'disabled' ? '确认停用该账号？其在线会话会立即失效。' : '确认启用该账号？')) return;
+  try{ const r = await post(`/admin/users/${id}/status`, {status: next}); toast(r.message, r.changed > 0); loadSystem(); }
+  catch(e){ toast(e.message, false); }
+}
+
+async function saveSetting(k){
+  const el = document.querySelector(`input[data-k="${k}"]`);
+  try{ const r = await post('/admin/settings', {k, v: el.value}); toast(r.message, r.changed > 0); loadSystem(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 启动 ---------- */
+api('/runtime').then(r => {
+  const b = $('#k8sBadge');
+  b.textContent = r.real ? '真集群 · k3s' : '模拟运行时';
+  b.className = 'pill ' + (r.real ? 'p-green' : 'p-amber');
+}).catch(() => { $('#k8sBadge').textContent = '运行时未知'; });
+
+loadOverview();
+setInterval(()=>{ if($('#page-overview').classList.contains('on')) loadOverview(); }, 8000);
+</script>
+</body>
+</html>
