@@ -1,4 +1,4 @@
-/* 顶部导航「算力市场」下拉：默认第一项，点击各自跳转 */
+/* 顶部导航「算力市场」下拉：点击展开 / 点击外部收起 / 当前项高亮 */
 (function () {
   var link = document.querySelector('.navlinks a[href="/market.html"]');
   if (!link || link.parentNode.classList.contains('nav-drop')) return;
@@ -9,28 +9,44 @@
   wrap.appendChild(link);
   link.insertAdjacentHTML('beforeend', '<span class="caret">⌄</span>');
 
-  wrap.insertAdjacentHTML('beforeend', [
-    '<div class="drop-panel">',
-    '  <a class="drop-item" href="/portal.html">',
-    '    <span class="di blue">▣</span>',
-    '    <span class="dt"><b>容器云 <em class="tag pink">按量计费</em></b>',
-    '      <i>弹性 GPU 容器集群，按需弹性扩缩容</i></span>',
-    '  </a>',
-    '  <a class="drop-item" href="/group.html">',
-    '    <span class="di orange">◉</span>',
-    '    <span class="dt"><b>拼租卡 <em class="tag green">拼租卡</em></b>',
-    '      <i>多人共享显卡，平摊成本更省钱</i></span>',
-    '  </a>',
-    '  <a class="drop-item" href="/baremetal.html">',
-    '    <span class="di purple">✦</span>',
-    '    <span class="dt"><b>裸金属 <em class="tag blue">企业级</em></b>',
-    '      <i>独享物理服务器，适合大规模训练</i></span>',
-    '  </a>',
-    '</div>'
-  ].join(''));
+  var path = location.pathname;
+  var items = [
+    { h: '/portal.html', ic: '▣', cls: 'blue', t: '容器云', tag: '按量计费', tagCls: 'pink',
+      d: '弹性 GPU 容器集群，按需弹性扩缩容' },
+    { h: '/group.html', ic: '◉', cls: 'orange', t: '拼租卡', tag: '拼租卡', tagCls: 'green',
+      d: '多人共享显卡，平摊成本更省钱' },
+    { h: '/baremetal.html', ic: '✦', cls: 'purple', t: '裸金属', tag: '企业级', tagCls: 'blue',
+      d: '独享物理服务器，适合大规模训练' }
+  ];
+
+  wrap.insertAdjacentHTML('beforeend',
+    '<div class="drop-panel">' +
+      items.map(function (x) {
+        var on = path === x.h ? ' on' : '';
+        return '<a class="drop-item' + on + '" href="' + x.h + '">' +
+          '<span class="di ' + x.cls + '">' + x.ic + '</span>' +
+          '<span class="dt"><b>' + x.t + '<em class="tag ' + x.tagCls + '">' + x.tag + '</em></b>' +
+          '<i>' + x.d + '</i></span>' +
+          (path === x.h ? '<span class="cur">当前</span>' : '') +
+        '</a>';
+      }).join('') +
+      '<a class="drop-all" href="/market.html">查看全部商品 <span>›</span></a>' +
+    '</div>');
+
+  /* 点击展开 / 收起，不再依赖悬停 */
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    wrap.classList.toggle('open');
+  });
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) wrap.classList.remove('open');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') wrap.classList.remove('open');
+  });
 
   /* 当前页高亮：市场落地 / 容器云 / 拼团 / 裸金属 都算「算力市场」 */
-  var path = location.pathname;
   var inMarket = ['/market.html', '/portal.html', '/group.html', '/baremetal.html'].indexOf(path) >= 0;
   link.classList.toggle('on', inMarket);
 })();

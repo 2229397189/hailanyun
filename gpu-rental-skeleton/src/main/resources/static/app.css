@@ -687,3 +687,16 @@ label{display:block;font-size:11.5px;color:var(--ink2);margin-bottom:5px}
 .mkt-switch a:hover{color:#c026d3;background:#fdf7fd}
 .mkt-switch a.on{background:linear-gradient(100deg,#e879c9,#c026d3);color:#fff;font-weight:600;
   box-shadow:0 8px 18px -10px rgba(192,38,211,.8)}
+
+/* 下拉：点击常驻 + 当前项高亮（覆盖上面的悬停实现） */
+.nav-drop.open .drop-panel{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+.nav-drop .drop-panel{width:400px;padding:10px;border-radius:16px;border-color:#f3eef9}
+.nav-drop .drop-item{min-height:72px;padding:14px;position:relative;align-items:flex-start}
+.nav-drop .drop-item.on{background:#faf7ff}
+.nav-drop .drop-item.on::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;
+  border-radius:2px;background:linear-gradient(180deg,#e879c9,#c026d3)}
+.nav-drop .drop-item .cur{margin-left:auto;align-self:center;font-size:9.5px;color:#c026d3;
+  background:#fdf2fb;border:1px solid #fbe4f4;border-radius:5px;padding:1px 6px}
+.nav-drop .drop-all{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px;
+  padding:9px;border-top:1px dashed #f3eef9;font-size:11.5px;color:#98a1b3}
+.nav-drop .drop-all:hover{color:#c026d3}
