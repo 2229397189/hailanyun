@@ -6,6 +6,7 @@
 <title>主控制台 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
 <style>
 body{background:#f7f8fb}
 .cs{width:196px;flex:0 0 196px;background:#fff;border-right:1px solid #eef0f5;
@@ -67,45 +68,14 @@ body{background:#f7f8fb}
 @media(max-width:1100px){.grid-c,.grid-b{grid-template-columns:1fr}.cs{display:none}}
 </style>
 </head>
-<body>
+<body data-active="main">
 
 <div class="console">
-  <aside class="cs">
-    <a class="logo brand" href="/index.html">
-      <span class="brand-mark" style="width:28px;height:28px;border-radius:9px">
-        <svg width="15" height="15" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
-          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span><span class="brand-name" style="font-size:13.5px">Token<span>Ark</span></span>
-      <span class="brand-sub" style="font-size:9.5px">创元方舟</span></span>
-    </a>
-    <nav>
-      <a class="on"><span class="ic">▦</span>主控制台</a>
-      <a href="/portal.html#instances"><span class="ic">▤</span>实例列表</a>
-      <a onclick="return tip('文件存储')"><span class="ic">▧</span>文件存储</a>
-      <a onclick="return tip('我的镜像')"><span class="ic">◫</span>我的镜像</a>
-      <a onclick="return tip('大模型 API')"><span class="ic">✦</span>大模型 API</a>
-      <a onclick="return tip('财务管理')"><span class="ic">¥</span>财务管理<span class="arw">▸</span></a>
-      <a onclick="return tip('账号管理')"><span class="ic">⚙</span>账号管理<span class="arw">▸</span></a>
-    </nav>
-    <div class="foot">v1.0.0 · 演示环境</div>
-  </aside>
+  <aside class="cs" id="cside"></aside>
 
   <div class="cmain">
     <div class="ctopbar">
-      <div class="ctabs">
-        <span class="ctab2 on">▦ 主控制台</span>
-        <span class="ctab2" onclick="go('instances')">▤ 实例列表 <span class="x">×</span></span>
-        <span class="ctab2" onclick="tip('我的镜像')">◫ 我的镜像 <span class="x">×</span></span>
-        <span class="ctab2" onclick="tip('文件存储')">▧ 文件存储 <span class="x">×</span></span>
-        <span class="ctab2" onclick="tip('大模型 API')">✦ 大模型 API <span class="x">×</span></span>
-        <span class="ctab2" onclick="location.href='/recharge.html'">¥ 在线充值 <span class="x">×</span></span>
-        <span class="ctab2" onclick="tip('个人资料')">◉ 个人资料 <span class="x">×</span></span>
-        <span class="ctab2" onclick="tip('账号管理')">⚙ 账号管理 <span class="x">×</span></span>
-        <span class="ctab2" onclick="tip('消息通知')">◔ 消息通知 <span class="x">×</span></span>
-      </div>
+      <div class="ctabs" id="ctabs"></div>
     </div>
 
     <div class="cbody">
@@ -198,6 +168,7 @@ body{background:#f7f8fb}
   </div>
 </div>
 
+<script src="/console-nav.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
