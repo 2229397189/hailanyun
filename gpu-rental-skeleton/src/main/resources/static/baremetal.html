@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>B端裸金属 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v10">
+<link rel="stylesheet" href="/app.css?v12">
+<link rel="stylesheet" href="/ref.css?v12">
 </head>
 <body>
 
@@ -39,50 +40,44 @@
 </header>
 
 <main>
-  <section class="grid-bg">
-    <div class="wrap" style="padding:46px 24px 40px;display:grid;grid-template-columns:1.15fr .85fr;
-         gap:40px;align-items:center">
+  <section class="bm-hero">
+    <div class="bm-wrap">
       <div>
-        <span class="hero-badge"><i></i>智能算力服务 · 现货充足</span>
-        <div class="h1-xl" style="margin:18px 0 14px">赋能科研<br><span class="grad-text">高性能裸金属</span></div>
-        <div class="lead-2">专为深度学习、大模型训练及企业级推理打造。告别虚拟化损耗，独享 RTX 5090 / H800 物理算力，秒级部署，即刻开跑。</div>
-        <div style="display:flex;gap:12px;margin-top:24px">
-          <a class="btn-primary" href="#list">查看机型</a>
-          <a class="btn-ghost" href="#contact">联系顾问</a>
-        </div>
+        <span class="bm-badge"><i></i>物理机资源池 · 现货充足</span>
+        <h1 class="bm-title">赋能科研与创新的<br><em>高性能裸金属矩阵</em></h1>
+        <p class="bm-lead">专为深度学习、大模型训练及企业级推理打造。告别虚拟化损耗，独享 RTX 5090 / H800 物理算力，秒级部署，即刻开跑。</p>
       </div>
 
-      <div class="card" id="contact" style="padding:24px 24px 22px;border-radius:18px">
-        <div style="font-size:15px;font-weight:750;margin-bottom:10px">需要定制化算力集群？</div>
-        <div class="hint" style="margin-bottom:16px">针对高校实验室及企业需求，我们提供 1 对 1 专属技术咨询、大客户折扣以及全额免费测试。</div>
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fbfaff;
-             border:1px solid #f1eef9;border-radius:10px;margin-bottom:10px">
-          <span style="width:30px;height:30px;border-radius:9px;background:#e8f9f1;color:#10b981;
-               display:flex;align-items:center;justify-content:center">✆</span>
-          <div><div style="font-size:10.5px;color:#98a1b3">企业专线</div><b style="font-size:13px">186-1613-8684</b></div>
+      <div class="bm-contact">
+        <h3>需要定制化算力集群？</h3>
+        <p class="d">针对高校实验室及企业需求，我们提供 1对1 专属技术咨询与大客户折扣以及裸金属免费测试。</p>
+        <div class="bm-crow">
+          <span class="ic" style="background:#e8f9f1;color:#10b981">✆</span>
+          <div><small>微信咨询（24H）</small><b>A16138684</b></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fbfaff;
-             border:1px solid #f1eef9;border-radius:10px">
-          <span style="width:30px;height:30px;border-radius:9px;background:#eaf2fe;color:#3b82f6;
-               display:flex;align-items:center;justify-content:center">✉</span>
-          <div><div style="font-size:10.5px;color:#98a1b3">商务邮箱</div><b style="font-size:13px">sales@tokenark.cn</b></div>
+        <div class="bm-crow">
+          <span class="ic" style="background:#eaf2fe;color:#3b82f6">✆</span>
+          <div><small>企业专线</small><b>186-1613-8684</b></div>
         </div>
-        <button class="pay-btn" style="margin-top:16px" onclick="apply()">申请免费测试 →</button>
+        <button class="go" onclick="apply()">申请免费测试 →</button>
       </div>
     </div>
   </section>
 
-  <section class="wrap" id="list" style="padding:30px 24px 60px">
-    <div class="filter-bar">
+  <section class="wrap" id="list" style="padding:22px 24px 60px">
+    <div class="bm-filter">
       <label>筛选：</label>
-      <select><option>显卡型号（全部）</option><option>RTX 5090</option><option>A100</option><option>H800</option></select>
-      <select><option>地区（全部）</option><option>可用区 A</option><option>可用区 B</option></select>
-      <select><option>价格（默认）</option><option>从低到高</option><option>从高到低</option></select>
+      <select id="fModel" onchange="renderRows()"></select>
+      <select id="fZone" onchange="renderRows()"></select>
+      <select id="fSort" onchange="renderRows()">
+        <option value="default">价格（默认）</option>
+        <option value="asc">从低到高</option>
+        <option value="desc">从高到低</option>
+      </select>
       <span class="sp"></span>
-      <span class="hint">共 <b>4</b> 款机型在售</span>
+      <span class="cnt"><i></i>共 <b id="cnt">0</b> 款机型在售</span>
     </div>
-
-    <div id="rows"></div>
+    <div id="rows" style="margin-top:14px"></div>
   </section>
 </main>
 
@@ -98,11 +93,9 @@
 <script>
 /* 机型与价格全部来自 /api/catalog/baremetal，页面不存业务数据 */
 let ROWS = [];
-const NV_LOGO = `<svg width="48" height="28" viewBox="0 0 48 28" role="img" aria-label="NVIDIA">
-  <path d="M24 3c-8.4 0-14.6 4.3-17.6 9.4C9.4 17.5 15.6 21.8 24 21.8s14.6-4.3 17.6-9.4C38.6 7.3 32.4 3 24 3Zm0 2.6c6 0 10.7 2.7 13.4 6.8-2.7 4.1-7.4 6.8-13.4 6.8S13.3 16.5 10.6 12.4C13.3 8.3 18 5.6 24 5.6Z" fill="#76b900"/>
-  <circle cx="24" cy="12.4" r="4.1" fill="#76b900"/>
-  <text x="24" y="27" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-        font-size="7" font-weight="700" fill="#76b900" letter-spacing=".3">NVIDIA</text></svg>`;
+const NV_LOGO = `<img src="/img/nvidia.svg" alt="NVIDIA" style="width:46px;height:auto">`;
+/* 地区标签配色：与参考站一区一色 */
+const ZONE_CLS = { '重庆': '', '浙江': 'z-green', '新疆': 'z-yellow', '成都': 'z-blue', '广东': 'z-indigo' };
 const PIN_IC = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
   <path d="M6 10.6S2.4 7.6 2.4 4.9a3.6 3.6 0 1 1 7.2 0c0 2.7-3.6 5.7-3.6 5.7Z"/>
   <circle cx="6" cy="4.9" r="1.1"/></svg>`;
@@ -115,8 +108,7 @@ function metalCard(r) {
     <div class="xc-main">
       <div class="xc-head">
         <span class="xc-title">${r.model}</span>
-        <span class="xc-zone green">${PIN_IC}${r.zone}</span>
-        <span style="font-size:10px;color:#9aa2b1">整机独占 · 无虚拟化损耗</span>
+        <span class="xc-zone ${ZONE_CLS[r.zone] || ''}">${PIN_IC}${r.zone}</span>
       </div>
       <div class="xc-specs">
         ${specCell('pink', '▤', '显存', r.vram)}
@@ -134,9 +126,24 @@ function metalCard(r) {
     </div>
   </div>`;
 }
+function fillFilters() {
+  const fm = document.getElementById('fModel'), fz = document.getElementById('fZone');
+  const models = ['全部', ...Array.from(new Set(ROWS.map(r => r.model)))];
+  const zones = ['全部', ...Array.from(new Set(ROWS.map(r => r.zone)))];
+  fm.innerHTML = models.map(m => `<option value="${m}">${m === '全部' ? '显卡型号（全部）' : m}</option>`).join('');
+  fz.innerHTML = zones.map(z => `<option value="${z}">${z === '全部' ? '地区（全部）' : z}</option>`).join('');
+}
 function renderRows() {
-  document.getElementById('rows').innerHTML = ROWS.length
-    ? `<div class="xlist">${ROWS.map(metalCard).join('')}</div>`
+  const fm = document.getElementById('fModel').value || '全部';
+  const fz = document.getElementById('fZone').value || '全部';
+  const sort = document.getElementById('fSort').value;
+  let list = ROWS.filter(r => (fm === '全部' || r.model === fm) && (fz === '全部' || r.zone === fz));
+  if (sort === 'asc') list.sort((a, b) => a.price - b.price);
+  if (sort === 'desc') list.sort((a, b) => b.price - a.price);
+  const cnt = document.getElementById('cnt');
+  if (cnt) cnt.textContent = list.length;
+  document.getElementById('rows').innerHTML = list.length
+    ? `<div class="xlist">${list.map(metalCard).join('')}</div>`
     : `<div class="card panel"><div class="empty">暂无在售机型</div></div>`;
 }
 async function loadRows() {
@@ -144,6 +151,7 @@ async function loadRows() {
     const r = await fetch('/api/catalog/baremetal');
     ROWS = await r.json();
   } catch (e) { ROWS = []; }
+  fillFilters();
   renderRows();
 }
 loadRows();
@@ -152,6 +160,6 @@ function apply(model) {
   alert(`演示环境：已记录需求${model ? '（' + model + '）' : ''}。\n真实流程会创建工单并通知商务，当前仅展示交互。`);
 }
 </script>
-<script src="/nav.js?v10"></script>
+<script src="/nav.js?v12"></script>
 </body>
 </html>

@@ -22,6 +22,17 @@ public class CatalogApi {
 
     private final Db db;
 
+    /** 显卡型号 → 单卡显存（GB），用于商品卡标题「型号 / 显存」 */
+    private static final Map<String, Integer> VRAM = Map.ofEntries(
+            Map.entry("RTX 2080 Ti", 22), Map.entry("Tesla T4", 16),
+            Map.entry("RTX 3090", 24), Map.entry("RTX 3090 Lite", 24),
+            Map.entry("RTX 4090", 24), Map.entry("RTX 4090 Lite", 24),
+            Map.entry("RTX 4090D", 24), Map.entry("RTX 5090", 32),
+            Map.entry("A100-PCIE-40GB", 40), Map.entry("A100-SXM4-40GB", 40),
+            Map.entry("RTX 4090-48G", 48), Map.entry("L40S", 48), Map.entry("L20", 48),
+            Map.entry("RTX 6000D", 84), Map.entry("A800-NVLINK-80GB", 80),
+            Map.entry("H800", 80), Map.entry("RTX 4080", 32));
+
     public CatalogApi(Db db) {
         this.db = db;
     }
@@ -102,51 +113,161 @@ public class CatalogApi {
         return m;
     }
 
+    /** 容器云商品目录（公开）：字段与页面卡片一一对应 */
+    @GetMapping("/market")
+    public List<Map<String, Object>> market() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        out.add(card("CLOUD CPU2", "amd", "山西1区", "CPU", 30, 80, 30, "50 GB", "",
+                11, 70, 300, 0.60, false));
+        out.add(card("CLOUD CPU4", "amd", "杭州1区", "CPU", 30, 120, 30, "50 GB", "",
+                14.5, 95, 360, 0.62, true));
+        out.add(card("CLOUD CPU3", "intel", "杭州1区", "CPU", 20, 80, 30, "50 GB", "2787",
+                13, 86, 340, 0.60, false));
+        out.add(card("CLOUD CPU", "intel", "海南", "CPU", 12, 42, 30, "50 GB", "1719",
+                11, 70, 300, 0.50, false));
+        out.add(card("CPU", "amd", "四川", "CPU", 40, 200, 30, "50 GB", "2102",
+                16, 120, 390, 0.70, false));
+        out.add(card("CPU", "intel", "杭州1区", "CPU", 18, 70, 30, "50 GB", "",
+                11, 75, 290, 0.50, true));
+        out.add(card("RTX 2080 Ti", "nvidia", "杭州1区", "GPU", 12, 58, 30, "50 GB", "",
+                16, 105, 410, 0.70, true));
+        out.add(card("Tesla T4", "nvidia", "上海2区", "GPU", 10, 58, 30, "50 GB", "1176",
+                11, 75, 308, 0.46, false));
+        out.add(card("RTX 3090", "nvidia", "四川", "GPU", 20, 100, 30, "50 GB", "",
+                23, 150, 580, 0.99, true));
+        out.add(card("RTX 3090", "nvidia", "浙江", "GPU", 18, 60, 30, "50 GB", "",
+                23, 150, 580, 0.99, true));
+        out.add(card("RTX 3090", "nvidia", "杭州1区", "GPU", 20, 80, 30, "50 GB", "",
+                23, 150, 580, 0.99, true));
+        out.add(card("RTX 3090", "nvidia", "山西1区", "GPU", 10, 28, 30, "50 GB", "",
+                21, 145, 570, 0.88, true));
+        out.add(card("RTX 3090 Lite", "nvidia", "浙江", "GPU", 12, 25, 30, "50 GB", "",
+                20, 120, 500, 0.88, true));
+        out.add(card("RTX 4090", "nvidia", "新疆", "GPU", 15, 100, 30, "50 GB", "",
+                35, 230, 880, 1.46, true));
+        out.add(card("RTX 4090", "nvidia", "海南", "GPU", 15, 100, 30, "50 GB", "",
+                35, 240, 930, 1.46, false));
+        out.add(card("RTX 4090", "nvidia", "福建", "GPU", 23, 58, 30, "50 GB", "",
+                33, 225, 850, 1.38, true));
+        out.add(card("RTX 4090", "nvidia", "山西1区", "GPU", 22, 60, 30, "50 GB", "",
+                33, 228, 908, 1.46, true));
+        out.add(card("RTX 4090 Lite", "nvidia", "新疆", "GPU", 13, 60, 30, "50 GB", "",
+                30, 210, 800, 1.28, false));
+        out.add(card("RTX 4090D", "nvidia", "河北1区", "GPU", 22, 100, 30, "50 GB", "",
+                29, 200, 800, 1.25, true));
+        out.add(card("RTX 4090D", "nvidia", "上海3区", "GPU", 20, 100, 30, "50 GB", "",
+                29, 200, 800, 1.25, true));
+        out.add(card("RTX 5090", "nvidia", "辽宁", "GPU", 18, 60, 30, "50 GB", "",
+                50, 350, 1350, 2.18, true));
+        out.add(card("RTX 5090", "nvidia", "安徽", "GPU", 18, 60, 30, "50 GB", "",
+                50, 350, 1350, 2.18, true));
+        out.add(card("RTX 5090", "nvidia", "四川2区", "GPU", 14, 60, 30, "50 GB", "",
+                57, 389, 1536, 2.38, true));
+        out.add(card("RTX 5090", "nvidia", "杭州1区", "GPU", 22, 58, 30, "50 GB", "",
+                57, 389, 1536, 2.38, true));
+        out.add(card("A100-PCIE-40GB", "nvidia", "福建2区", "GPU", 11, 90, 30, "50 GB", "",
+                46, 320, 1250, 1.98, true));
+        out.add(card("A100-SXM4-40GB", "nvidia", "江苏", "GPU", 30, 100, 30, "50 GB", "",
+                55, 370, 1400, 2.39, true));
+        out.add(card("RTX 4090-48G", "nvidia", "新疆", "GPU", 14, 90, 30, "50 GB", "",
+                47, 320, 1280, 2.08, true));
+        out.add(card("RTX 4090-48G", "nvidia", "杭州1区", "GPU", 22, 58, 30, "50 GB", "",
+                47, 320, 1280, 2.08, true));
+        out.add(card("RTX 4090-48G", "nvidia", "四川2区", "GPU", 14, 100, 30, "50 GB", "",
+                50, 350, 1350, 2.18, true));
+        out.add(card("RTX 4090-48G", "nvidia", "山西1区", "GPU", 22, 60, 30, "50 GB", "",
+                47, 320, 1280, 2.08, true));
+        out.add(card("L40S", "nvidia", "上海3区", "GPU", 20, 120, 30, "50 GB", "3121",
+                55, 378, 1500, 2.30, false));
+        out.add(card("L20", "nvidia", "上海3区", "GPU", 20, 100, 30, "50 GB", "",
+                51, 350, 1400, 2.18, true));
+        out.add(card("L20", "nvidia", "上海4区", "GPU", 14, 120, 30, "50 GB", "6186",
+                51, 350, 1400, 2.18, false));
+        out.add(card("RTX 6000D", "nvidia", "杭州1区", "GPU", 26, 110, 30, "50 GB", "",
+                135, 935, 3700, 5.80, true));
+        out.add(card("A800-NVLINK-80GB", "nvidia", "江苏", "GPU", 30, 120, 30, "50 GB", "",
+                160, 1100, 4388, 6.80, true));
+        out.add(card("H800", "nvidia", "浙江2区", "GPU", 22, 110, 30, "50 GB", "3545",
+                230, 1588, 6300, 9.80, false));
+        out.add(card("RTX 4080", "nvidia", "杭州1区", "GPU", 12, 68, 30, "50 GB", "",
+                31, 210, 800, 1.38, true));
+        return out;
+    }
+
     @GetMapping("/group")
     public List<Map<String, Object>> group() {
         List<Map<String, Object>> out = new ArrayList<>();
-        String epyc = "AMD EPYC 7513*2", xeon = "Intel Xeon Gold 6530*2";
-        out.add(groupItem("RTX5090", 32, 1280, "NVIDIA", "可用区 A", 8, 2, 16, 64, 480, epyc, "1TB NVMe"));
-        out.add(groupItem("RTX5090", 32, 1280, "NVIDIA", "可用区 B", 8, 5, 16, 64, 480, epyc, "1TB NVMe"));
-        out.add(groupItem("RTX4090", 24, 880, "NVIDIA", "可用区 A", 8, 3, 12, 48, 480, xeon, "1TB NVMe"));
-        out.add(groupItem("RTX4090", 24, 880, "NVIDIA", "可用区 B", 8, 6, 12, 48, 480, xeon, "1TB NVMe"));
-        out.add(groupItem("A100", 80, 3200, "NVIDIA", "可用区 B", 8, 1, 24, 128, 960, "AMD EPYC 7543*2", "1.92TB NVMe"));
-        out.add(groupItem("A100", 40, 2600, "NVIDIA", "可用区 A", 8, 4, 24, 128, 960, "AMD EPYC 7543*2", "1.92TB NVMe"));
-        out.add(groupItem("H800", 80, 3800, "NVIDIA", "可用区 B", 8, 2, 32, 192, 1920, xeon, "3.84TB NVMe"));
-        out.add(groupItem("L40S", 48, 1600, "NVIDIA", "可用区 A", 8, 7, 16, 96, 960, epyc, "960G NVMe"));
+        out.add(groupItem("RTX3090", 24, 550, "NVIDIA", "AMD 7513", "重庆", 8, 5, 3, 30, 30, "200GB (赠)", "1个月 (固)", "重邮"));
+        out.add(groupItem("RTX4090D", 24, 670, "NVIDIA", "Intel P-8136", "新疆", 8, 2, 7, 60, 30, "200GB (赠)", "1个月 (固)", "复旦"));
+        out.add(groupItem("RTX4090", 24, 800, "NVIDIA", "Intel 6530", "浙江", 8, 6, 7, 60, 30, "800GB (赠)", "1个月 (固)", "浙大"));
+        out.add(groupItem("RTX5090", 32, 1200, "NVIDIA", "Intel 6530", "新疆", 8, 2, 7, 60, 30, "800GB (赠)", "1个月 (固)", "新疆大学"));
+        out.add(groupItem("A100", 40, 1300, "NVIDIA", "Intel 6248R", "浙江", 8, 7, 5, 90, 30, "1500GB (赠)", "1个月 (固)", "浙大"));
+        out.add(groupItem("A100", 80, 3000, "NVIDIA", "Intel 8558P", "成都", 8, 3, 13, 90, 30, "3500GB (赠)", "1个月 (固)", "电子科大"));
+        out.add(groupItem("H20", 141, 3300, "NVIDIA", "Intel 8358P", "广东", 8, 4, 7, 250, 30, "3500GB (赠)", "1个月 (固)", "中山大学"));
+        out.add(groupItem("A800", 80, 2600, "NVIDIA", "Intel 6442Y", "成都", 8, 1, 6, 60, 30, "3500GB (赠)", "1个月 (固)", "电子科大"));
+        out.add(groupItem("H100", 80, 6400, "NVIDIA", "Intel 8468", "浙江", 8, 2, 11, 250, 30, "3500GB (赠)", "1个月 (固)", "浙大"));
         return out;
     }
 
     @GetMapping("/baremetal")
     public List<Map<String, Object>> baremetal() {
         List<Map<String, Object>> out = new ArrayList<>();
-        out.add(metal("RTX5090", "可用区 A", 10000, "32 GB GDDR7", "512 GB", "480 GB SSD *2",
-                "64 核", "3.84 TB NVMe SSD *2", "Intel Xeon Gold 6530 *2"));
-        out.add(metal("RTX5090", "可用区 B", 10000, "32 GB GDDR7", "512 GB", "480 GB SSD *2",
-                "64 核", "3.84 TB NVMe SSD *2", "Intel Xeon Gold 6530 *2"));
-        out.add(metal("A100", "可用区 B", 10000, "40 GB HBM2", "768 GB", "480 GB SSD *2",
-                "48 核", "7.68 TB SSD (1.92TB*4)", "Intel Xeon Gold 6248R *2"));
-        out.add(metal("RTX4090", "可用区 A", 6300, "24 GB GDDR6X", "512 GB", "960 GB SSD *2",
-                "64 核", "3.84 TB SATA SSD *2", "Intel Xeon Gold 6530 *2"));
+        out.add(metal("RTX3090", "重庆", 4200, "24*8 GB", "1 TB", "480G SSD", "48核", "1* 7.68TB NVMe", "AMD EPYC 7513*2"));
+        out.add(metal("RTX4090", "浙江", 6300, "24*8 GB", "512 GB", "960 GB SSD *2", "64核", "3.84 TB SATA SSD *2", "Intel Xeon Gold 6530*2"));
+        out.add(metal("RTX5090", "新疆", 10000, "32*8 GB", "512 GB", "480 GB SSD *2", "64核", "3.84 TB NVMe SSD *2", "Intel Xeon Gold 6530 *2"));
+        out.add(metal("A100", "浙江", 10000, "40*8 GB", "768 GB", "480 GB SSD *2", "48核", "7.68 TB SSD (1.92TB*4)", "Intel Xeon 6248R*2"));
+        out.add(metal("A100", "成都", 25000, "80*8 GB", "768 GB", "960 GB SSD *2", "112核", "15.36 TB SSD (7.68TB*2)", "Intel Xeon 8558P *2"));
+        out.add(metal("H20", "广东", 34000, "141*8 GB", "2 TB", "960 GB SSD *2", "64核", "15.36 TB NVMe SSD (3.84TB*4)", "Intel Xeon 8358P *2"));
+        out.add(metal("A800", "成都", 20000, "80*8 GB", "512 GB", "960 GB SSD *2", "48核", "15.36 TB NVMe SSD (3.84TB*4)", "Intel Xeon 6442Y *2"));
+        out.add(metal("H100", "浙江", 55000, "80*8 GB", "2 TB", "960 GB SSD *2", "96核", "15.36 TB NVMe SSD (7.68TB*2)", "Intel Xeon 8468 *2"));
+        out.add(metal("H200", "成都", 60000, "150*8 GB", "2 TB", "960 GB SSD *2", "112核", "7.68 TB SSD (3.84TB*2)", "Intel Xeon 8558 *2"));
+        out.add(metal("B200", "新疆", 95000, "192*8 GB", "2.25 TB", "1.92 TB SSD *2", "144核", "15.36 TB NVMe SSD (7.68TB*2)", "Intel Xeon 6960P*2"));
+        out.add(metal("Ascend 910B", "成都", 22000, "32*8 GB", "2 TB", "480 GB SATA SSD *2", "192核", "7.68 TB SSD (3.84TB*2)", "鲲鹏920-5250*4"));
         return out;
     }
 
-    private Map<String, Object> groupItem(String model, int vram, int price, String brand, String zone,
-                                          int total, int done, int vcpu, int ram, int disk,
-                                          String cpu, String dataDisk) {
+    private Map<String, Object> card(String model, String brand, String zone, String kind, int vcpu, int ram,
+                                     int sysDisk, String dataDisk, String dataExpand,
+                                     double day, double week, double month, double hourly, boolean soldOut) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("model", model);
+        m.put("brand", brand);
+        m.put("zone", zone);
+        m.put("kind", kind);
+        m.put("alloc", "1 x " + ("CPU".equals(kind) ? "CPU" : "GPU") + " 分配");
+        m.put("vcpu", vcpu);
+        m.put("ram", ram);
+        m.put("sysDisk", sysDisk);
+        m.put("dataDisk", dataDisk);
+        m.put("dataExpand", dataExpand == null || dataExpand.isBlank() ? "" : "可扩容 " + dataExpand + " GB");
+        m.put("vram", VRAM.getOrDefault(model, 0));
+        m.put("cpuBrand", "GPU".equals(kind) ? "intel" : "");
+        m.put("day", day);
+        m.put("week", week);
+        m.put("month", month);
+        m.put("hourly", hourly);
+        m.put("soldOut", soldOut);
+        return m;
+    }
+
+    private Map<String, Object> groupItem(String model, int vram, int price, String brand, String cpu,
+                                          String zone, int total, int done, int vcpu, int ram, int disk,
+                                          String dataDisk, String duration, String school) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("model", model);
         m.put("vram", vram);
         m.put("price", price);
         m.put("brand", brand);
+        m.put("cpu", cpu);
         m.put("zone", zone);
         m.put("total", total);
         m.put("done", done);
         m.put("vcpu", vcpu);
         m.put("ram", ram);
         m.put("disk", disk);
-        m.put("cpu", cpu);
         m.put("dataDisk", dataDisk);
+        m.put("duration", duration);
+        m.put("school", school);
         return m;
     }
 

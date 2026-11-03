@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>算力市场 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v10">
+<link rel="stylesheet" href="/app.css?v12">
+<link rel="stylesheet" href="/ref.css?v12">
 </head>
 <body>
 
@@ -53,45 +54,32 @@
 
   <div class="msg" id="msg"></div>
 
-  <!-- ================= 算力市场 ================= -->
+  <!-- ================= 算力市场（容器云） ================= -->
   <section id="view-market">
-<div class="page-head">
-      <div class="page-title">容器云实例</div>
-      <div class="page-desc">探索丰富的算力资源，秒级启动，预装主流框架。根据您的需求灵活选择，支持按量、包日、包周及包月计费，选择最适合您的解决方案。</div>
+    <h1 class="rm-title">容器云实例</h1>
+    <p class="rm-desc">探索丰富的算力资源，秒级启动，预装主流框架。根据您的需求灵活选择，支持按量、包日、包周及包月计费，选择最适合您需求的解决方案。</p>
+
+    <div class="rm-filter">
+      <div class="rm-frow"><div class="rm-flabel">计费方式</div><div class="rm-opts" id="fBilling"></div></div>
+      <div class="rm-frow"><div class="rm-flabel">选择地区</div><div class="rm-opts" id="fZone"></div></div>
+      <div class="rm-frow"><div class="rm-flabel">GPU型号</div><div class="rm-opts" id="fModel"></div></div>
+      <div class="rm-frow"><div class="rm-flabel">GPU数量</div><div class="rm-opts" id="fQty"></div></div>
     </div>
 
-    <div class="filter-card">
-      <div class="filter-row">
-        <div class="filter-label">计费方式</div>
-        <div class="opts" id="fBilling"></div>
+    <div class="rm-toolbar">
+      <div class="rm-tool-left">
+        <span class="rm-icon" title="列表">▤</span>
+        <span class="rm-pill on" id="sortDefault" onclick="setSort('default')">✦ 综合</span>
+        <span class="rm-pill" id="sortPrice" onclick="toggleSortPrice()">↑ 升序</span>
+        <span class="rm-pill" id="onlyStock" onclick="toggleStock()">只看有货</span>
       </div>
-      <div class="filter-row">
-        <div class="filter-label">选择地区</div>
-        <div class="opts" id="fZone"></div>
-      </div>
-      <div class="filter-row">
-        <div class="filter-label">GPU 型号</div>
-        <div class="opts" id="fModel"></div>
-      </div>
-      <div class="filter-row">
-        <div class="filter-label">GPU 数量</div>
-        <div class="opts" id="fQty"></div>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <div class="tool-left">
-        <span class="tool-pill plain" style="padding:0 4px">▦</span>
-        <span class="tool-pill on" id="sortDefault" onclick="setSort('default')">综合</span>
-        <span class="tool-pill" id="sortPrice" onclick="toggleSortPrice()">升序 <span id="sortArrow">↑</span></span>
-        <span class="tool-pill" id="onlyStock" onclick="toggleStock()">只看有货</span>
-      </div>
-      <div class="tool-right">
-        <span class="icon-btn" title="刷新" onclick="loadMarket()">↻</span>
+      <div class="rm-tool-right">
+        <span class="rm-icon" title="刷新" onclick="loadMarket()">↻</span>
+        <span class="rm-icon" title="网格">▦</span>
       </div>
     </div>
 
-    <div class="xlist" id="productGrid"></div>
+    <div class="rm-grid" id="productGrid"></div>
   </section>
 
   <!-- ================= 我的实例 ================= -->
@@ -222,9 +210,9 @@ document.addEventListener('click', () => $('#umPop').classList.remove('on'));
 
 /* ---------------- 状态 ---------------- */
 const S = {
-  billing: 'on', zone: 'all', model: 'all', qty: 1,
+  billing: 'on', zone: '全部', model: '全部', qty: 1,
   sort: 'default', priceAsc: true, onlyStock: false, view: 'grid',
-  skus: [], me: {}, tenants: [], overview: {}
+  skus: [], cards: [], me: {}, tenants: [], overview: {}
 };
 
 /* 尚未接入硬件的型号，只做展示，不产生订单 */
@@ -254,45 +242,54 @@ function route() {
 function go(v) { location.hash = v; }
 window.addEventListener('hashchange', route);
 
-/* ---------------- 市场 ---------------- */
+/* ---------------- 市场（容器云） ---------------- */
 const BILLING = [
-  { k: 'on', t: '按量计费', ok: true },
-  { k: 'day', t: '包日', ok: false },
-  { k: 'week', t: '包周', ok: false },
-  { k: 'month', t: '包月', ok: false },
-  { k: 'night', t: '包夜', ok: false }
+  { k: 'on', t: '按量计费' },
+  { k: 'day', t: '包日' },
+  { k: 'week', t: '包周' },
+  { k: 'month', t: '包月' },
+  { k: 'night', t: '包夜', night: true }
 ];
+const ZONES = ['全部', '河北1区', '福建2区', '上海4区', '浙江', '杭州1区', '上海3区', '上海2区', '山西1区',
+  '江苏', '浙江2区', '四川', '海南', '四川2区', '新疆', '辽宁', '福建', '安徽'];
+const MODELS = ['全部', 'CLOUD CPU2', 'CLOUD CPU4', 'CLOUD CPU', 'CLOUD CPU3', 'CPU', 'RTX 2080 Ti',
+  'Tesla T4', 'RTX 3090', 'RTX 3090 Lite', 'RTX 4090', 'RTX 4090 Lite', 'RTX 4090D', 'RTX 5090',
+  'A100-PCIE-40GB', 'A100-SXM4-40GB', 'RTX 4090-48G', 'L40S', 'L20', 'RTX 6000D', 'A800-NVLINK-80GB',
+  'H800', 'RTX 4080'];
+
+const PIN = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+const BRAND_IMG = { amd: '/img/amd.svg', intel: '/img/intel.svg', nvidia: '/img/nvidia.svg' };
+
 function renderFilters() {
   $('#fBilling').innerHTML = BILLING.map(b =>
-    `<span class="opt ${S.billing === b.k ? 'on' : ''} ${b.ok ? '' : 'dim'}"
-      ${b.ok ? `onclick="setBilling('${b.k}')"` : 'title="规划中"'}>${b.t}</span>`).join('');
+    `<button class="rm-opt ${S.billing === b.k ? 'on' : ''} ${b.night ? 'night' : ''}"
+      onclick="setBilling('${b.k}')">${b.t}</button>`).join('');
 
-  const zones = ['all', 'A', 'B'];
-  $('#fZone').innerHTML = zones.map(z =>
-    `<span class="opt ${S.zone === z ? 'on' : ''}" onclick="setZone('${z}')">${z === 'all' ? '全部' : '可用区 ' + z}</span>`).join('');
+  $('#fZone').innerHTML = ZONES.map(z =>
+    `<button class="rm-opt ${S.zone === z ? 'on' : ''}" onclick="setZone('${z}')">${z}</button>`).join('');
 
-  const models = ['all', 'RTX 5090', 'A100', 'H800', 'L40S'];
-  $('#fModel').innerHTML = models.map(m =>
-    `<span class="opt ${S.model === m ? 'on' : ''}" onclick="setModel('${m}')">${m === 'all' ? '全部' : m}</span>`).join('');
+  $('#fModel').innerHTML = MODELS.map(m =>
+    `<button class="rm-opt ${S.model === m ? 'on' : ''}" onclick="setModel('${m}')">${m}</button>`).join('');
 
   const qtys = [1, 2, 4, 8];
-  $('#fQty').innerHTML = qtys.map(q => {
-    const ok = q === 1 || q === 8;
-    return `<span class="opt ${S.qty === q ? 'on' : ''} ${ok ? '' : 'dim'}"
-      ${ok ? `onclick="setQty(${q})"` : 'title="多卡规格规划中"'}>${q}</span>`;
-  }).join('');
+  $('#fQty').innerHTML = qtys.map(q =>
+    `<button class="rm-opt ${S.qty === q ? 'on' : ''}" onclick="setQty(${q})">${q}</button>`).join('');
 }
-function setBilling(k) { S.billing = k; renderFilters(); renderProducts(); }
+function setBilling(k) { S.billing = k; renderFilters(); }
 function setZone(z) { S.zone = z; renderFilters(); renderProducts(); }
 function setModel(m) { S.model = m; renderFilters(); renderProducts(); }
 function setQty(q) { S.qty = q; renderFilters(); renderProducts(); }
-function setSort(s) { S.sort = s; renderProducts(); }
-function toggleSortPrice() {
-  S.sort = 'price'; S.priceAsc = !S.priceAsc;
-  $('#sortArrow').textContent = S.priceAsc ? '↑' : '↓';
-  $('#sortPrice').classList.toggle('on', true);
-  $('#sortDefault').classList.remove('on');
+function setSort(s) {
+  S.sort = s;
+  $('#sortDefault').classList.toggle('on', s === 'default');
+  $('#sortPrice').classList.toggle('on', s === 'price');
   renderProducts();
+}
+function toggleSortPrice() {
+  if (S.sort === 'price') S.priceAsc = !S.priceAsc;
+  S.sort = 'price';
+  $('#sortPrice').innerHTML = (S.priceAsc ? '↑ 升序' : '↓ 降序');
+  setSort('price');
 }
 function toggleStock() {
   S.onlyStock = !S.onlyStock;
@@ -300,101 +297,74 @@ function toggleStock() {
   renderProducts();
 }
 
-/* NVIDIA 品牌块（灰底 + 绿色眼睛 + 字标） */
-const NV_LOGO = `<svg width="48" height="28" viewBox="0 0 48 28" role="img" aria-label="NVIDIA">
-  <path d="M24 3c-8.4 0-14.6 4.3-17.6 9.4C9.4 17.5 15.6 21.8 24 21.8s14.6-4.3 17.6-9.4C38.6 7.3 32.4 3 24 3Zm0 2.6c6 0 10.7 2.7 13.4 6.8-2.7 4.1-7.4 6.8-13.4 6.8S13.3 16.5 10.6 12.4C13.3 8.3 18 5.6 24 5.6Z" fill="#76b900"/>
-  <circle cx="24" cy="12.4" r="4.1" fill="#76b900"/>
-  <text x="24" y="27" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-        font-size="7" font-weight="700" fill="#76b900" letter-spacing=".3">NVIDIA</text>
-</svg>`;
-const PIN_IC = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
-  <path d="M6 10.6S2.4 7.6 2.4 4.9a3.6 3.6 0 1 1 7.2 0c0 2.7-3.6 5.7-3.6 5.7Z"/>
-  <circle cx="6" cy="4.9" r="1.1"/></svg>`;
-
-function specCell(cls, icon, label, value) {
-  return `<div class="xc-spec ${cls}"><span class="i">${icon}</span>${label} <b>${value}</b></div>`;
-}
-
-function productCard(p) {
-  const soon = !!p.soon;
-  const isWhole = Number(p.gpuCount) === 8;
-  const hourly = Number(p.unitPrice) * (isWhole ? 8 : 1);
-  const month = Math.round(hourly * 720 * 0.6);           // 月租：按 720h 打 6 折估算
-  const zone = p.zone || (isWhole ? '可用区 B' : '可用区 A');
-  const mem = isWhole ? '128 GB' : '32 GB';
-  const stockTxt = soon ? '硬件待接入'
-    : (isWhole ? (p.stock >= 8 ? '可开通 ' + Math.floor(p.stock / 8) + ' 台' : '需 8 张同节点卡')
-               : (p.stock > 0 ? '可开通 ' + p.stock + ' 张' : '已售罄'));
-  const btn = soon
-    ? `<button class="xc-btn" onclick="demand('${p.name}')">需求提交</button>`
-    : (p.stock > 0
-        ? `<button class="xc-btn" onclick="openBuy('${p.code}')">立即购买</button>`
-        : `<button class="xc-btn dis" disabled>暂无库存</button>`);
-
-  return `<div class="xcard">
-    <div class="xc-brand">${NV_LOGO}</div>
-    <div class="xc-main">
-      <div class="xc-head">
-        <span class="xc-title">${p.name}</span>
-        <span class="xc-zone">${PIN_IC}${zone}</span>
-        <span style="font-size:10px;color:#9aa2b1">${stockTxt}</span>
-      </div>
-      <div class="xc-specs">
-        ${specCell('pink', '▤', '显存', isWhole ? '8 × 32 GB' : `${p.memGb} GB`)}
-        ${specCell('purple', '▦', '核心数', p.cores || (isWhole ? '128 核' : '16 核'))}
-        ${specCell('violet', '▣', 'CPU', p.cpu || 'AMD EPYC 7513*2')}
-        ${specCell('blue', '▥', '内存', p.ram || mem)}
-        ${specCell('amber', '▧', '系统盘', p.sysDisk || (isWhole ? '480G SSD' : '50G SSD'))}
-        ${specCell('blue', '◫', '数据盘', p.dataDisk || (isWhole ? '3.84TB NVMe' : '200G NVMe'))}
+function marketCard(d) {
+  const sold = !!d.soldOut;
+  const num = v => (Math.round(Number(v) * 10) / 10).toLocaleString('en-US');
+  const title = d.vram ? `${d.model} / ${d.vram} GB` : d.model;
+  return `<div class="rm-card">
+    ${d.cpuBrand ? `<span class="rm-cpubadge ${d.cpuBrand}">${d.cpuBrand}</span>` : ''}
+    <div class="rm-head">
+      <div class="rm-brand"><img src="${BRAND_IMG[d.brand] || BRAND_IMG.nvidia}" alt="${d.brand}"></div>
+      <div class="rm-hinfo">
+        <h3 class="rm-name">${title}</h3>
+        <span class="rm-zone">${PIN}${d.zone}</span>
       </div>
     </div>
-    <div class="xc-buy">
-      <div class="lb">月租 / 台</div>
-      <div class="xc-price">¥${month.toLocaleString('en-US')}</div>
-      ${btn}
+    <div class="rm-alloc"><span>${d.alloc}</span><i></i></div>
+    <div class="rm-specs">
+      <div><span>vCPU</span><b>${d.vcpu} 核心</b></div>
+      <div class="r"><span>内存</span><b>${d.ram} GB</b></div>
+      <div><span>系统盘</span><b>${d.sysDisk} GB</b></div>
+      <div class="r"><span>数据盘</span><b>${d.dataDisk}${d.dataExpand ? ' · ' + d.dataExpand : ''}</b></div>
+    </div>
+    <div class="rm-foot">
+      <div class="rm-price3">
+        <div><em>包日</em><b>¥${num(d.day)}</b></div>
+        <div><em>包周</em><b>¥${num(d.week)}</b></div>
+        <div><em>包月</em><b>¥${num(d.month)}</b></div>
+      </div>
+      <div class="rm-hr">
+        <em>按量</em>
+        <div><span class="p">¥${num(d.hourly)}</span><span class="u">/时</span></div>
+      </div>
+      <button class="rm-buy ${sold ? 'warn' : ''}" onclick="createInstance('${d.model}', ${sold})">
+        ${sold ? '到货<br>提醒' : '立即<br>创建'}
+      </button>
     </div>
   </div>`;
 }
 
-function demand(model) {
-  alert('演示环境：已记录「' + model + '」采购需求。\n真实流程会创建工单并通知商务，当前仅展示交互。');
-}
-
-function periodTip(name) {
-  toast(`${name}计费开发中，当前仅支持按量计费（按秒结算）`, false);
-}
-
 function renderProducts() {
-  let list = S.skus.map(s => ({
-    code: s.code, name: s.model || s.name, model: s.model || 'RTX 5090',
-    memGb: s.memGb, unitPrice: s.unitPrice, stock: s.stock, gpuCount: s.gpuCount,
-    zone: s.zone, cores: s.cores, cpu: s.cpu, ram: s.ram,
-    sysDisk: s.sysDisk, dataDisk: s.dataDisk
-  }));
-  if (S.qty === 1) list = list.concat(SOON);
-
-  if (S.model !== 'all') list = list.filter(p => p.model === S.model);
-  if (S.onlyStock) list = list.filter(p => !p.soon && p.stock > 0);
+  let list = S.cards.slice();
+  if (S.model !== '全部') list = list.filter(d => d.model === S.model);
+  if (S.zone !== '全部') list = list.filter(d => d.zone === S.zone);
+  if (S.onlyStock) list = list.filter(d => !d.soldOut);
   if (S.sort === 'price') {
-    list.sort((a, b) => {
-      const av = a.soon ? 1e9 : Number(a.unitPrice);
-      const bv = b.soon ? 1e9 : Number(b.unitPrice);
-      return S.priceAsc ? av - bv : bv - av;
-    });
+    list.sort((a, b) => S.priceAsc ? a.hourly - b.hourly : b.hourly - a.hourly);
   }
   $('#productGrid').innerHTML = list.length
-    ? list.map(productCard).join('')
-    : `<div class="card panel"><div class="empty">当前筛选条件下没有可用规格，换个条件试试</div></div>`;
+    ? list.map(marketCard).join('')
+    : `<div class="card panel" style="grid-column:1/-1"><div class="empty">当前筛选条件下没有可用规格，换个条件试试</div></div>`;
+}
+
+/* 真实库存只对 RTX 5090 生效，其余机型走预约 */
+function createInstance(model, soldOut) {
+  if (soldOut) {
+    toast('已登记「' + model + '」到货提醒，有货后会通知你', true);
+    return;
+  }
+  if (model.indexOf('RTX 5090') === 0) {
+    openBuy('single');
+    return;
+  }
+  toast('「' + model + '」当前为演示机型，可提交需求后由商务开通', true);
 }
 
 async function loadMarket() {
   try {
-    const [skus, tenants] = await Promise.all([api('/skus'), api('/tenants')]);
+    const [cards, skus] = await Promise.all([api('/catalog/market'), api('/skus')]);
+    S.cards = cards;
     S.skus = skus;
-    S.tenants = U.tenantId ? tenants.filter(t => t.id === U.tenantId) : tenants;
-    S.me = S.tenants.find(t => t.id === TENANT) || S.tenants[0] || {};
-    if (S.me.id) TENANT = S.me.id;
-    $('#umTenant').textContent = S.me.name || '未绑定租户';
     renderFilters();
     renderProducts();
   } catch (e) { toast(e.message, false); }
@@ -562,6 +532,6 @@ async function submitPwd() {
 /* ---------------- 启动 ---------------- */
 route();
 </script>
-<script src="/nav.js?v10"></script>
+<script src="/nav.js?v12"></script>
 </body>
 </html>

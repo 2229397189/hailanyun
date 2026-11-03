@@ -715,9 +715,12 @@ label{display:block;font-size:11.5px;color:var(--ink2);margin-bottom:5px}
 .xc-main{flex:1;min-width:0}
 .xc-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .xc-title{font-size:19px;font-weight:750;letter-spacing:-.01em;color:#111827;line-height:1.2}
-.xc-zone{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 7px;border-radius:5px;
-  font-size:10.5px;color:#e0459a;background:#fdf2f8;border:1px solid #fbd9ea}
-.xc-zone.green{color:#0f9d6e;background:#eefaf4;border-color:#c9f0e0}
+.xc-zone{display:inline-flex;align-items:center;gap:4px;height:21px;padding:0 9px;border-radius:6px;
+  font-size:10.5px;font-weight:700;color:#7e22ce;background:#faf5ff;border:1px solid #e9d5ff}
+.xc-zone.z-green{color:#15803d;background:#f0fdf4;border-color:#bbf7d0}
+.xc-zone.z-yellow{color:#a16207;background:#fefce8;border-color:#fef08a}
+.xc-zone.z-blue{color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}
+.xc-zone.z-indigo{color:#4338ca;background:#eef2ff;border-color:#c7d2fe}
 .xc-zone svg{width:9px;height:9px;flex:0 0 9px}
 .xc-specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:11px}
 .xc-spec{display:flex;align-items:center;gap:6px;height:30px;padding:0 9px;border-radius:6px;

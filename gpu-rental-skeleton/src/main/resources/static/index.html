@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TokenArk 创元方舟 · 弹性 GPU 算力云</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v10">
+<link rel="stylesheet" href="/app.css?v12">
+<link rel="stylesheet" href="/ref.css?v12">
 </head>
 <body>
 
@@ -38,38 +39,55 @@
   </div>
 </header>
 
-<section class="hero grid-bg">
-  <div class="inner">
-    <div>
-      <span class="hero-badge"><i></i>算力资源池充足 · <b id="statPool">--</b> 张 GPU 在线 · <b id="statTime">--:--</b> 更新</span>
-      <h1 style="font-size:52px;line-height:1.14">释放科研想象力<br>让算力<span class="grad">川流不息</span></h1>
-      <p class="lead">专为高校科研与开发者打造的弹性 GPU 云平台，从"按量训练"到"弹性推理"，我们为您提供覆盖 AI 模型全生命周期的算力服务。</p>
-      <div class="hero-actions">
-        <a class="btn-primary" href="/login.html">立即开始使用</a>
-        <a class="btn-ghost" href="#pricing">查看价格表</a>
+<section class="rh-hero">
+  <div class="rh-wrap">
+    <div class="rh-left">
+      <span class="rh-badge"><i class="dot"></i>算力资源池充足</span>
+      <h1 class="rh-title">
+        <span>释放科研想象力</span>
+        <span>让算力<span class="g-blue">川流</span><span class="g-pink">不息</span></span>
+      </h1>
+      <p class="rh-lead">专为高校科研与开发者打造的弹性 GPU 云平台，从“按量训练”到“弹性推理”，我们为您提供覆盖 AI 模型全生命周期的算力服务。</p>
+      <div class="rh-actions">
+        <a class="rh-btn-p" href="/login.html">立即开始使用</a>
+        <a class="rh-btn-g" href="#pricing">查看价格表</a>
       </div>
     </div>
 
-    <div class="hero-visual">
-      <span class="orb a"></span><span class="orb b"></span>
-      <span class="chip tf"><b>◆</b> TensorFlow</span>
-      <span class="chip mm"><b>✦</b> 多模态推理</span>
-      <span class="chip data"><b>▤</b> 数据预处理</span>
-      <span class="chip torch"><b>●</b> PyTorch</span>
+    <div class="rh-visual">
+      <span class="rh-ring r1"></span>
+      <span class="rh-ring r2"></span>
+      <span class="rh-glow"></span>
+      <span class="rh-tag t1"><b style="color:#eab308">⚡</b> TensorFlow</span>
+      <span class="rh-tag t2">✨ 多模态推理</span>
+      <span class="rh-tag t3">📊 数据预处理</span>
+      <span class="rh-tag t4"><b style="color:#3b82f6">🐍</b> PyTorch</span>
 
-      <div class="float-card">
-        <div class="dots"><i></i><i></i><i></i></div>
-        <div class="searching"><i></i>正在搜索...</div>
-        <div style="width:64px;height:64px;border-radius:16px;margin:8px auto 10px;background:#76b900;
-             display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;
-             letter-spacing:.02em;box-shadow:0 10px 24px -10px rgba(118,185,0,.7)">NVIDIA</div>
-        <div class="fc-title">RTX 5090</div>
-        <div class="fc-spec">16 核 · 64 GB 内存 · 32 GB 显存</div>
-        <div class="fc-price">
-          <span>预估价格</span>
-          <b>¥<span id="heroPrice">2.80</span> <small>/ 小时</small></b>
+      <div class="rh-flip" id="rhFlip">
+        <div class="rh-flipper">
+          <div class="rh-front">
+            <div class="rh-cardbar">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span class="searching"><i></i><em id="rhState" style="font-style:normal">正在搜索...</em></span>
+            </div>
+            <div class="rh-cardbody">
+              <div class="rh-logo"><img id="rhLogo" src="/img/amd.svg" alt="AMD"></div>
+              <h3 id="rhModel">CLOUD CPU4</h3>
+              <p id="rhSpec">30 核心 · 120 GB 内存</p>
+              <div class="rh-pricebox">
+                <span>预估价格</span>
+                <div>¥ <b id="rhPrice">0.62</b> <i>/小时</i></div>
+              </div>
+            </div>
+            <div class="rh-lock" onclick="rhLock()">👆 点击锁定配置</div>
+          </div>
+          <div class="rh-back">
+            <div class="ok">✓</div>
+            <h3>配置已锁定</h3>
+            <button onclick="location.href='/login.html'">立即创建实例</button>
+            <a href="#" onclick="rhUnlock();return false">重新选择</a>
+          </div>
         </div>
-        <div class="fc-tip">点击锁定配置</div>
       </div>
     </div>
   </div>
@@ -93,8 +111,8 @@
         </svg>
       </div>
       <div class="type-title">容器云实例</div>
-      <div class="type-desc">无需配置环境，秒级启动，适合 JupyterLab 直连、作业提交与论文复现。</div>
-      <div class="spec-box"><span class="k">RTX5090-32G</span><span class="p">¥2.80<small> / 卡 · 时</small></span></div>
+      <div class="type-desc">无需配置环境，秒级启动，适合 JupyterLab 直连，作业提交与论文复现。</div>
+      <div class="spec-box"><span class="k">RTX4090-24G</span><span class="p">¥1.08<small> /小时</small></span></div>
       <a class="type-btn line" href="/portal.html" style="text-decoration:none">立即创建</a>
     </div>
 
@@ -107,9 +125,9 @@
           <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
       </div>
-      <div class="type-title">拼团卡 · 团购</div>
-      <div class="type-desc">多人团购一整机，显存共享或切分，大幅降低大显存卡使用门槛。</div>
-      <div class="spec-box"><span class="k">RTX5090-32G</span><span class="p">¥1,280<small> / 月 · 卡</small></span></div>
+      <div class="type-title">拼租卡 · 团购</div>
+      <div class="type-desc">多人团购一整机，显存共享或切分。大幅降低大显存卡使用门槛。</div>
+      <div class="spec-box"><span class="k">RTX4090-24G</span><span class="p">¥670<small> /月·卡</small></span></div>
       <a class="type-btn btn-primary" href="/group.html" style="text-decoration:none">去拼团</a>
     </div>
 
@@ -123,7 +141,7 @@
       </div>
       <div class="type-title">B端裸金属</div>
       <div class="type-desc">无虚拟化损耗，整机独占，提供极致性能，适合长时间大规模训练。</div>
-      <div class="spec-box"><span class="k">RTX5090 × 8 整机</span><span class="p">¥5,500<small> / 月</small></span></div>
+      <div class="spec-box"><span class="k">RTX4090-24G</span><span class="p">¥5500<small>/月</small></span></div>
       <a class="type-btn line" href="/baremetal.html" style="text-decoration:none">查看配置</a>
     </div>
   </div>
@@ -256,7 +274,7 @@
       <a href="/market.html">算力市场</a><a href="/group.html">拼团</a>
       <a href="/baremetal.html">裸金属</a><a href="/about.html">关于我们</a>
     </div>
-    <div>© 2026 TokenArk · 演示环境</div>
+    <div>© 2026 TokenArk · 演示环境 · 卡池 <b id="statPool">--</b> · <span id="statTime">--:--</span> 更新</div>
   </div>
 </footer>
 
@@ -285,14 +303,56 @@
       document.getElementById('statPool').textContent = st.freeGpus + ' / ' + st.totalGpus;
       document.getElementById('statTime').textContent = st.serverTime || '--:--';
     }
-    if (d.models && d.models[0]) {
-      document.getElementById('heroPrice').textContent = Number(d.models[0].hourly).toFixed(2);
-    }
   } catch (e) {
     console.error('首页数据加载失败', e);
   }
 })();
 </script>
-<script src="/nav.js?v10"></script>
+<script>
+/* Hero 翻转卡：正面机型轮换 + 3D 翻转，对应参考站「正在搜索 / 配置已锁定」 */
+(function () {
+  var configs = [
+    { logo: '/img/amd.svg',   alt: 'AMD',    model: 'CLOUD CPU4', spec: '30 核心 · 120 GB 内存', price: '0.62' },
+    { logo: '/img/nvidia.svg',alt: 'NVIDIA', model: 'RTX 4090D',  spec: '22 核心 · 100 GB 内存 · 24G 显存', price: '1.25' },
+    { logo: '/img/intel.svg', alt: 'Intel',  model: 'CLOUD CPU3', spec: '20 核心 · 80 GB 内存', price: '0.60' },
+    { logo: '/img/nvidia.svg',alt: 'NVIDIA', model: 'RTX 5090',   spec: '32 核心 · 160 GB 内存 · 32G 显存', price: '2.80' }
+  ];
+  var i = 0, flip = document.getElementById('rhFlip'), busy = false;
+  var logo = document.getElementById('rhLogo'), model = document.getElementById('rhModel');
+  var spec = document.getElementById('rhSpec'), price = document.getElementById('rhPrice');
+
+  function apply(c) {
+    logo.src = c.logo; logo.alt = c.alt;
+    model.textContent = c.model;
+    spec.textContent = c.spec;
+    price.textContent = c.price;
+  }
+
+  window.rhLock = function () {
+    if (busy) return;
+    busy = true;
+    flip.classList.add('flipped');
+    setTimeout(function () { busy = false; }, 1000);
+  };
+  window.rhUnlock = function () {
+    flip.classList.remove('flipped');
+  };
+
+  setInterval(function () {
+    if (busy) return;
+    busy = true;
+    flip.classList.add('flipped');
+    setTimeout(function () {
+      i = (i + 1) % configs.length;
+      apply(configs[i]);
+    }, 900);
+    setTimeout(function () {
+      flip.classList.remove('flipped');
+      busy = false;
+    }, 3200);
+  }, 7000);
+})();
+</script>
+<script src="/nav.js?v12"></script>
 </body>
 </html>

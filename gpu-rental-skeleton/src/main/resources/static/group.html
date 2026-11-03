@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>多人拼团 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v10">
+<link rel="stylesheet" href="/app.css?v12">
+<link rel="stylesheet" href="/ref.css?v12">
 </head>
 <body>
 
@@ -38,54 +39,52 @@
   </div>
 </header>
 
-<main class="grid-bg">
-  <div class="wrap" style="padding:44px 24px 20px;text-align:center">
-    <div class="h1-xl" style="font-size:44px">多人拼团 <span class="grad-text">共享算力</span></div>
-    <div class="lead-2" style="margin:14px auto 0;text-align:center">
-      针对大显存需求（如模型微调、推理）推出拼团服务。<br>
-      一台服务器多人共享显存，资源隔离，价格更优。
-    </div>
-  </div>
+<main>
+  <section class="rg-hero">
+    <h1 class="rg-title">多人拼团 <em>共享算力</em></h1>
+    <p class="rg-sub">针对大显存需求（如模型微调、推理）推出拼租服务。<br>
+      一台服务器多人共享显存，资源隔离，价格更优。</p>
 
-  <div class="wrap" style="padding-bottom:26px">
-    <div class="steps">
-      <div class="step"><div class="n">1</div><b>选择配置</b><span>挑选合适的 GPU 型号</span></div>
-      <div class="step"><div class="n">2</div><b>提交信息</b><span>支付拼团预付款</span></div>
-      <div class="step"><div class="n">3</div><b>等待成团</b><span>邀请好友或等待其他同学</span></div>
-      <div class="step"><div class="n">4</div><b>拼团成功</b><span>获取机器信息</span></div>
-    </div>
-  </div>
-
-  <div class="wrap" style="padding-bottom:60px">
-    <div class="filter-card">
-      <div class="filter-row">
-        <div class="filter-label">GPU 型号</div>
-        <div class="opts" id="fModel"></div>
-      </div>
-      <div class="filter-row">
-        <div class="filter-label">显存大小</div>
-        <div class="opts" id="fVram"></div>
-      </div>
-      <div class="filter-row">
-        <div class="filter-label">地区</div>
-        <div class="opts" id="fZone"></div>
-      </div>
+    <div class="rg-steps">
+      <div class="rg-step"><div class="n">1</div><b>选择配置</b><span>挑选合适的 GPU 型号</span><i class="arw">›</i></div>
+      <div class="rg-step"><div class="n">2</div><b>提交信息</b><span>支付拼团预付款</span><i class="arw">›</i></div>
+      <div class="rg-step"><div class="n">3</div><b>等待成团</b><span>邀请好友或等待其他同学</span><i class="arw">›</i></div>
+      <div class="rg-step"><div class="n">✓</div><b>拼团成功</b><span>获取机器信息</span><i class="arw">›</i></div>
     </div>
 
-    <div class="toolbar">
-      <div class="tool-left"><span class="hint">共 <b id="cnt">0</b> 个拼团中</span></div>
-      <div class="tool-right">
-        <span class="hint">价格排序</span>
-        <select id="sort" style="width:110px;height:32px;font-size:12px" onchange="render()">
+    <div class="rg-filter">
+      <div class="rm-frow"><div class="rm-flabel">GPU型号</div><div class="rm-opts" id="fModel"></div></div>
+      <div class="rm-frow"><div class="rm-flabel">显存大小</div><div class="rm-opts" id="fVram"></div></div>
+      <div class="rm-frow"><div class="rm-flabel">地区</div><div class="rm-opts" id="fZone"></div></div>
+    </div>
+
+    <div class="rg-bar">
+      <span class="rg-reset" onclick="resetFilter()">↻ 重置筛选</span>
+      <span class="rg-sort">价格排序
+        <select id="sort" onchange="render()">
           <option value="default">默认</option>
           <option value="asc">从低到高</option>
           <option value="desc">从高到低</option>
         </select>
-      </div>
+      </span>
     </div>
 
-    <div class="xlist" id="grid"></div>
-  </div>
+    <div class="rg-grid" id="grid"></div>
+  </section>
+
+  <section class="rg-faq">
+    <h2>拼团常见问题</h2>
+    <div class="item">
+      <span class="q">?</span>
+      <div><b>拼机须知</b>
+        <p>拼团过程中随时可联系客服，取消拼团，预付款将原路全额退回，无需手续费。请注意，一旦拼团成功，不可取消退费。</p></div>
+    </div>
+    <div class="item">
+      <span class="q">?</span>
+      <div><b>显存和硬盘是如何分配的？</b>
+        <p>显存采用切分技术（MIG或虚拟化），每位用户独享分配的额度。硬盘和CPU也是严格隔离的，保障数据安全与性能稳定。</p></div>
+    </div>
+  </section>
 </main>
 
 <footer style="border-top:1px solid #f3eefc;background:#fff">
@@ -98,30 +97,23 @@
 </footer>
 
 <script>
-/* 页面不存业务数据：机型、库存、成团进度全部来自 /api/catalog/group */
+/* 机型、库存、成团进度全部来自 /api/catalog/group */
 let DATA = [];
 const S = { model: '全部', vram: '全部', zone: '全部' };
-const MODELS = ['全部', 'RTX5090', 'RTX4090', 'A100', 'H800', 'L40S'];
-const VRAMS = ['全部', '24G', '32G', '40G', '48G', '80G'];
-const ZONES = ['全部', '可用区 A', '可用区 B'];
-
-const NV_LOGO = `<svg width="48" height="28" viewBox="0 0 48 28" role="img" aria-label="NVIDIA">
-  <path d="M24 3c-8.4 0-14.6 4.3-17.6 9.4C9.4 17.5 15.6 21.8 24 21.8s14.6-4.3 17.6-9.4C38.6 7.3 32.4 3 24 3Zm0 2.6c6 0 10.7 2.7 13.4 6.8-2.7 4.1-7.4 6.8-13.4 6.8S13.3 16.5 10.6 12.4C13.3 8.3 18 5.6 24 5.6Z" fill="#76b900"/>
-  <circle cx="24" cy="12.4" r="4.1" fill="#76b900"/>
-  <text x="24" y="27" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
-        font-size="7" font-weight="700" fill="#76b900" letter-spacing=".3">NVIDIA</text></svg>`;
-const PIN_IC = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
-  <path d="M6 10.6S2.4 7.6 2.4 4.9a3.6 3.6 0 1 1 7.2 0c0 2.7-3.6 5.7-3.6 5.7Z"/>
-  <circle cx="6" cy="4.9" r="1.1"/></svg>`;
-
-function specCell(cls, icon, label, value) {
-  return `<div class="xc-spec ${cls}"><span class="i">${icon}</span>${label} <b>${value}</b></div>`;
-}
+const MODELS = ['全部', 'A100', 'A800', 'H100', 'H20', 'H200', 'RTX3090', 'RTX4090', 'RTX4090D', 'RTX5090'];
+const VRAMS = ['全部', '24G', '32G', '40G', '80G', '141G', '150G'];
+const ZONES = ['全部', '广东', '成都', '新疆', '浙江', '重庆'];
 
 function opts(list, key) {
-  return list.map(x => `<span class="opt ${S[key] === x ? 'on' : ''}" onclick="pick('${key}','${x}')">${x}</span>`).join('');
+  return list.map(x => `<button class="rm-opt ${S[key] === x ? 'on' : ''}"
+    onclick="pick('${key}','${x}')">${x}</button>`).join('');
 }
 function pick(k, v) { S[k] = v; renderFilters(); render(); }
+function resetFilter() {
+  S.model = '全部'; S.vram = '全部'; S.zone = '全部';
+  document.getElementById('sort').value = 'default';
+  renderFilters(); render();
+}
 function renderFilters() {
   document.getElementById('fModel').innerHTML = opts(MODELS, 'model');
   document.getElementById('fVram').innerHTML = opts(VRAMS, 'vram');
@@ -130,32 +122,36 @@ function renderFilters() {
 
 function groupCard(d) {
   const pct = Math.round(d.done / d.total * 100);
-  return `<div class="xcard">
-    <div class="xc-brand">${NV_LOGO}</div>
-    <div class="xc-main">
-      <div class="xc-head">
-        <span class="xc-title">${d.model}</span>
-        <span class="xc-zone">${PIN_IC}${d.zone}</span>
-        <span style="font-size:10px;color:#9aa2b1">已拼 ${d.done} / ${d.total} 人</span>
+  const left = Math.max(0, d.total - d.done);
+  return `<div class="rg-card">
+    <div class="rg-head">
+      <div class="rg-name">${d.model} <span class="rg-vram">${d.vram}G</span></div>
+      <div class="rg-price">¥${Number(d.price).toLocaleString('en-US')}</div>
+    </div>
+    <div class="rg-meta">
+      <span><i class="pin">◉</i> ${d.zone}</span>
+      <span><i>▤</i> <b>${d.cpu}</b></span>
+    </div>
+    <div class="rg-panel">
+      <div class="rg-boxes">
+        <div class="rg-box"><label>拼租数量</label><div class="v">1 张卡 <em>⌄</em></div></div>
+        <div class="rg-box"><label>数据盘</label><div class="v">${d.dataDisk}</div></div>
       </div>
-      <div class="xc-specs">
-        ${specCell('pink', '▤', '显存', d.vram + ' GB')}
-        ${specCell('purple', '▦', '核心数', d.vcpu + ' 核')}
-        ${specCell('violet', '▣', 'CPU', d.cpu || '—')}
-        ${specCell('blue', '▥', '内存', d.ram + ' GB')}
-        ${specCell('amber', '▧', '系统盘', d.disk + 'G SSD')}
-        ${specCell('blue', '◫', '数据盘', d.dataDisk || '—')}
-      </div>
-      <div class="xc-extra">
-        <div class="xc-prog-txt"><span>成团进度</span><span>${pct}% · 还差 ${d.total - d.done} 人</span></div>
-        <div class="xc-prog"><i style="width:${pct}%"></i></div>
+      <div class="rg-div"></div>
+      <div class="rg-specs">
+        <div>⚙ vCPU <b>${d.vcpu}核</b></div>
+        <div>◷ 时长 <b>${d.duration}</b></div>
+        <div>▤ 内存 <b>${d.ram}GB</b></div>
+        <div>▥ 系统盘 <b>${d.disk}GB</b></div>
       </div>
     </div>
-    <div class="xc-buy">
-      <div class="lb">月租 / 卡</div>
-      <div class="xc-price">¥${Number(d.price).toLocaleString('en-US')}</div>
-      <button class="xc-btn" onclick="join('${d.model} ${d.vram}G')">立即拼单</button>
+    <div class="rg-prog-wrap">
+      <div class="rg-prog-txt"><span>值机中</span><span>${d.done}/${d.total}</span></div>
+      <div class="rg-prog"><i style="width:${pct}%"></i></div>
+      <div class="rg-note">再拼 ${left} 张卡即可起飞</div>
     </div>
+    <div class="rg-people">👥 机上有来自 <b>${d.school || d.zone}</b> 的同学</div>
+    <button class="rg-btn" onclick="join('${d.model} ${d.vram}G')">立即拼单</button>
   </div>`;
 }
 
@@ -167,10 +163,9 @@ function render() {
   const sort = document.getElementById('sort').value;
   if (sort === 'asc') list.sort((a, b) => a.price - b.price);
   if (sort === 'desc') list.sort((a, b) => b.price - a.price);
-  document.getElementById('cnt').textContent = list.length;
   document.getElementById('grid').innerHTML = list.length
     ? list.map(groupCard).join('')
-    : `<div class="card panel"><div class="empty">没有符合条件的拼团</div></div>`;
+    : `<div class="card panel" style="grid-column:1/-1"><div class="empty">没有符合条件的拼团</div></div>`;
 }
 
 function join(name) {
@@ -181,13 +176,11 @@ async function load() {
   try {
     const r = await fetch('/api/catalog/group');
     DATA = await r.json();
-  } catch (e) {
-    DATA = [];
-  }
+  } catch (e) { DATA = []; }
   renderFilters(); render();
 }
 load();
 </script>
-<script src="/nav.js?v10"></script>
+<script src="/nav.js?v12"></script>
 </body>
 </html>
