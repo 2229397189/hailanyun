@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TokenArk 创元方舟 · 弹性 GPU 算力云</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v9">
+<link rel="stylesheet" href="/app.css?v10">
 </head>
 <body>
 
@@ -41,7 +41,7 @@
 <section class="hero grid-bg">
   <div class="inner">
     <div>
-      <span class="hero-badge"><i></i>算力资源池充足</span>
+      <span class="hero-badge"><i></i>算力资源池充足 · <b id="statPool">--</b> 张 GPU 在线 · <b id="statTime">--:--</b> 更新</span>
       <h1 style="font-size:52px;line-height:1.14">释放科研想象力<br>让算力<span class="grad">川流不息</span></h1>
       <p class="lead">专为高校科研与开发者打造的弹性 GPU 云平台，从"按量训练"到"弹性推理"，我们为您提供覆盖 AI 模型全生命周期的算力服务。</p>
       <div class="hero-actions">
@@ -67,7 +67,7 @@
         <div class="fc-spec">16 核 · 64 GB 内存 · 32 GB 显存</div>
         <div class="fc-price">
           <span>预估价格</span>
-          <b>¥2.80 <small>/ 小时</small></b>
+          <b>¥<span id="heroPrice">2.80</span> <small>/ 小时</small></b>
         </div>
         <div class="fc-tip">点击锁定配置</div>
       </div>
@@ -150,25 +150,10 @@
 </section>
 
 <section class="section" style="padding-top:6px">
-  <div class="blk-head"><div><div class="blk-title" style="font-size:22px">热门模型镜像</div></div></div>
-  <div class="mirror-strip">
-    <div class="mirror"><div class="ic" style="background:#ff6f00">TF</div><b>TensorFlow</b><span>2.16 · GPU</span></div>
-    <div class="mirror"><div class="ic" style="background:#7c3aed">SD</div><b>Stable Diffusion</b><span>WebUI · 出图</span></div>
-    <div class="mirror"><div class="ic" style="background:#22c55e">vL</div><b>vLLM</b><span>0.6 · 推理加速</span></div>
-    <div class="mirror"><div class="ic" style="background:#3b82f6">Ol</div><b>Ollama</b><span>0.3 · 本地推理</span></div>
-    <div class="mirror"><div class="ic" style="background:#2563eb">PP</div><b>PaddlePaddle</b><span>2.6 · 飞桨</span></div>
-    <div class="mirror"><div class="ic" style="background:#4f46e5">DS</div><b>DeepSeek</b><span>V3 · 推理</span></div>
-    <div class="mirror"><div class="ic" style="background:#0891b2">Ll</div><b>Llama</b><span>3.1 · 微调</span></div>
-    <div class="mirror"><div class="ic" style="background:#7c3aed">Qw</div><b>Qwen</b><span>2.5 · 通义</span></div>
-    <div class="mirror"><div class="ic" style="background:#0ea5e9">GL</div><b>ChatGLM</b><span>4 · 对话</span></div>
-    <div class="mirror"><div class="ic" style="background:#f97316">Mi</div><b>Mistral</b><span>7B · 推理</span></div>
-    <div class="mirror"><div class="ic" style="background:#ec4899">Co</div><b>ComfyUI</b><span>节点式出图</span></div>
-    <div class="mirror"><div class="ic" style="background:#ee4c2c">Py</div><b>PyTorch</b><span>2.4 · CUDA 12.4</span></div>
-    <div class="mirror"><div class="ic" style="background:#8b5cf6">MS</div><b>ModelScope</b><span>魔搭 · 模型库</span></div>
-    <div class="mirror"><div class="ic" style="background:#76b900">NI</div><b>NVIDIA NIM</b><span>推理微服务</span></div>
-    <div class="mirror"><div class="ic" style="background:#06b6d4">LF</div><b>LLaMA-Factory</b><span>0.9 · 微调</span></div>
-    <div class="mirror"><div class="ic" style="background:#111827">Jp</div><b>JupyterLab</b><span>4.2 · 交互开发</span></div>
-  </div>
+  <div class="blk-head"><div><div class="blk-title" style="font-size:22px">热门模型镜像</div>
+    <div class="blk-sub">预置环境，开箱即用 · 数据来自服务端镜像目录</div></div>
+    <a class="pill-link" href="/images.html">查看全部镜像 →</a></div>
+  <div class="mirror-strip"><div class="mirror-track" id="mirrorTrack"></div></div>
 </section>
 
 <section class="section" style="padding-top:6px">
@@ -280,6 +265,34 @@
    background:linear-gradient(135deg,#7c3aed,#d946ef);color:#fff;display:flex;align-items:center;
    justify-content:center;font-size:20px;box-shadow:0 14px 30px -10px rgba(124,58,237,.7);z-index:60">☁</a>
 
-<script src="/nav.js?v9"></script>
+<script>
+/* 首页数据全部来自 Spring Boot：/api/catalog/home */
+(async function () {
+  try {
+    const res = await fetch('/api/catalog/home');
+    const d = await res.json();
+
+    const items = (d.mirrors || []).map(m =>
+      `<div class="mirror">
+         <div class="ic" style="background:${m.color}">${m.icon}</div>
+         <b>${m.name}</b><span>${m.tag}</span>
+       </div>`).join('');
+    // 复制一份，translateX(-50%) 才能无缝衔接
+    document.getElementById('mirrorTrack').innerHTML = items + items;
+
+    const st = d.stats || {};
+    if (st.totalGpus != null) {
+      document.getElementById('statPool').textContent = st.freeGpus + ' / ' + st.totalGpus;
+      document.getElementById('statTime').textContent = st.serverTime || '--:--';
+    }
+    if (d.models && d.models[0]) {
+      document.getElementById('heroPrice').textContent = Number(d.models[0].hourly).toFixed(2);
+    }
+  } catch (e) {
+    console.error('首页数据加载失败', e);
+  }
+})();
+</script>
+<script src="/nav.js?v10"></script>
 </body>
 </html>

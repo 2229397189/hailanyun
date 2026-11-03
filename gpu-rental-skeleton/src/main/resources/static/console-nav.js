@@ -1,11 +1,11 @@
-/* 控制台外壳：官网顶栏 + 面包屑 + 标签栏 + 侧栏 */
+/* 控制台外壳：官网顶栏 + 侧栏 + 浏览器式标签栏（对齐智川云控制台） */
 (function () {
   var U = JSON.parse(localStorage.getItem('gu_user') || 'null') || { username: '未登录' };
   var active = document.body.dataset.active || 'main';
   document.body.classList.add('theme-pink');
 
   var tabs = [
-    { k: 'main', t: '主控制台', h: '/console.html' },
+    { k: 'main', t: '主页概览', h: '/console.html' },
     { k: 'inst', t: '实例列表', h: '/instances.html' },
     { k: 'img', t: '我的镜像', h: '/images.html' },
     { k: 'store', t: '文件存储', h: '/storage.html' },
@@ -17,6 +17,7 @@
   ];
   var cur = tabs.filter(function (x) { return x.k === active; })[0] || tabs[0];
 
+  /* ---------- 顶部导航 ---------- */
   var nav = document.createElement('header');
   nav.className = 'topnav c-topnav';
   nav.innerHTML =
@@ -43,9 +44,10 @@
     '</div>';
   document.body.insertBefore(nav, document.body.firstChild);
 
+  /* ---------- 侧栏 ---------- */
   var side = [
-    { k: 'main', t: '主控制台', i: '▦', h: '/console.html' },
-    { k: 'inst', t: '实例列表', i: '▤', h: '/instances.html' },
+    { k: 'main', t: '主页概览', i: '▦', h: '/console.html' },
+    { k: 'inst', t: '实例市场', i: '▤', h: '/portal.html#market' },
     { k: 'store', t: '文件存储', i: '▧', h: '/storage.html' },
     { k: 'img', t: '我的镜像', i: '◫', h: '/images.html' },
     { k: 'llm', t: '大模型 API', i: '✦', h: '/llm-api.html' }
@@ -54,34 +56,32 @@
     { k: 'recharge', t: '在线充值', h: '/recharge.html' },
     { k: 'wallet', t: '我的钱包', h: '/wallet.html' },
     { k: 'orders', t: '我的订单', h: '/orders.html' },
-    { k: 'billing', t: '收支明细', h: '/wallet.html' }
+    { k: 'msg', t: '消息通知', h: '/notifications.html' }
   ];
   var acc = [
     { k: 'acc', t: '个人资料', h: '/account.html' },
     { k: 'sub', t: '子账号', h: '/subaccounts.html' },
-    { k: 'msg', t: '消息通知', h: '/notifications.html' },
     { k: 'push', t: '订单推送', h: '/notifications.html' }
   ];
+  function link(s) {
+    return '<a class="' + (s.k === active ? 'on' : '') + '" href="' + s.h + '">' +
+      (s.i ? '<span class="ic">' + s.i + '</span>' : '<span class="ic dot"></span>') + s.t + '</a>';
+  }
   var el = document.getElementById('cside');
   if (el) {
     el.innerHTML =
+      '<div class="cs-logo"><span class="cs-mark">◈</span><b>控制台</b></div>' +
       '<nav>' +
-        side.map(function (s) {
-          return '<a class="' + (s.k === active ? 'on' : '') + '" href="' + s.h + '">' +
-            '<span class="ic">' + s.i + '</span>' + s.t + '</a>';
-        }).join('') +
-        '<div class="grp2">财务管理</div>' +
-        fin.map(function (s) {
-          return '<a class="' + (s.k === active ? 'on' : '') + '" href="' + s.h + '">' + s.t + '</a>';
-        }).join('') +
-        '<div class="grp2">账号管理</div>' +
-        acc.map(function (s) {
-          return '<a class="' + (s.k === active ? 'on' : '') + '" href="' + s.h + '">' + s.t + '</a>';
-        }).join('') +
+        side.map(link).join('') +
+        '<div class="grp2"><span>费用管理</span><i>⌄</i></div>' +
+        fin.map(link).join('') +
+        '<div class="grp2"><span>账号管理</span><i>⌄</i></div>' +
+        acc.map(link).join('') +
       '</nav>' +
       '<div class="foot">v1.0.0 · ' + U.username + '</div>';
   }
 
+  /* ---------- 标签栏 + 面包屑 ---------- */
   var host = document.querySelector('.ctopbar');
   if (host) {
     host.classList.add('c-tabsbar');
@@ -93,8 +93,8 @@
     var bc = document.createElement('div');
     bc.className = 'c-breadcrumb';
     bc.innerHTML = cur.k === 'main'
-      ? '<span>▦</span><b>主控制台</b>'
-      : '<span>▦</span><span>主控制台</span><span>›</span><b>' + cur.t + '</b>';
-    host.parentNode.insertBefore(bc, host);
+      ? '<span>▦</span><b>主页概览</b>'
+      : '<span>▦</span><span>主页概览</span><span>›</span><b>' + cur.t + '</b>';
+    host.parentNode.insertBefore(bc, host.nextSibling);
   }
 })();

@@ -5,67 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>主控制台 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v9">
-<link rel="stylesheet" href="/console.css?v9">
+<link rel="stylesheet" href="/app.css?v10">
+<link rel="stylesheet" href="/console.css?v10">
 <style>
-body{background:#f7f8fb}
-.cs{width:196px;flex:0 0 196px;background:#fff;border-right:1px solid #eef0f5;
-  display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-.cs .logo{padding:18px 16px 14px;display:flex;align-items:center;gap:9px}
-.cs nav{flex:1;overflow-y:auto;padding:4px 8px 12px}
-.cs a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:12.5px;
-  color:#5b6478;cursor:pointer;margin-bottom:2px;transition:.14s}
-.cs a:hover{background:#faf7ff;color:#6d28d9}
-.cs a.on{background:#f4edff;color:#6d28d9;font-weight:600}
-.cs a .ic{width:15px;text-align:center;font-size:11px;opacity:.8}
-.cs a .arw{margin-left:auto;font-size:9px;color:#b9bfcc}
-.cs .foot{padding:12px 16px;border-top:1px solid #f2f4f8;color:#b9bfcc;font-size:11px}
-.cmain{flex:1;min-width:0;display:flex;flex-direction:column}
-.ctopbar{background:#fff;border-bottom:1px solid #eef0f5;padding:0 18px;position:sticky;top:0;z-index:20}
-.ctabs{display:flex;align-items:center;gap:2px;height:52px;overflow-x:auto}
-.ctab2{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:8px;font-size:12.5px;
-  color:#5b6478;cursor:pointer;white-space:nowrap}
-.ctab2:hover{background:#faf7ff;color:#6d28d9}
-.ctab2.on{background:#f4edff;color:#6d28d9;font-weight:600}
-.ctab2 .x{font-size:10px;color:#c3c8d4;margin-left:2px}
-.cbody{padding:18px 20px 60px;max-width:1500px}
-.welcome2{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #f1eef9;
-  border-radius:14px;padding:16px 18px;margin-bottom:14px}
-.welcome2 .ava{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#f3e8ff,#fdeaf6);
-  display:flex;align-items:center;justify-content:center;font-size:22px}
-.welcome2 b{font-size:15px;font-weight:650}
-.welcome2 .sub{font-size:11.5px;color:#98a1b3;margin-top:3px}
-.welcome2 .luck{margin-left:auto;text-align:right;font-size:11px;color:#98a1b3}
-.welcome2 .luck b{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#5b6478;
-  background:#fbf8ff;border:1px solid #f2eaff;border-radius:8px;padding:5px 10px;margin-top:4px;font-weight:400}
-.grid-c{display:grid;grid-template-columns:1.18fr .82fr;gap:14px;align-items:start}
-.grid-b{display:grid;grid-template-columns:1.18fr .82fr;gap:14px;align-items:start;margin-top:14px}
-.ck2{background:#fbfbfe;border:1px solid #f3f1f9;border-radius:11px;padding:13px 14px}
-.ck2 .k{font-size:11.5px;color:#98a1b3;display:flex;align-items:center;gap:6px;margin-bottom:10px}
-.ck2 .k i{width:18px;height:18px;border-radius:6px;display:flex;align-items:center;justify-content:center;
-  font-size:9px;font-style:normal}
-.ck2 .v{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1}
-.ck2 .v small{font-size:11px;color:#98a1b3;font-weight:400}
-.ck2.pink{background:#fff8fd;border-color:#fbe4f4}
-.ck2.pink .v{color:#db2777}
-.ck2.warm{background:#fffaf0;border-color:#fbe8d6}
+/* 主页概览专属样式；外壳样式统一在 console.css */
+.cbody{padding-top:2px}
+.welcome2{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #f0eff3;
+  border-radius:10px;padding:15px 17px;margin-bottom:12px}
+.welcome2 .ava{width:44px;height:44px;border-radius:50%;flex:0 0 44px;overflow:hidden;
+  background:linear-gradient(135deg,#fde7f3,#f3e8ff);display:flex;align-items:center;justify-content:center;
+  font-size:21px;box-shadow:inset 0 0 0 1px #f6e6f5}
+.welcome2 b{font-size:13px;font-weight:650;color:#1f2937;line-height:1.6}
+.welcome2 b em{font-style:normal;background:linear-gradient(90deg,#e0459a,#c026d3);
+  -webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
+.welcome2 .sub{font-size:10.5px;color:#9aa2b1;margin-top:3px}
+.welcome2 .luck{margin-left:auto;text-align:right;font-size:10px;color:#9aa2b1;white-space:nowrap}
+.welcome2 .luck b{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:#4b5563;
+  background:#fbfbfd;border:1px solid #f1f1f5;border-radius:7px;padding:4px 9px;margin-top:4px;font-weight:400}
+.welcome2 .luck i{font-style:normal;color:#10b981;font-weight:600}
+.grid-c{display:grid;grid-template-columns:1.06fr .94fr;gap:12px;align-items:start}
+.grid-b{display:grid;grid-template-columns:1.06fr .94fr;gap:12px;align-items:start;margin-top:12px}
+.grid.g2{gap:8px}
+.ck2 .k i{width:15px;height:15px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;font-size:8px;font-style:normal}
+.ck2 .v{font-size:22px}
+.ck2.total .v{color:#d6358f}
+.ck2.pink{background:#fffafd;border-color:#fbe7f3}
+.ck2.pink .v{color:#d6358f}
+.ck2.warm{background:#fffbf4;border-color:#f9ecd9}
 .ck2.warm .v{color:#d97706}
-.link-sm{font-size:11.5px;color:#7c3aed;cursor:pointer;font-weight:400}
-.help-row{display:flex;gap:11px;padding:11px 0;border-bottom:1px dashed #f3f1f9;align-items:flex-start}
-.help-row:last-child{border-bottom:none}
-.help-row .ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-  font-size:12px;flex:0 0 auto}
-.help-row b{font-size:12.5px;display:block}
-.help-row span{font-size:10.5px;color:#98a1b3}
-.inv-card{background:linear-gradient(120deg,#fff8f4,#fdf4ff);border:1px solid #fbe8d6;border-radius:12px;
-  padding:14px 16px}
-.inv-title{font-size:13px;font-weight:650;line-height:1.7}
-.inv-title em{font-style:normal;color:#db2777;font-weight:700}
-.inv-rule{font-size:10.5px;color:#98a1b3;line-height:1.9}
-.code-box{margin-top:12px;border:1px dashed #f3c98b;border-radius:9px;background:#fffdf8;
-  padding:9px 12px;font-size:11px;color:#b45309}
-.code-box b{font-size:14px;letter-spacing:.08em;color:#d97706}
-@media(max-width:1100px){.grid-c,.grid-b{grid-template-columns:1fr}.cs{display:none}}
+.help-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f6f5f9;align-items:center}
+.help-row:last-child{border-bottom:none;padding-bottom:0}
+.help-row .ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-size:10px;flex:0 0 auto}
+.help-row b{font-size:11px;display:block;font-weight:600;color:#374151}
+.help-row span{font-size:9.5px;color:#9aa2b1}
+.inv-card{background:linear-gradient(120deg,#fffaf6,#fdf6ff);border:1px solid #f8e9da;border-radius:9px;
+  padding:13px 14px}
+.inv-title{font-size:12px;font-weight:600;line-height:1.7;color:#374151}
+.inv-title em{font-style:normal;color:#d6358f;font-weight:700}
+.inv-rule{font-size:9.5px;color:#9aa2b1;line-height:1.9;margin-top:6px}
+.code-box{margin-top:10px;border:1px dashed #f3cf9b;border-radius:7px;background:#fffdf8;
+  padding:8px 10px;font-size:10px;color:#b45309;display:flex;align-items:center;gap:6px}
+.code-box b{font-size:12.5px;letter-spacing:.06em;color:#d97706}
+.code-box button{margin-left:auto;border:1px solid #f3cf9b;background:#fff;color:#c2410c;
+  font-size:10px;border-radius:5px;padding:3px 8px;cursor:pointer;font-family:inherit}
+.tag-mini{display:inline-flex;align-items:center;height:16px;padding:0 6px;border-radius:4px;
+  font-size:9px;font-weight:600;margin-left:2px}
+.tag-mini.pink{background:linear-gradient(90deg,#fde7f3,#f3e8ff);color:#c026d3}
+.tag-mini.green{background:#e9f9f1;color:#0f9d6e}
+.float2{position:fixed;right:18px;bottom:22px;display:flex;flex-direction:column;gap:9px;z-index:50}
+.float2 a{width:34px;height:34px;border-radius:50%;background:#fff;border:1px solid #ececf2;
+  box-shadow:0 6px 16px -8px rgba(17,24,39,.25);display:flex;align-items:center;justify-content:center;
+  color:#6b7280;font-size:13px;text-decoration:none}
+.float2 a.main{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border-color:transparent}
+@media(max-width:1100px){.grid-c,.grid-b{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-active="main">
@@ -82,12 +76,12 @@ body{background:#f7f8fb}
       <div class="welcome2">
         <span class="ava">🐱</span>
         <div>
-          <b><span id="greet">下午好</span>，<span id="wName">–</span> 同学！让下一次运行比上一次更可靠 👋</b>
-          <div class="sub">显卡温度正常，今天又是炼丹成功的一天~</div>
+          <b><span id="greet">下午好</span>，<em>TokenArk <span id="wName">–</span> 同学</em>！让每一次训练都有迹可循 🌙</b>
+          <div class="sub">我是派小云，它可能正是你的突破口。</div>
         </div>
         <div class="luck">
           今日 AI 运势
-          <b>🪄 宜：画图作图　—— 表达直观，沟通顺畅</b>
+          <b>🪄 宜：<i>安顿情绪</i>　—— 别急着赶路，明天更清醒</b>
         </div>
       </div>
 
@@ -95,7 +89,7 @@ body{background:#f7f8fb}
         <div class="card panel">
           <h3>实例信息 <span class="link-sm" onclick="go('instances')">管理实例</span></h3>
           <div class="grid g2">
-            <div class="ck2"><div class="k"><i style="background:#f3ecff;color:#7c3aed">▦</i>实例总数</div>
+            <div class="ck2"><div class="k"><i style="background:#fdeef7;color:#e0459a">▦</i>实例总数</div>
               <div class="v" id="kTotal">0</div></div>
             <div class="ck2"><div class="k"><i style="background:#e8f9f1;color:#10b981">◉</i>运行中</div>
               <div class="v" id="kRun">0</div></div>
@@ -109,7 +103,7 @@ body{background:#f7f8fb}
         <div class="card panel">
           <h3>账户概览 <span class="link-sm" onclick="location.href='/recharge.html'">去充值</span></h3>
           <div class="grid g2">
-            <div class="ck2"><div class="k">账户总余额</div>
+            <div class="ck2 total"><div class="k">账户总余额</div>
               <div class="v" id="balTotal">¥0<small> 元</small></div></div>
             <div class="ck2"><div class="k">现金余额</div>
               <div class="v" id="balCash">¥0<small> 元</small></div></div>
@@ -144,7 +138,7 @@ body{background:#f7f8fb}
 
         <div class="card panel">
           <h3 style="margin-bottom:0">
-            邀请赠送
+            <span>邀请赠送 <span class="tag-mini pink">新手任务</span><span class="tag-mini green">技术交流群</span></span>
             <span style="display:flex;align-items:center;gap:8px">
               <span class="link-sm" style="color:#d97706" onclick="tip('联系客服')">联系客服</span>
               <span class="link-sm" style="color:#2563eb" onclick="tip('技术交流群')">技术交流群</span>
@@ -160,7 +154,8 @@ body{background:#f7f8fb}
               3. 所有赠送金额有效期三个月，请及时使用。<br>
               4. 如存在异常套现行为，平台有权回收已发放的代金券。
             </div>
-            <div class="code-box">我的邀请码：<b id="invCode">AHH2QJ9G</b></div>
+            <div class="code-box">我的邀请码：<b id="invCode">AHH2QJ9G</b>
+              <button onclick="copyCode()">复制邀请码</button></div>
           </div>
         </div>
       </div>
@@ -168,7 +163,12 @@ body{background:#f7f8fb}
   </div>
 </div>
 
-<script src="/console-nav.js?v9"></script>
+<div class="float2">
+  <a href="#" onclick="tip('帮助中心');return false" title="帮助">?</a>
+  <a class="main" href="#" onclick="tip('在线客服');return false" title="在线客服">💬</a>
+</div>
+
+<script src="/console-nav.js?v10"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -190,6 +190,11 @@ async function api(p) {
 }
 function tip(n) { alert('演示环境：「' + n + '」页面尚未实现。'); return false; }
 function go(v) { location.href = '/portal.html#' + v; return false; }
+function copyCode() {
+  const c = document.getElementById('invCode').textContent.trim();
+  navigator.clipboard.writeText(c).then(() => alert('邀请码已复制：' + c))
+    .catch(() => alert('邀请码：' + c));
+}
 
 (async function () {
   try {

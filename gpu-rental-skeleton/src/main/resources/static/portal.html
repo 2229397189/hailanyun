@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>算力市场 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v9">
+<link rel="stylesheet" href="/app.css?v10">
 </head>
 <body>
 
@@ -55,12 +55,7 @@
 
   <!-- ================= 算力市场 ================= -->
   <section id="view-market">
-    <div class="mkt-switch">
-      <a class="on" href="/portal.html">容器云</a>
-      <a href="/group.html">拼租卡</a>
-      <a href="/baremetal.html">裸金属</a>
-    </div>
-    <div class="page-head">
+<div class="page-head">
       <div class="page-title">容器云实例</div>
       <div class="page-desc">探索丰富的算力资源，秒级启动，预装主流框架。根据您的需求灵活选择，支持按量、包日、包周及包月计费，选择最适合您的解决方案。</div>
     </div>
@@ -93,12 +88,10 @@
       </div>
       <div class="tool-right">
         <span class="icon-btn" title="刷新" onclick="loadMarket()">↻</span>
-        <span class="icon-btn on" id="viewGrid" title="网格" onclick="setView('grid')">▦</span>
-        <span class="icon-btn" id="viewList" title="列表" onclick="setView('list')">▤</span>
       </div>
     </div>
 
-    <div class="product-grid" id="productGrid"></div>
+    <div class="xlist" id="productGrid"></div>
   </section>
 
   <!-- ================= 我的实例 ================= -->
@@ -236,12 +229,15 @@ const S = {
 
 /* 尚未接入硬件的型号，只做展示，不产生订单 */
 const SOON = [
-  { code: 'soon-a100', name: 'A100 · 80 GB', model: 'A100', brand: 'nv', memGb: 80,
-    desc: '1 × A100 SXM4 · 80 GB 显存<br>NVLink 互联 · 适合千亿参数训练', soon: true },
-  { code: 'soon-h800', name: 'H800 · 80 GB', model: 'H800', brand: 'nv', memGb: 80,
-    desc: '1 × H800 · 80 GB 显存<br>高带宽互联 · 大模型训练首选', soon: true },
-  { code: 'soon-l40s', name: 'L40S · 48 GB', model: 'L40S', brand: 'amd', memGb: 48,
-    desc: '1 × L40S · 48 GB 显存<br>推理与图形渲染兼顾', soon: true }
+  { code: 'soon-a100', name: 'A100', model: 'A100', gpuCount: 1, memGb: 80, soon: true,
+    zone: '可用区 A', cores: '24 核', cpu: 'AMD EPYC 7543*2', ram: '128 GB',
+    sysDisk: '480G SSD', dataDisk: '1TB NVMe', unitPrice: 9.80 },
+  { code: 'soon-h800', name: 'H800', model: 'H800', gpuCount: 1, memGb: 80, soon: true,
+    zone: '可用区 B', cores: '32 核', cpu: 'Intel Xeon Gold 6530*2', ram: '192 GB',
+    sysDisk: '480G SSD', dataDisk: '1.92TB NVMe', unitPrice: 12.60 },
+  { code: 'soon-l40s', name: 'L40S', model: 'L40S', gpuCount: 1, memGb: 48, soon: true,
+    zone: '可用区 A', cores: '16 核', cpu: 'AMD EPYC 7513*2', ram: '96 GB',
+    sysDisk: '480G SSD', dataDisk: '960G NVMe', unitPrice: 5.40 }
 ];
 
 /* ---------------- 路由 ---------------- */
@@ -303,65 +299,65 @@ function toggleStock() {
   $('#onlyStock').classList.toggle('on', S.onlyStock);
   renderProducts();
 }
-function setView(v) {
-  S.view = v;
-  $('#viewGrid').classList.toggle('on', v === 'grid');
-  $('#viewList').classList.toggle('on', v === 'list');
-  $('#productGrid').classList.toggle('list', v === 'list');
+
+/* NVIDIA 品牌块（灰底 + 绿色眼睛 + 字标） */
+const NV_LOGO = `<svg width="48" height="28" viewBox="0 0 48 28" role="img" aria-label="NVIDIA">
+  <path d="M24 3c-8.4 0-14.6 4.3-17.6 9.4C9.4 17.5 15.6 21.8 24 21.8s14.6-4.3 17.6-9.4C38.6 7.3 32.4 3 24 3Zm0 2.6c6 0 10.7 2.7 13.4 6.8-2.7 4.1-7.4 6.8-13.4 6.8S13.3 16.5 10.6 12.4C13.3 8.3 18 5.6 24 5.6Z" fill="#76b900"/>
+  <circle cx="24" cy="12.4" r="4.1" fill="#76b900"/>
+  <text x="24" y="27" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
+        font-size="7" font-weight="700" fill="#76b900" letter-spacing=".3">NVIDIA</text>
+</svg>`;
+const PIN_IC = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
+  <path d="M6 10.6S2.4 7.6 2.4 4.9a3.6 3.6 0 1 1 7.2 0c0 2.7-3.6 5.7-3.6 5.7Z"/>
+  <circle cx="6" cy="4.9" r="1.1"/></svg>`;
+
+function specCell(cls, icon, label, value) {
+  return `<div class="xc-spec ${cls}"><span class="i">${icon}</span>${label} <b>${value}</b></div>`;
 }
 
 function productCard(p) {
   const soon = !!p.soon;
   const isWhole = Number(p.gpuCount) === 8;
-  const unit = Number(p.unitPrice);          // 元 / 卡 / 小时
-  const mult = isWhole ? 8 : 1;
-  const hourly = unit * mult;
-  const day = hourly * 24 * 0.75;
-  const week = hourly * 24 * 7 * 0.68;
-  const month = hourly * 24 * 30 * 0.6;
-  const machines = Math.floor(Number(p.stock || 0) / 8);
-  const stockHtml = soon
-    ? '硬件待接入'
-    : (isWhole
-        ? (machines > 0 ? `可开通 <b>${machines}</b> 台` : '需 8 张同节点卡')
-        : (p.stock > 0 ? `可开通 <b>${p.stock}</b> 张` : '已售罄'));
+  const hourly = Number(p.unitPrice) * (isWhole ? 8 : 1);
+  const month = Math.round(hourly * 720 * 0.6);           // 月租：按 720h 打 6 折估算
+  const zone = p.zone || (isWhole ? '可用区 B' : '可用区 A');
+  const mem = isWhole ? '128 GB' : '32 GB';
+  const stockTxt = soon ? '硬件待接入'
+    : (isWhole ? (p.stock >= 8 ? '可开通 ' + Math.floor(p.stock / 8) + ' 台' : '需 8 张同节点卡')
+               : (p.stock > 0 ? '可开通 ' + p.stock + ' 张' : '已售罄'));
   const btn = soon
-    ? `<button class="pc-btn disabled" disabled>敬请期待</button>`
+    ? `<button class="xc-btn" onclick="demand('${p.name}')">需求提交</button>`
     : (p.stock > 0
-        ? `<button class="pc-btn" onclick="openBuy('${p.code}')">立即购买</button>`
-        : `<button class="pc-btn disabled" disabled>暂无库存</button>`);
-  const badge = soon ? `<span class="pc-badge">即将上线</span>` : '';
-  const specMap = {
-    'RTX 5090': [['显卡', '1 × RTX 5090'], ['显存', '32 GB'], ['系统盘', '50 GB SSD'], ['数据盘', '200 GB NVMe']],
-    'A100': [['显卡', '1 × A100'], ['显存', '80 GB HBM2'], ['系统盘', '480 GB SSD'], ['数据盘', '1 TB NVMe']],
-    'H800': [['显卡', '1 × H800'], ['显存', '80 GB HBM3'], ['系统盘', '480 GB SSD'], ['数据盘', '1 TB NVMe']],
-    'L40S': [['显卡', '1 × L40S'], ['显存', '48 GB'], ['系统盘', '480 GB SSD'], ['数据盘', '1 TB NVMe']]
-  };
-  const spec = isWhole
-    ? [['显卡', '8 × RTX 5090'], ['显存', '256 GB'], ['系统盘', '480 GB SSD'], ['数据盘', '3.84 TB NVMe']]
-    : (specMap[p.model] || specMap['RTX 5090']);
-  const money = v => v >= 1000 ? String(Math.round(v)) : fmt(v);
+        ? `<button class="xc-btn" onclick="openBuy('${p.code}')">立即购买</button>`
+        : `<button class="xc-btn dis" disabled>暂无库存</button>`);
 
-  return `<div class="product-card">
-    ${badge}
-    <div class="pc-head">
-      <div class="pc-logo ${p.brand || 'nv'}">${p.brand === 'amd' ? 'AMD' : 'NV'}</div>
-      <div style="flex:1">
-        <div class="pc-title">${p.name}</div>
-        <div class="pc-region"><i></i>${soon ? '可用区 B' : '可用区 A'}　<span style="color:#c3c8d4">|</span>　${stockHtml}</div>
+  return `<div class="xcard">
+    <div class="xc-brand">${NV_LOGO}</div>
+    <div class="xc-main">
+      <div class="xc-head">
+        <span class="xc-title">${p.name}</span>
+        <span class="xc-zone">${PIN_IC}${zone}</span>
+        <span style="font-size:10px;color:#9aa2b1">${stockTxt}</span>
+      </div>
+      <div class="xc-specs">
+        ${specCell('pink', '▤', '显存', isWhole ? '8 × 32 GB' : `${p.memGb} GB`)}
+        ${specCell('purple', '▦', '核心数', p.cores || (isWhole ? '128 核' : '16 核'))}
+        ${specCell('violet', '▣', 'CPU', p.cpu || 'AMD EPYC 7513*2')}
+        ${specCell('blue', '▥', '内存', p.ram || mem)}
+        ${specCell('amber', '▧', '系统盘', p.sysDisk || (isWhole ? '480G SSD' : '50G SSD'))}
+        ${specCell('blue', '◫', '数据盘', p.dataDisk || (isWhole ? '3.84TB NVMe' : '200G NVMe'))}
       </div>
     </div>
-    <div class="p-specs">
-      ${spec.map(x => `<div>${x[0]}：<b>${x[1]}</b></div>`).join('')}
+    <div class="xc-buy">
+      <div class="lb">月租 / 台</div>
+      <div class="xc-price">¥${month.toLocaleString('en-US')}</div>
+      ${btn}
     </div>
-    <div class="price-tabs">
-      <div class="ptab" onclick="periodTip('包日')">包日<b>¥${soon ? '—' : money(day)}</b></div>
-      <div class="ptab" onclick="periodTip('包周')">包周<b>¥${soon ? '—' : money(week)}</b></div>
-      <div class="ptab" onclick="periodTip('包月')">包月<b>¥${soon ? '—' : money(month)}</b></div>
-      <div class="ptab on">按量<b>¥${soon ? '—' : money(hourly)}</b></div>
-    </div>
-    ${btn}
   </div>`;
+}
+
+function demand(model) {
+  alert('演示环境：已记录「' + model + '」采购需求。\n真实流程会创建工单并通知商务，当前仅展示交互。');
 }
 
 function periodTip(name) {
@@ -370,10 +366,10 @@ function periodTip(name) {
 
 function renderProducts() {
   let list = S.skus.map(s => ({
-    code: s.code, name: s.name, model: 'RTX 5090', brand: 'nv',
+    code: s.code, name: s.model || s.name, model: s.model || 'RTX 5090',
     memGb: s.memGb, unitPrice: s.unitPrice, stock: s.stock, gpuCount: s.gpuCount,
-    desc: (s.gpuCount === 8 ? '8 × RTX 5090 · 256 GB 显存<br>同节点整机 · 适合大模型训练'
-                           : '1 × RTX 5090 · 32 GB 显存<br>独占整卡 · 适合推理、微调、实验')
+    zone: s.zone, cores: s.cores, cpu: s.cpu, ram: s.ram,
+    sysDisk: s.sysDisk, dataDisk: s.dataDisk
   }));
   if (S.qty === 1) list = list.concat(SOON);
 
@@ -388,7 +384,7 @@ function renderProducts() {
   }
   $('#productGrid').innerHTML = list.length
     ? list.map(productCard).join('')
-    : `<div class="card panel" style="grid-column:1/-1"><div class="empty">当前筛选条件下没有可用规格，换个条件试试</div></div>`;
+    : `<div class="card panel"><div class="empty">当前筛选条件下没有可用规格，换个条件试试</div></div>`;
 }
 
 async function loadMarket() {
@@ -566,6 +562,6 @@ async function submitPwd() {
 /* ---------------- 启动 ---------------- */
 route();
 </script>
-<script src="/nav.js?v9"></script>
+<script src="/nav.js?v10"></script>
 </body>
 </html>

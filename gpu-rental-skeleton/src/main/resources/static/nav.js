@@ -54,8 +54,4 @@
   var inMarket = ['/market.html', '/portal.html', '/group.html', '/baremetal.html'].indexOf(path) >= 0;
   link.classList.toggle('on', inMarket);
 
-  /* autoOpen：进了这三个产品页，菜单默认展开，方便直接切另一个 */
-  if (['/portal.html', '/group.html', '/baremetal.html'].indexOf(path) >= 0) {
-    wrap.classList.add('open');
-  }
 })();

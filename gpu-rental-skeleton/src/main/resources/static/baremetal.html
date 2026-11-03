@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>B端裸金属 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v9">
+<link rel="stylesheet" href="/app.css?v10">
 </head>
 <body>
 
@@ -39,13 +39,6 @@
 </header>
 
 <main>
-  <div class="wrap" style="padding-top:26px">
-    <div class="mkt-switch">
-      <a href="/portal.html">容器云</a>
-      <a href="/group.html">拼租卡</a>
-      <a class="on" href="/baremetal.html">裸金属</a>
-    </div>
-  </div>
   <section class="grid-bg">
     <div class="wrap" style="padding:46px 24px 40px;display:grid;grid-template-columns:1.15fr .85fr;
          gap:40px;align-items:center">
@@ -103,47 +96,62 @@
 </footer>
 
 <script>
-let ROWS = [
-  { m: 'RTX5090', zone: '可用区 A', price: 10000, gpu: '32 GB GDDR7', ram: '512 GB', sys: '480 GB SSD *2',
-    core: '64 核', data: '3.84 TB NVMe SSD *2', cpu: 'Intel Xeon Gold 6530 *2' },
-  { m: 'RTX5090', zone: '可用区 B', price: 10000, gpu: '32 GB GDDR7', ram: '512 GB', sys: '480 GB SSD *2',
-    core: '64 核', data: '3.84 TB NVMe SSD *2', cpu: 'Intel Xeon Gold 6530 *2' },
-  { m: 'A100', zone: '可用区 B', price: 10000, gpu: '40 GB HBM2', ram: '768 GB', sys: '480 GB SSD *2',
-    core: '48 核', data: '7.68 TB SSD (1.92TB*4)', cpu: 'Intel Xeon Gold 6248R *2' },
-  { m: 'RTX4090', zone: '可用区 A', price: 6300, gpu: '24 GB GDDR6X', ram: '512 GB', sys: '960 GB SSD *2',
-    core: '64 核', data: '3.84 TB SATA SSD *2', cpu: 'Intel Xeon Gold 6530 *2' }
-];
-function renderRows(){ document.getElementById('rows').innerHTML = ROWS.map(r => `
-  <div class="metal-row">
-    <div class="metal-logo">NV</div>
-    <div class="metal-main">
-      <b>${r.m}</b>
-      <span><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;margin-right:4px"></i>${r.zone}</span>
+/* 机型与价格全部来自 /api/catalog/baremetal，页面不存业务数据 */
+let ROWS = [];
+const NV_LOGO = `<svg width="48" height="28" viewBox="0 0 48 28" role="img" aria-label="NVIDIA">
+  <path d="M24 3c-8.4 0-14.6 4.3-17.6 9.4C9.4 17.5 15.6 21.8 24 21.8s14.6-4.3 17.6-9.4C38.6 7.3 32.4 3 24 3Zm0 2.6c6 0 10.7 2.7 13.4 6.8-2.7 4.1-7.4 6.8-13.4 6.8S13.3 16.5 10.6 12.4C13.3 8.3 18 5.6 24 5.6Z" fill="#76b900"/>
+  <circle cx="24" cy="12.4" r="4.1" fill="#76b900"/>
+  <text x="24" y="27" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"
+        font-size="7" font-weight="700" fill="#76b900" letter-spacing=".3">NVIDIA</text></svg>`;
+const PIN_IC = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
+  <path d="M6 10.6S2.4 7.6 2.4 4.9a3.6 3.6 0 1 1 7.2 0c0 2.7-3.6 5.7-3.6 5.7Z"/>
+  <circle cx="6" cy="4.9" r="1.1"/></svg>`;
+function specCell(cls, icon, label, value) {
+  return `<div class="xc-spec ${cls}"><span class="i">${icon}</span>${label} <b>${value}</b></div>`;
+}
+function metalCard(r) {
+  return `<div class="xcard">
+    <div class="xc-brand">${NV_LOGO}</div>
+    <div class="xc-main">
+      <div class="xc-head">
+        <span class="xc-title">${r.model}</span>
+        <span class="xc-zone green">${PIN_IC}${r.zone}</span>
+        <span style="font-size:10px;color:#9aa2b1">整机独占 · 无虚拟化损耗</span>
+      </div>
+      <div class="xc-specs">
+        ${specCell('pink', '▤', '显存', r.vram)}
+        ${specCell('purple', '▦', '核心数', r.cores)}
+        ${specCell('violet', '▣', 'CPU', r.cpu)}
+        ${specCell('blue', '▥', '内存', r.ram)}
+        ${specCell('amber', '▧', '系统盘', r.sysDisk)}
+        ${specCell('blue', '◫', '数据盘', r.dataDisk)}
+      </div>
     </div>
-    <div class="metal-specs">
-      <div>显存 <b>${r.gpu}</b></div>
-      <div>内存 <b>${r.ram}</b></div>
-      <div>系统盘 <b>${r.sys}</b></div>
-      <div>核心数 <b>${r.core}</b></div>
-      <div>数据盘 <b>${r.data}</b></div>
-      <div>CPU <b>${r.cpu}</b></div>
+    <div class="xc-buy">
+      <div class="lb">月租 / 台</div>
+      <div class="xc-price">¥${Number(r.price).toLocaleString('en-US')}</div>
+      <button class="xc-btn" onclick="apply('${r.model}')">需求提交</button>
     </div>
-    <div class="metal-price">
-      <div class="p">¥${r.price.toLocaleString()}</div>
-      <small>月租 / 台</small>
-      <div><button onclick="apply('${r.m}')">需求提交</button></div>
-    </div>
-  </div>`).join(''); }
-
-fetch('/api/catalog/baremetal').then(r => r.json()).then(d => {
-  if (Array.isArray(d) && d.length) { ROWS = d; renderRows(); }
-}).catch(() => {});
-renderRows();
+  </div>`;
+}
+function renderRows() {
+  document.getElementById('rows').innerHTML = ROWS.length
+    ? `<div class="xlist">${ROWS.map(metalCard).join('')}</div>`
+    : `<div class="card panel"><div class="empty">暂无在售机型</div></div>`;
+}
+async function loadRows() {
+  try {
+    const r = await fetch('/api/catalog/baremetal');
+    ROWS = await r.json();
+  } catch (e) { ROWS = []; }
+  renderRows();
+}
+loadRows();
 
 function apply(model) {
   alert(`演示环境：已记录需求${model ? '（' + model + '）' : ''}。\n真实流程会创建工单并通知商务，当前仅展示交互。`);
 }
 </script>
-<script src="/nav.js?v9"></script>
+<script src="/nav.js?v10"></script>
 </body>
 </html>

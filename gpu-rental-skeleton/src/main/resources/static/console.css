@@ -1,29 +1,51 @@
-/* 控制台外壳（侧栏 + 顶部标签）共用于所有 console 子页 */
-body{background:#f7f8fb}
-.console{display:flex;min-height:100vh;background:#f7f8fb}
-.cs{width:196px;flex:0 0 196px;background:#fff;border-right:1px solid #eef0f5;
+/* 控制台外壳（侧栏 + 浏览器式标签栏），对齐参考控制台 */
+body{background:#f7f7fa}
+.console{display:flex;min-height:100vh;background:#f7f7fa}
+
+/* ---------- 左侧栏 ---------- */
+.cs{width:150px;flex:0 0 150px;background:#fff;border-right:1px solid #efeff3;
   display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-.cs .logo{padding:18px 16px 14px;display:flex;align-items:center;gap:9px}
-.cs nav{flex:1;overflow-y:auto;padding:4px 8px 12px}
-.cs a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:12.5px;
-  color:#5b6478;cursor:pointer;margin-bottom:2px;transition:.14s}
-.cs a:hover{background:#faf7ff;color:#6d28d9}
-.cs a.on{background:#f4edff;color:#6d28d9;font-weight:600}
-.cs a .ic{width:15px;text-align:center;font-size:11px;opacity:.8}
-.cs a .arw{margin-left:auto;font-size:9px;color:#b9bfcc}
-.cs .foot{padding:12px 16px;border-top:1px solid #f2f4f8;color:#b9bfcc;font-size:11px}
+.cs-logo{display:flex;align-items:center;gap:7px;padding:14px 14px 12px;font-size:12.5px;color:#1f2937}
+.cs-mark{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#f472b6,#c026d3);color:#fff;font-size:10px}
+.cs nav{flex:1;overflow-y:auto;padding:2px 7px 10px}
+.cs a{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;font-size:11.5px;
+  color:#4b5563;cursor:pointer;margin-bottom:1px;transition:.14s;text-decoration:none}
+.cs a:hover{background:#fdf7fb;color:#c026d3}
+.cs a.on{background:#fdf1f8;color:#d6358f;font-weight:600}
+.cs a .ic{width:13px;text-align:center;font-size:10px;opacity:.75;flex:0 0 13px}
+.cs a .ic.dot{height:3px;border-radius:2px;background:#d1d5db;opacity:.9}
+.cs .grp2{display:flex;align-items:center;justify-content:space-between;padding:13px 9px 5px;
+  font-size:10.5px;color:#9aa2b1;letter-spacing:.02em}
+.cs .grp2 i{font-style:normal;font-size:9px;color:#c3c8d4}
+.cs .foot{padding:10px 14px;border-top:1px solid #f2f2f6;color:#b9bfcc;font-size:10px}
+
+/* ---------- 主区 ---------- */
 .cmain{flex:1;min-width:0;display:flex;flex-direction:column}
-.ctopbar{background:#fff;border-bottom:1px solid #eef0f5;padding:0 18px;position:sticky;top:0;z-index:20}
-.ctabs{display:flex;align-items:center;gap:2px;height:52px;overflow-x:auto}
-.ctab2{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:8px;font-size:12.5px;
-  color:#5b6478;cursor:pointer;white-space:nowrap;text-decoration:none}
-.ctab2:hover{background:#faf7ff;color:#6d28d9}
-.ctab2.on{background:#f4edff;color:#6d28d9;font-weight:600}
-.ctab2 .x{font-size:10px;color:#c3c8d4;margin-left:2px}
-.cbody{padding:18px 20px 60px;max-width:1500px}
-.ck2{background:#fbfbfe;border:1px solid #f3f1f9;border-radius:11px;padding:13px 14px}
-.ck2 .k{font-size:11.5px;color:#98a1b3;display:flex;align-items:center;gap:6px;margin-bottom:10px}
-.ck2 .v{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1}
-.ck2 .v small{font-size:11px;color:#98a1b3;font-weight:400}
-.link-sm{font-size:11.5px;color:#7c3aed;cursor:pointer;font-weight:400}
+.ctopbar{background:#fbfbfd;border-bottom:1px solid #efeff3;padding:0 12px;position:sticky;top:0;z-index:20}
+.ctabs{display:flex;align-items:stretch;height:38px;overflow-x:auto}
+.ctab2{display:inline-flex;align-items:center;gap:7px;padding:0 12px;font-size:11px;color:#6b7280;
+  cursor:pointer;white-space:nowrap;text-decoration:none;border-right:1px solid #f0f0f4;position:relative}
+.ctab2:hover{background:#fff;color:#d6358f}
+.ctab2.on{background:#fff;color:#d6358f;font-weight:600}
+.ctab2.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,#f472b6,#c026d3)}
+.ctab2 .x{font-size:10px;color:#c3c8d4;margin-left:1px}
+.ctab2:hover .x{color:#d6358f}
+
+/* 面包屑：内容区顶部一行 */
+.c-breadcrumb{display:flex;align-items:center;gap:6px;height:30px;padding:0 16px;
+  font-size:10.5px;color:#9aa2b1;background:#f7f7fa}
+.c-breadcrumb b{color:#374151;font-weight:600}
+.c-breadcrumb span:first-child{color:#c026d3}
+
+.cbody{padding:6px 16px 50px;max-width:1320px}
+.ck2{background:#fcfcfd;border:1px solid #f1f1f5;border-radius:9px;padding:12px 13px}
+.ck2 .k{font-size:11px;color:#98a1b3;display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.ck2 .v{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.ck2 .v small{font-size:10.5px;color:#98a1b3;font-weight:400}
+.link-sm{font-size:11px;color:#d6358f;cursor:pointer;font-weight:400}
+.card.panel{border-radius:10px;border-color:#f0eff3;box-shadow:none;padding:16px}
+.card.panel h3{font-size:12.5px;font-weight:650;color:#1f2937;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between}
 @media(max-width:1100px){.cs{display:none}}

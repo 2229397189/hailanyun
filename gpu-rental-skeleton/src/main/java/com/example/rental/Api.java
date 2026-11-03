@@ -108,17 +108,38 @@ public class Api {
                 """).stream().mapToInt(r -> ((Number) r.get("m")).intValue()).sum();
 
         List<Map<String, Object>> out = new java.util.ArrayList<>();
-        out.add(Map.of(
-                "code", "single", "name", "单卡 · RTX 5090", "gpuCount", 1,
-                "memGb", 32, "unitPrice", RentalService.UNIT_PRICE,
-                "stock", freeSingle,
-                "desc", "单张 5090，独占整卡，适合推理、微调、实验"));
-        out.add(Map.of(
-                "code", "whole", "name", "整机 · 8 × RTX 5090", "gpuCount", 8,
-                "memGb", 256, "unitPrice", RentalService.UNIT_PRICE,
-                "stock", wholeStock,
-                "desc", "同一节点 8 张卡，适合分布式训练、多卡并行"));
+        out.add(sku("single", "RTX 5090", 1, 32, freeSingle,
+                "16 核", "AMD EPYC 7513*2", "64 GB", "50G SSD", "200G NVMe",
+                "单张 5090，独占整卡，适合推理、微调、实验"));
+        out.add(sku("whole", "RTX 5090", 8, 256, wholeStock,
+                "128 核", "AMD EPYC 7513*2", "512 GB", "480G SSD", "3.84TB NVMe",
+                "同一节点 8 张卡，适合分布式训练、多卡并行"));
         return out;
+    }
+
+    /**
+     * 商品卡的六个规格块由服务端下发，前端只负责渲染。
+     * 以后接真实机型（A100/H800）只改这里，页面不用动。
+     */
+    private Map<String, Object> sku(String code, String model, int gpuCount, int memGb, int stock,
+                                    String cores, String cpu, String ram, String sysDisk, String dataDisk,
+                                    String desc) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("code", code);
+        m.put("name", model);
+        m.put("model", model);
+        m.put("gpuCount", gpuCount);
+        m.put("memGb", memGb);
+        m.put("unitPrice", RentalService.UNIT_PRICE);
+        m.put("stock", stock);
+        m.put("zone", "可用区 A");
+        m.put("cores", cores);
+        m.put("cpu", cpu);
+        m.put("ram", ram);
+        m.put("sysDisk", sysDisk);
+        m.put("dataDisk", dataDisk);
+        m.put("desc", desc);
+        return m;
     }
 
     // ---------------- 下单 ----------------
