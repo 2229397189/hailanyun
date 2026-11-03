@@ -13,18 +13,38 @@
 <div class="console">
   <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="ctopbar"></div>
     <div class="cbody">
-      <div class="card panel">
-        <h3>我的镜像 <span class="s">预置环境，开箱即用</span>
-          <button class="sm" onclick="tip('新建镜像')">新建镜像</button>
-        </h3>
-        <div id="list"></div>
+      <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px">我的镜像</h2>
+      <div class="hint" style="margin-bottom:12px">
+        ⚠ 个人镜像容量计费，免费额度 <b>20GB</b>；创建时选择基础镜像，保存后实例可直接使用。
       </div>
-      <div class="card panel" style="margin-top:14px">
-        <h3>拉取命令</h3>
-        <div class="hint">私有仓库地址：<code class="mono">registry.local:5000</code>，集群内可直接拉取；集群外需先登录。</div>
-        <pre class="mono" style="background:#fbfbfe;border:1px solid #f3f1f9;border-radius:10px;padding:12px;margin-top:10px;overflow:auto">docker pull registry.local:5000/tokenark/pytorch:2.4-cuda12.4</pre>
+
+      <div class="card panel mb10" style="padding:16px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="quota-head">0 GB <small>/ 200 GB</small></div>
+          <div class="hint">今日流量 <b>0 GB</b> · 预估花费 <b>¥0</b></div>
+        </div>
+        <div class="quota-bar"><i style="width:0%"></i></div>
+        <div class="hint" style="display:flex;gap:18px">
+          <span>● 免费 20 GB</span><span>● 付费 0 GB</span>
+        </div>
+      </div>
+
+      <div class="card" style="overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f4f0f9">
+          <button class="sm pink-btn" onclick="createImg()">创建镜像</button>
+          <span class="hint" style="margin-left:auto">⟳</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
+             font-size:11px;color:#98a1b3">
+          <span style="flex:1">镜像名称</span><span style="width:80px">状态</span>
+          <span style="width:90px">镜像地区</span><span style="width:110px">基础镜像</span>
+          <span style="width:110px">镜像详情版本</span><span style="width:80px">大小</span>
+          <span style="width:150px">创建时间</span><span style="width:100px">UUID</span>
+          <span style="width:60px;text-align:right">操作</span>
+        </div>
+        <div id="list"></div>
       </div>
     </div>
   </div>
@@ -32,25 +52,56 @@
 
 <script src="/console-nav.js"></script>
 <script>
-const IMGS = [
-  { n: 'pytorch', t: '2.4-cuda12.4', size: '9.2 GB', desc: 'PyTorch 2.4 + CUDA 12.4 + cuDNN', tag: '推荐' },
-  { n: 'tensorflow', t: '2.16-gpu', size: '7.8 GB', desc: 'TensorFlow 2.16 GPU 版', tag: '' },
-  { n: 'vllm', t: '0.6.3', size: '12.4 GB', desc: 'vLLM 推理加速，支持 OpenAI 协议', tag: '推理' },
-  { n: 'ollama', t: '0.3.12', size: '3.1 GB', desc: '本地模型推理运行时', tag: '' },
-  { n: 'jupyter', t: '4.2-lab', size: '2.6 GB', desc: 'JupyterLab 交互式开发环境', tag: '开发' },
-  { n: 'cuda', t: '12.4-base', size: '1.9 GB', desc: 'CUDA 基础镜像，自行安装依赖', tag: '基础' }
-];
-document.getElementById('list').innerHTML = `<table>
-  <thead><tr><th>镜像</th><th>版本</th><th>大小</th><th>说明</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
-  <tbody>${IMGS.map(i => `<tr>
-    <td><b class="mono">${i.n}</b> ${i.tag ? `<span class="pill p-purple">${i.tag}</span>` : ''}</td>
-    <td class="mono">${i.t}</td>
-    <td>${i.size}</td>
-    <td class="hint">${i.desc}</td>
-    <td><span class="pill p-green">已同步</span></td>
-    <td style="text-align:right"><button class="sm ghost" onclick="tip('拉取 ${i.n}:${i.t}')">拉取</button></td>
-  </tr>`).join('')}</tbody></table>`;
-function tip(n) { alert('演示环境：' + n + ' 需要接入镜像仓库，当前仅展示目录。'); }
+const KEY = 'gu_images';
+let imgs = JSON.parse(localStorage.getItem(KEY) || '[]');
+
+function render() {
+  const box = document.getElementById('list');
+  if (!imgs.length) {
+    box.innerHTML = '<div class="empty-state">' +
+      '<div class="ic">◫</div><b>暂无数据</b>' +
+      '<span>保存一台实例的环境，即可生成专属镜像</span>' +
+      '<div><button class="btn-pink" onclick="createImg()">创建镜像</button></div>' +
+      '</div>';
+    return;
+  }
+  box.innerHTML = imgs.map(function (m, i) {
+    return '<div style="display:flex;align-items:center;gap:14px;padding:12px 16px;' +
+      'border-bottom:1px solid #f8f5fc;font-size:12px">' +
+      '<span style="flex:1"><b>' + m.name + '</b></span>' +
+      '<span style="width:80px"><span class="pill p-green">可用</span></span>' +
+      '<span style="width:90px">可用区 A</span>' +
+      '<span style="width:110px" class="hint">' + m.base + '</span>' +
+      '<span style="width:110px" class="hint">v1</span>' +
+      '<span style="width:80px">' + m.size + '</span>' +
+      '<span style="width:150px" class="hint">' + m.time + '</span>' +
+      '<span style="width:100px" class="mono">' + m.uuid + '</span>' +
+      '<span style="width:60px;text-align:right">' +
+      '<button class="sm ghost" onclick="del(' + i + ')">删除</button></span>' +
+      '</div>';
+  }).join('');
+}
+
+function createImg() {
+  const name = prompt('镜像名称（例如：pytorch-cu124-v1）');
+  if (!name) return;
+  imgs.unshift({
+    name: name, base: 'pytorch:2.4', size: '2.1 GB',
+    time: new Date().toLocaleString('zh-CN', { hour12: false }).slice(5),
+    uuid: Math.random().toString(16).slice(2, 10)
+  });
+  localStorage.setItem(KEY, JSON.stringify(imgs));
+  render();
+}
+
+function del(i) {
+  if (!confirm('确认删除该镜像？')) return;
+  imgs.splice(i, 1);
+  localStorage.setItem(KEY, JSON.stringify(imgs));
+  render();
+}
+
+render();
 </script>
 </body>
 </html>

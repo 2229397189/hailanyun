@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>子账号管理 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body data-active="sub">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"></div>
+    <div class="cbody">
+      <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px">子账号管理</h2>
+      <div class="hint" style="margin-bottom:12px">为团队成员分配子账号，可限制其可访问的实例与操作权限。</div>
+
+      <div class="card" style="overflow:hidden">
+        <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f4f0f9">
+          <span class="hint">共 <b id="cnt">0</b> 个子账号</span>
+          <button class="sm pink-btn" style="margin-left:auto" onclick="add()">新建子账号</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
+             font-size:11px;color:#98a1b3">
+          <span style="flex:1">账号</span><span style="width:110px">角色</span>
+          <span style="width:110px">状态</span><span style="width:150px">创建时间</span>
+          <span style="width:70px;text-align:right">操作</span>
+        </div>
+        <div id="list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js"></script>
+<script>
+const KEY = 'gu_subaccounts';
+let list = JSON.parse(localStorage.getItem(KEY) || '[]');
+
+function render() {
+  document.getElementById('cnt').textContent = list.length;
+  const box = document.getElementById('list');
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-state"><div class="ic">⚙</div><b>暂无子账号</b>' +
+      '<span>创建子账号后，成员可独立登录并共享租户资源</span>' +
+      '<div><button class="btn-pink" onclick="add()">新建子账号</button></div></div>';
+    return;
+  }
+  box.innerHTML = list.map(function (s, i) {
+    return '<div style="display:flex;align-items:center;gap:16px;padding:12px 16px;' +
+      'border-bottom:1px solid #f8f5fc;font-size:12px">' +
+      '<span style="flex:1"><b>' + s.name + '</b></span>' +
+      '<span style="width:110px">' + s.role + '</span>' +
+      '<span style="width:110px"><span class="pill p-green">正常</span></span>' +
+      '<span style="width:150px" class="hint">' + s.time + '</span>' +
+      '<span style="width:70px;text-align:right">' +
+      '<button class="sm ghost" onclick="del(' + i + ')">删除</button></span></div>';
+  }).join('');
+}
+function add() {
+  const name = prompt('子账号用户名（字母/数字，4-16 位）');
+  if (!name) return;
+  list.push({
+    name: name, role: '运维只读',
+    time: new Date().toLocaleString('zh-CN', { hour12: false }).slice(5)
+  });
+  localStorage.setItem(KEY, JSON.stringify(list)); render();
+}
+function del(i) {
+  if (!confirm('确认删除该子账号？')) return;
+  list.splice(i, 1); localStorage.setItem(KEY, JSON.stringify(list)); render();
+}
+render();
+</script>
+</body>
+</html>

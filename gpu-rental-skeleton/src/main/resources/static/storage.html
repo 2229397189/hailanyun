@@ -13,22 +13,49 @@
 <div class="console">
   <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="ctopbar"></div>
     <div class="cbody">
-      <div class="grid g3 mb10">
-        <div class="card panel"><div class="ck2"><div class="k">已用空间</div>
-          <div class="v">12.4<small> GB</small></div></div></div>
-        <div class="card panel"><div class="ck2"><div class="k">配额</div>
-          <div class="v">100<small> GB</small></div></div></div>
-        <div class="card panel"><div class="ck2"><div class="k">文件数</div>
-          <div class="v">6<small> 个</small></div></div></div>
+      <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px">文件存储</h2>
+      <div class="hint" style="margin-bottom:12px">
+        ⚠ 文件存储按量计费，免费额度 <b>20GB</b>；实例挂载路径为
+        <code class="mono">/root/venv-mind-h</code>。欠费或长期未使用将回收空间。
       </div>
 
-      <div class="card panel">
-        <h3>我的文件 <span class="s">挂载到实例 /data 目录</span>
-          <button class="sm" onclick="tip('上传文件')">上传文件</button>
-        </h3>
-        <div id="list"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <span class="opt on" style="font-size:11.5px">可用区 A</span>
+        <span class="opt" style="font-size:11.5px">可用区 B</span>
+        <span class="opt" style="font-size:11.5px">华东</span>
+        <span class="opt" style="font-size:11.5px">华南</span>
+      </div>
+
+      <div class="card panel mb10" style="padding:16px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="quota-head">0 GB <small>/ 0 GB</small></div>
+          <div class="hint">今日流量 <b>0 GB</b> · 预估花费 <b>¥0</b></div>
+        </div>
+        <div class="quota-bar"><i style="width:0%"></i></div>
+        <div class="hint" style="display:flex;gap:18px">
+          <span>● 免费已用 0 GB</span><span>● 付费已用 0 GB</span>
+        </div>
+      </div>
+
+      <div class="card" style="overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f4f0f9">
+          <span class="hint" style="margin-right:auto">文件 / 文件夹</span>
+          <button class="ghost sm" onclick="tip('新建文件夹')">新建文件夹</button>
+          <button class="sm pink-btn" onclick="tip('上传文件')">上传</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
+             font-size:11px;color:#98a1b3">
+          <span style="flex:1">名称</span><span style="width:120px">大小</span>
+          <span style="width:170px">更新时间</span><span style="width:80px;text-align:right">操作</span>
+        </div>
+        <div class="empty-state">
+          <div class="ic">▧</div>
+          <b>该区域暂无存储空间</b>
+          <span>如需开通请联系客服</span>
+          <div><button class="btn-pink" onclick="tip('联系客服')">联系客服</button></div>
+        </div>
       </div>
     </div>
   </div>
@@ -36,22 +63,7 @@
 
 <script src="/console-nav.js"></script>
 <script>
-const FILES = [
-  { n: 'llama3-8b', t: '目录', size: '—', time: '2026-11-03 10:22' },
-  { n: 'dataset-mini', t: '目录', size: '—', time: '2026-11-02 18:05' },
-  { n: 'train.py', t: 'Python', size: '12 KB', time: '2026-11-02 16:31' },
-  { n: 'requirements.txt', t: '文本', size: '2 KB', time: '2026-11-02 16:30' },
-  { n: 'checkpoint-1200.safetensors', t: '模型权重', size: '8.4 GB', time: '2026-11-01 22:14' },
-  { n: 'eval-result.csv', t: 'CSV', size: '318 KB', time: '2026-11-01 21:02' }
-];
-document.getElementById('list').innerHTML = `<table>
-  <thead><tr><th>名称</th><th>类型</th><th class="num">大小</th><th>更新时间</th><th style="text-align:right">操作</th></tr></thead>
-  <tbody>${FILES.map(f => `<tr>
-    <td><b>${f.n}</b></td><td class="hint">${f.t}</td>
-    <td class="num">${f.size}</td><td class="hint">${f.time}</td>
-    <td style="text-align:right"><button class="sm ghost" onclick="tip('下载 ${f.n}')">下载</button></td>
-  </tr>`).join('')}</tbody></table>`;
-function tip(n) { alert('演示环境：' + n + ' 需要接入对象存储，当前仅展示目录。'); }
+function tip(n) { alert('演示环境：' + n + ' 需要接入对象存储。'); }
 </script>
 </body>
 </html>

@@ -13,29 +13,48 @@
 <div class="console">
   <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="ctopbar"></div>
     <div class="cbody">
-      <div class="card panel mb10">
-        <h3>接口地址 <span class="s">兼容 OpenAI 协议</span></h3>
-        <pre class="mono" style="background:#fbfbfe;border:1px solid #f3f1f9;border-radius:10px;padding:12px;margin:0;overflow:auto">POST https://api.tokenark.local/v1/chat/completions
-Authorization: Bearer sk-你的密钥</pre>
-        <div class="hint" style="margin-top:8px">演示环境未部署模型网关，接口地址为占位。</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em">大模型 API</h2>
+        <a class="hint" href="/index.html" style="color:#c026d3">返回使用 ›</a>
       </div>
+      <div class="hint" style="margin-bottom:12px">模型额度统一管理，调用费用只从模型余额扣除。</div>
 
       <div class="card panel">
-        <h3>API 密钥 <span class="s">最多创建 5 个</span>
-          <button class="sm" onclick="createKey()">新建密钥</button>
+        <h3 style="justify-content:flex-start;gap:8px">
+          <span style="width:22px;height:22px;border-radius:6px;background:#fdf2fb;color:#c026d3;
+                display:inline-flex;align-items:center;justify-content:center;font-size:11px">✦</span>
+          模型额度
+          <span class="hint" style="font-weight:400;margin-left:4px">使用前请确保已充值，代金券不可抵扣</span>
         </h3>
-        <div id="list"></div>
+        <div style="display:flex;align-items:center;margin-top:8px">
+          <div style="flex:1;text-align:center">
+            <div class="hint">可用余额</div>
+            <div style="font-size:26px;font-weight:750;color:#c026d3;margin-top:6px">¥ 0</div>
+            <div class="hint" style="font-size:10px;margin-top:4px">不含代金券</div>
+          </div>
+          <div style="width:1px;height:54px;background:#f3eef9"></div>
+          <div style="flex:1;text-align:center">
+            <div class="hint">模型余额</div>
+            <div style="font-size:26px;font-weight:750;color:#c026d3;margin-top:6px">¥ 0</div>
+            <div class="hint" style="font-size:10px;margin-top:4px">模型调用计费</div>
+          </div>
+          <div style="flex:1;text-align:right">
+            <button class="pink-btn" style="height:34px;padding:0 20px;border-radius:8px;font-size:12.5px"
+                    onclick="location.href='/recharge.html'">去充值</button>
+          </div>
+        </div>
       </div>
 
-      <div class="grid g3" style="margin-top:14px">
-        <div class="card panel"><div class="ck2"><div class="k">今日调用</div>
-          <div class="v">0<small> 次</small></div></div></div>
-        <div class="card panel"><div class="ck2"><div class="k">今日 Token</div>
-          <div class="v">0<small> k</small></div></div></div>
-        <div class="card panel"><div class="ck2"><div class="k">今日消费</div>
-          <div class="v">¥0.00</div></div></div>
+      <div class="card panel" style="margin-top:14px">
+        <h3>API 密钥 <span class="s">兼容 OpenAI 协议</span>
+          <button class="sm pink-btn" onclick="createKey()">新建密钥</button>
+        </h3>
+        <div class="hint" style="margin-bottom:10px">
+          接口地址：<code class="mono">https://api.tokenark.local/v1/chat/completions</code>（演示环境未部署网关）
+        </div>
+        <div id="list"></div>
       </div>
     </div>
   </div>
@@ -43,7 +62,6 @@ Authorization: Bearer sk-你的密钥</pre>
 
 <script src="/console-nav.js"></script>
 <script>
-const $ = s => document.querySelector(s);
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
 if (!localStorage.getItem('gu_token') || !U) location.replace('/login.html');
 const KEY = 'gu_api_keys_' + U.username;
@@ -52,26 +70,39 @@ if (!keys.length) {
   keys = [{ id: 'sk-' + Math.random().toString(36).slice(2, 10), name: '默认密钥', created: '2026-11-03', status: 'on' }];
   localStorage.setItem(KEY, JSON.stringify(keys));
 }
+
 function render() {
-  $('#list').innerHTML = `<table>
-    <thead><tr><th>名称</th><th>密钥</th><th>创建时间</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
-    <tbody>${keys.map((k, i) => `<tr>
-      <td>${k.name}</td>
-      <td class="mono">${k.id.slice(0, 8)}••••••••</td>
-      <td class="hint">${k.created}</td>
-      <td><span class="pill ${k.status === 'on' ? 'p-green' : 'p-gray'}">${k.status === 'on' ? '启用' : '停用'}</span></td>
-      <td style="text-align:right">
-        <button class="sm ghost" onclick="toggle(${i})">${k.status === 'on' ? '停用' : '启用'}</button>
-        <button class="sm danger" style="margin-left:4px" onclick="del(${i})">删除</button>
-      </td>
-    </tr>`).join('')}</tbody></table>`;
+  const box = document.getElementById('list');
+  if (!keys.length) {
+    box.innerHTML = '<div class="empty-state"><div class="ic">✦</div><b>暂无密钥</b>' +
+      '<span>创建后即可调用模型</span></div>';
+    return;
+  }
+  box.innerHTML = '<table><thead><tr><th>名称</th><th>密钥</th><th>创建时间</th><th>状态</th>' +
+    '<th style="text-align:right">操作</th></tr></thead><tbody>' +
+    keys.map(function (k, i) {
+      return '<tr><td>' + k.name + '</td>' +
+        '<td class="mono">' + k.id.slice(0, 8) + '••••••••</td>' +
+        '<td class="hint">' + k.created + '</td>' +
+        '<td><span class="pill ' + (k.status === 'on' ? 'p-green' : 'p-gray') + '">' +
+        (k.status === 'on' ? '启用' : '停用') + '</span></td>' +
+        '<td style="text-align:right">' +
+        '<button class="sm ghost" onclick="toggle(' + i + ')">' +
+        (k.status === 'on' ? '停用' : '启用') + '</button> ' +
+        '<button class="sm danger" onclick="del(' + i + ')">删除</button></td></tr>';
+    }).join('') + '</tbody></table>';
 }
 function save() { localStorage.setItem(KEY, JSON.stringify(keys)); render(); }
 function createKey() {
   if (keys.length >= 5) { alert('最多创建 5 个密钥'); return; }
   const name = prompt('给密钥起个名字（例如：本地调试）');
   if (!name) return;
-  keys.push({ id: 'sk-' + Math.random().toString(36).slice(2, 12), name: name, created: new Date().toISOString().slice(0, 10), status: 'on' });
+  keys.push({
+    id: 'sk-' + Math.random().toString(36).slice(2, 12),
+    name: name,
+    created: new Date().toISOString().slice(0, 10),
+    status: 'on'
+  });
   save();
 }
 function toggle(i) { keys[i].status = keys[i].status === 'on' ? 'off' : 'on'; save(); }

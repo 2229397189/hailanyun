@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实例列表 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body data-active="inst">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"></div>
+    <div class="cbody">
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="pink-btn" style="height:32px;padding:0 16px;font-size:12px;border-radius:7px"
+                onclick="location.href='/portal.html'">＋ 创建实例</button>
+        <button class="ghost" style="height:32px;padding:0 14px;font-size:12px;border-radius:7px"
+                onclick="tip('SSH 公钥')">SSH 公钥</button>
+        <button class="ghost" style="height:32px;padding:0 14px;font-size:12px;border-radius:7px"
+                onclick="tip('订阅推送')">订阅推送</button>
+        <input id="kw" placeholder="搜索实例名称/ID" style="width:260px;height:32px;font-size:12px;margin-left:6px">
+      </div>
+
+      <div class="filter-bar" style="border:none;padding:0;margin-bottom:16px">
+        <label>状态</label>
+        <select id="fStatus">
+          <option value="all">全部</option>
+          <option value="running">运行中</option>
+          <option value="released">已释放</option>
+        </select>
+        <label>地域时间</label>
+        <select><option>不排序</option><option>按创建时间</option></select>
+        <label>地区</label>
+        <select><option>全部</option><option>可用区 A</option><option>可用区 B</option></select>
+      </div>
+
+      <div class="card" style="overflow:hidden">
+        <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid #f4f0f9;
+             font-size:11px;color:#98a1b3">
+          <span style="width:16px">□</span><span style="flex:1">实例名称 / ID</span>
+          <span style="width:110px">状态</span><span style="width:120px">规格</span>
+          <span style="width:90px">可用区</span><span style="width:150px">创建时间</span>
+          <span style="width:100px;text-align:right">操作</span>
+        </div>
+        <div id="list"><div class="empty">加载中…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login.html');
+const TENANT = U.tenantId || 't1';
+const IST = {
+  provisioning: ['创建中', 'p-amber'], running: ['运行中', 'p-green'],
+  releasing: ['回收中', 'p-purple'], released: ['已释放', 'p-gray'], failed: ['失败', 'p-red']
+};
+let ALL = [];
+
+async function api(p) {
+  const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
+  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function tip(n) { alert('演示环境：' + n + ' 需要后端接口支持。'); }
+
+function render() {
+  const st = $('#fStatus').value;
+  const kw = ($('#kw').value || '').trim().toLowerCase();
+  const list = ALL.filter(i => (st === 'all' || i.status === st) &&
+    (!kw || String(i.id).toLowerCase().includes(kw) || String(i.pod_name || '').toLowerCase().includes(kw)));
+
+  if (!list.length) {
+    $('#list').innerHTML = `<div class="empty-state">
+      <div class="ic">▤</div>
+      <b>暂无实例</b>
+      <span>创建您的第一个 GPU 实例，开启算力之旅</span>
+      <div><button class="btn-pink" onclick="location.href='/portal.html'">创建第一个实例</button></div>
+    </div>`;
+    return;
+  }
+
+  $('#list').innerHTML = list.map(i => {
+    const s = IST[i.status] || [i.status, 'p-gray'];
+    const spec = Number(i.gpu_count) === 8 ? '8 × RTX 5090' : '1 × RTX 5090';
+    const created = i.created_at ? new Date(i.created_at).toLocaleString('zh-CN', { hour12: false }) : '–';
+    return `<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;
+         border-bottom:1px solid #f8f5fc;font-size:12px">
+      <span style="width:16px;color:#c3c8d4">□</span>
+      <div style="flex:1">
+        <b style="font-size:12.5px">${i.pod_name || i.id}</b>
+        <div class="hint mono" style="font-size:10.5px">${i.id}</div>
+      </div>
+      <span style="width:110px"><span class="pill ${s[1]}">${s[0]}</span></span>
+      <span style="width:120px">${spec}</span>
+      <span style="width:90px">${i.node_id === 'n2' ? '可用区 B' : '可用区 A'}</span>
+      <span style="width:150px" class="hint">${created}</span>
+      <span style="width:100px;text-align:right">
+        ${i.status === 'released'
+          ? '<span class="hint">—</span>'
+          : `<button class="sm ghost" onclick="rel('${i.id}')">释放</button>`}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+async function rel(id) {
+  if (!confirm('确认释放该实例？按实际使用秒数结算，差额退回余额。')) return;
+  try {
+    const r = await fetch('/api/instances/' + id + '/release', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + TOKEN, 'X-User': U.username }
+    });
+    const j = await r.json();
+    alert(j.message || '已释放');
+    load();
+  } catch (e) { alert('释放失败：' + e.message); }
+}
+
+async function load() {
+  try { ALL = await api('/instances?tenantId=' + TENANT); render(); }
+  catch (e) { $('#list').innerHTML = '<div class="empty">' + e.message + '</div>'; }
+}
+$('#fStatus').onchange = render;
+$('#kw').oninput = render;
+load();
+</script>
+</body>
+</html>

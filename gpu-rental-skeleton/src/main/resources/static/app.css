@@ -646,3 +646,36 @@ label{display:block;font-size:11.5px;color:var(--ink2);margin-bottom:5px}
 .tag.pink{background:#fdeaf6;color:#db2777}
 .tag.green{background:#e8f9f1;color:#0b7a5a}
 .tag.blue{background:#eaf2fe;color:#1d4ed8}
+
+/* ---------------- 控制台：洋红主题 + 官网顶栏 ---------------- */
+.theme-pink{
+  --brand:#d946ef; --brand-2:#e879c9; --brand-ink:#a21caf;
+  --brand-bg:#fdf2fb; --brand-bg2:#fef8fd; --brand-line:#fbe4f4;
+  --purple:#d946ef; --purple-bg:#fdf2fb;
+}
+.c-topnav{position:sticky;top:0;z-index:70;background:#fff;border-bottom:1px solid #f3eef7}
+.c-topnav .inner{max-width:100%;height:56px;display:flex;align-items:center;gap:34px;padding:0 20px}
+.c-topnav .navlinks{gap:26px;font-size:13px}
+.c-topnav .btn-console{height:30px;font-size:12px;border-radius:7px;padding:0 12px}
+.c-breadcrumb{padding:10px 20px 0;font-size:11px;color:#98a1b3;display:flex;align-items:center;gap:6px}
+.c-breadcrumb b{color:#5b6478;font-weight:500}
+.c-tabsbar{background:#fff;border-bottom:1px solid #f1eef9;padding:6px 14px 0;position:sticky;top:56px;z-index:60}
+.c-tabsbar .ctabs{height:40px;gap:2px}
+.c-tabsbar .ctab2{padding:5px 9px;border-radius:7px;font-size:12px}
+.c-tabsbar .ctab2.on{background:#fdf2fb;color:#c026d3}
+.cs .grp2{font-size:10px;color:#b3b9c6;padding:12px 10px 4px;letter-spacing:.06em}
+.cs a .ic{color:#c084fc}
+.cs a.on .ic{color:#c026d3}
+.cs a.on{background:#fdf2fb;color:#c026d3}
+.empty-state{text-align:center;padding:56px 0 60px;color:#b3b9c6}
+.empty-state .ic{width:64px;height:64px;border-radius:16px;background:#faf7fd;border:1px solid #f3eef9;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:#d8c7e8}
+.empty-state b{display:block;font-size:13px;color:#8b93a5;font-weight:500;margin-bottom:6px}
+.empty-state span{font-size:11px;color:#b3b9c6}
+.empty-state .btn-pink{margin-top:14px;height:32px;padding:0 18px;border-radius:7px;font-size:12px;
+  background:linear-gradient(100deg,#e879c9,#c026d3);color:#fff;border:none;box-shadow:0 6px 16px -8px rgba(192,38,211,.7)}
+.quota-bar{height:6px;background:#f6f1fb;border-radius:4px;overflow:hidden;margin:10px 0}
+.quota-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#e879c9,#c026d3)}
+.quota-head{display:flex;align-items:baseline;gap:8px;font-size:22px;font-weight:750;color:#c026d3}
+.quota-head small{font-size:12px;color:#98a1b3;font-weight:400}
+.pink-btn{background:linear-gradient(100deg,#e879c9,#c026d3)!important;box-shadow:0 8px 20px -10px rgba(192,38,211,.8)!important}
