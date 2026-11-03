@@ -1,0 +1,127 @@
+# TokenArk 演示部署（服务器版）
+#
+# 部署位置：北京 115.190.208.96  /opt/tokenark-demo
+# 启动：docker compose -p tokenark-demo -f docker-compose.demo.yml up -d
+# 带监控：docker compose -p tokenark-demo -f docker-compose.demo.yml --profile obs up -d
+#
+# 三条硬约束（宿主机是生产机）：
+#   1. 不碰 80/443（生产 nginx）、不碰 3000（new-api）、不碰 5432（生产 postgres）
+#   2. 对外只暴露 8099；数据库/监控一律绑 127.0.0.1，走 SSH 隧道看
+#   3. K8s 用 fake 模式，不在生产机装 k3s（避免改 iptables、吃内存）
+#
+# 回滚：docker compose -p tokenark-demo -f docker-compose.demo.yml down -v && rm -rf /opt/tokenark-demo
+
+name: tokenark-demo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tokenark-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rental
+      POSTGRES_USER: rental
+      POSTGRES_PASSWORD: rental_pwd
+      TZ: Asia/Shanghai
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rental -d rental"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  app:
+    image: gpu-rental-skeleton-app:latest
+    container_name: tokenark-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8099' || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      TZ: Asia/Shanghai
+      RENTAL_K8S_MODE: fake
+    ports:
+      - "8099:8099"
+
+  backup:
+    image: postgres:16-alpine
+    container_name: tokenark-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: rental_pwd
+      TZ: Asia/Shanghai
+    volumes:
+      - backupdata:/backup
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "[backup] 已启动，每 24 小时全量备份一次，保留 7 天"
+        while true; do
+          f=/backup/rental-$$(date +%Y%m%d-%H%M).dump
+          pg_dump -h postgres -U rental -d rental -Fc -f $$f && echo "[backup] 完成 $$f"
+          find /backup -name '*.dump' -mtime +7 -delete
+          sleep 86400
+        done
+
+  # ---------- 以下走 profile obs，默认不启动 ----------
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: tokenark-prom
+    restart: unless-stopped
+    profiles: ["obs"]
+    depends_on:
+      - app
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+    ports:
+      - "127.0.0.1:9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    container_name: tokenark-grafana
+    restart: unless-stopped
+    profiles: ["obs"]
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: TokenArk@2026
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      TZ: Asia/Shanghai
+    volumes:
+      - grafanadata:/var/lib/grafana
+    ports:
+      - "127.0.0.1:13000:3000"
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: tokenark-node-exp
+    restart: unless-stopped
+    profiles: ["obs"]
+    ports:
+      - "127.0.0.1:9100:9100"
+
+volumes:
+  pgdata:
+  backupdata:
+  promdata:
+  grafanadata:
