@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B端裸金属 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<header class="topnav">
+  <div class="inner">
+    <a class="brand" href="/index.html">
+      <span class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span>
+        <span class="brand-name">Token<span>Ark</span></span>
+        <span class="brand-sub">创元方舟 · 算力云</span>
+      </span>
+    </a>
+    <nav class="navlinks">
+      <a href="/index.html">首页</a>
+      <a href="/market.html">算力市场</a>
+      <a class="soon">大模型 API</a>
+      <a href="/solutions.html">解决方案</a>
+      <a href="/about.html">关于我们</a>
+      <a href="/index.html#pricing">帮助文档</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn-console" href="/portal.html">控制台</a>
+      <span class="avatar">L</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="grid-bg">
+    <div class="wrap" style="padding:46px 24px 40px;display:grid;grid-template-columns:1.15fr .85fr;
+         gap:40px;align-items:center">
+      <div>
+        <span class="hero-badge"><i></i>智能算力服务 · 现货充足</span>
+        <div class="h1-xl" style="margin:18px 0 14px">赋能科研<br><span class="grad-text">高性能裸金属</span></div>
+        <div class="lead-2">专为深度学习、大模型训练及企业级推理打造。告别虚拟化损耗，独享 RTX 5090 / H800 物理算力，秒级部署，即刻开跑。</div>
+        <div style="display:flex;gap:12px;margin-top:24px">
+          <a class="btn-primary" href="#list">查看机型</a>
+          <a class="btn-ghost" href="#contact">联系顾问</a>
+        </div>
+      </div>
+
+      <div class="card" id="contact" style="padding:24px 24px 22px;border-radius:18px">
+        <div style="font-size:15px;font-weight:750;margin-bottom:10px">需要定制化算力集群？</div>
+        <div class="hint" style="margin-bottom:16px">针对高校实验室及企业需求，我们提供 1 对 1 专属技术咨询、大客户折扣以及全额免费测试。</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fbfaff;
+             border:1px solid #f1eef9;border-radius:10px;margin-bottom:10px">
+          <span style="width:30px;height:30px;border-radius:9px;background:#e8f9f1;color:#10b981;
+               display:flex;align-items:center;justify-content:center">✆</span>
+          <div><div style="font-size:10.5px;color:#98a1b3">企业专线</div><b style="font-size:13px">186-1613-8684</b></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fbfaff;
+             border:1px solid #f1eef9;border-radius:10px">
+          <span style="width:30px;height:30px;border-radius:9px;background:#eaf2fe;color:#3b82f6;
+               display:flex;align-items:center;justify-content:center">✉</span>
+          <div><div style="font-size:10.5px;color:#98a1b3">商务邮箱</div><b style="font-size:13px">sales@tokenark.cn</b></div>
+        </div>
+        <button class="pay-btn" style="margin-top:16px" onclick="apply()">申请免费测试 →</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="list" style="padding:30px 24px 60px">
+    <div class="filter-bar">
+      <label>筛选：</label>
+      <select><option>显卡型号（全部）</option><option>RTX 5090</option><option>A100</option><option>H800</option></select>
+      <select><option>地区（全部）</option><option>可用区 A</option><option>可用区 B</option></select>
+      <select><option>价格（默认）</option><option>从低到高</option><option>从高到低</option></select>
+      <span class="sp"></span>
+      <span class="hint">共 <b>4</b> 款机型在售</span>
+    </div>
+
+    <div id="rows"></div>
+  </section>
+</main>
+
+<footer style="border-top:1px solid #f3eefc;background:#fff">
+  <div class="wrap" style="padding:26px 24px;display:flex;justify-content:space-between;gap:20px;
+       flex-wrap:wrap;font-size:12px;color:#98a1b3">
+    <div><div style="font-weight:700;color:#0f172a;font-size:13px">TokenArk 创元方舟</div>
+      <div style="margin-top:6px">GPU 算力运营平台 · 私有化交付</div></div>
+    <div>© 2026 TokenArk · 演示环境</div>
+  </div>
+</footer>
+
+<script>
+const ROWS = [
+  { m: 'RTX5090', zone: '可用区 A', price: 10000, gpu: '32 GB GDDR7', ram: '512 GB', sys: '480 GB SSD *2',
+    core: '64 核', data: '3.84 TB NVMe SSD *2', cpu: 'Intel Xeon Gold 6530 *2' },
+  { m: 'RTX5090', zone: '可用区 B', price: 10000, gpu: '32 GB GDDR7', ram: '512 GB', sys: '480 GB SSD *2',
+    core: '64 核', data: '3.84 TB NVMe SSD *2', cpu: 'Intel Xeon Gold 6530 *2' },
+  { m: 'A100', zone: '可用区 B', price: 10000, gpu: '40 GB HBM2', ram: '768 GB', sys: '480 GB SSD *2',
+    core: '48 核', data: '7.68 TB SSD (1.92TB*4)', cpu: 'Intel Xeon Gold 6248R *2' },
+  { m: 'RTX4090', zone: '可用区 A', price: 6300, gpu: '24 GB GDDR6X', ram: '512 GB', sys: '960 GB SSD *2',
+    core: '64 核', data: '3.84 TB SATA SSD *2', cpu: 'Intel Xeon Gold 6530 *2' }
+];
+document.getElementById('rows').innerHTML = ROWS.map(r => `
+  <div class="metal-row">
+    <div class="metal-logo">NV</div>
+    <div class="metal-main">
+      <b>${r.m}</b>
+      <span><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;margin-right:4px"></i>${r.zone}</span>
+    </div>
+    <div class="metal-specs">
+      <div>显存 <b>${r.gpu}</b></div>
+      <div>内存 <b>${r.ram}</b></div>
+      <div>系统盘 <b>${r.sys}</b></div>
+      <div>核心数 <b>${r.core}</b></div>
+      <div>数据盘 <b>${r.data}</b></div>
+      <div>CPU <b>${r.cpu}</b></div>
+    </div>
+    <div class="metal-price">
+      <div class="p">¥${r.price.toLocaleString()}</div>
+      <small>月租 / 台</small>
+      <div><button onclick="apply('${r.m}')">需求提交</button></div>
+    </div>
+  </div>`).join('');
+
+function apply(model) {
+  alert(`演示环境：已记录需求${model ? '（' + model + '）' : ''}。\n真实流程会创建工单并通知商务，当前仅展示交互。`);
+}
+</script>
+<script src="/nav.js"></script>
+</body>
+</html>
