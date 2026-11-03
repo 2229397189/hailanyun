@@ -6,50 +6,35 @@
 <title>在线充值 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+<style>
+.recharge{max-width:720px;margin:0 auto}
+.amt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.amt{border:1px solid #eee9f8;border-radius:11px;padding:14px;text-align:center;cursor:pointer;
+  font-size:14px;font-weight:600;color:#374151;transition:.15s;position:relative;background:#fff}
+.amt:hover{border-color:#d9c6ff}
+.amt.on{border-color:#a855f7;background:#faf5ff;color:#6d28d9;box-shadow:0 0 0 3px rgba(168,85,247,.12)}
+.amt.on::after{content:"✓";position:absolute;right:9px;top:7px;font-size:10px;color:#a855f7}
+.pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pay{display:flex;align-items:center;gap:9px;border:1px solid #eee9f8;border-radius:10px;
+  padding:12px;font-size:12.5px;cursor:pointer;background:#fff}
+.pay.on{border-color:#a855f7;background:#faf5ff}
+.pay i{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-style:normal;color:#fff}
+.summary{display:flex;justify-content:space-between;font-size:12.5px;padding:9px 0;color:#5b6478}
+.summary b{color:#111}
+.pay-btn{width:100%;height:44px;border-radius:11px;font-size:14px;font-weight:600;margin-top:6px}
+</style>
 </head>
-<body>
+<body data-active="recharge">
 
 <div class="console">
-  <aside class="cside">
-    <a class="logo brand" href="/index.html">
-      <span class="brand-mark" style="width:28px;height:28px;border-radius:9px">
-        <svg width="15" height="15" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
-          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span><span class="brand-name" style="font-size:13.5px">Token<span>Ark</span></span>
-      <span class="brand-sub" style="font-size:9.5px">创元方舟</span></span>
-    </a>
-    <nav>
-      <a href="/console.html"><span class="ic">▦</span>主控制台</a>
-      <a href="/portal.html#instances"><span class="ic">▤</span>实例队列</a>
-      <a onclick="return tip('文件存储')"><span class="ic">▧</span>文件存储</a>
-      <a onclick="return tip('我的镜像')"><span class="ic">◫</span>我的镜像</a>
-      <a onclick="return tip('大模型 API')"><span class="ic">✦</span>大模型 API</a>
-      <div class="grp">财务管理</div>
-      <a class="on" href="/recharge.html"><span class="ic">¥</span>在线充值</a>
-      <a onclick="return tip('我的钱包')"><span class="ic">◉</span>我的钱包</a>
-      <a onclick="return tip('我的订单')"><span class="ic">▤</span>我的订单</a>
-      <a href="/portal.html#billing"><span class="ic">◔</span>消费账单</a>
-      <a onclick="return tip('收支明细')"><span class="ic">◈</span>收支明细</a>
-      <div class="grp">账号管理</div>
-      <a onclick="return tip('账号设置')"><span class="ic">⚙</span>账号设置</a>
-    </nav>
-  </aside>
-
+  <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctop">
-      <div class="hint">财务管理 <span style="color:#d6d3e3">/</span> 在线充值</div>
-      <div class="right">
-        <span class="hint">文档</span>
-        <span class="avatar" id="ava">L</span>
-        <a class="hint" href="#" onclick="logout();return false">退出</a>
-      </div>
-    </div>
-
+    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
     <div class="cbody">
       <div class="recharge">
+        <div class="msg" id="msg"></div>
         <div class="card panel">
           <h3>充值金额 <span class="s">充值后余额实时到账</span></h3>
           <div class="amt-grid" id="amts"></div>
@@ -67,20 +52,14 @@
 
           <h3 style="margin-top:18px">支付方式</h3>
           <div class="pay-grid">
-            <div class="pay on" data-pay="微信支付" onclick="pickPay(this)">
-              <i style="background:#22c55e">微</i>微信支付
-            </div>
-            <div class="pay" data-pay="支付宝" onclick="pickPay(this)">
-              <i style="background:#3b82f6">支</i>支付宝
-            </div>
-            <div class="pay" data-pay="对公汇款" onclick="pickPay(this)">
-              <i style="background:#8b5cf6">公</i>对公汇款
-            </div>
+            <div class="pay on" data-pay="微信支付" onclick="pickPay(this)"><i style="background:#22c55e">微</i>微信支付</div>
+            <div class="pay" data-pay="支付宝" onclick="pickPay(this)"><i style="background:#3b82f6">支</i>支付宝</div>
+            <div class="pay" data-pay="对公汇款" onclick="pickPay(this)"><i style="background:#8b5cf6">公</i>对公汇款</div>
           </div>
 
           <button class="pay-btn" style="margin-top:18px" onclick="pay()">立即支付</button>
           <div class="hint" style="text-align:center;margin-top:10px">
-            演示环境未接入支付通道，点击不会真实扣款。
+            演示环境：点击后模拟到账，不产生真实扣款。
           </div>
         </div>
       </div>
@@ -88,24 +67,22 @@
   </div>
 </div>
 
+<script src="/console-nav.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const fmt = n => (Number(n) || 0).toFixed(2);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
 if (!TOKEN || !U) location.replace('/login.html');
-let TENANT = U.tenantId || 't1';
+const TENANT = U.tenantId || 't1';
 let BALANCE = 0, AMOUNT = 50;
 
 const PRESETS = [50, 100, 200, 500, 1000, 2000];
-$('#ava').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
-
 $('#amts').innerHTML = PRESETS.map(v =>
   `<div class="amt ${v === 50 ? 'on' : ''}" data-v="${v}" onclick="pickAmt(${v},this)">¥ ${v}</div>`).join('');
 
 function pickAmt(v, el) {
-  AMOUNT = v;
-  $('#custom').value = '';
+  AMOUNT = v; $('#custom').value = '';
   document.querySelectorAll('.amt').forEach(x => x.classList.toggle('on', x === el));
   refresh();
 }
@@ -115,23 +92,24 @@ function pickCustom() {
   document.querySelectorAll('.amt').forEach(x => x.classList.remove('on'));
   refresh();
 }
-function pickPay(el) {
-  document.querySelectorAll('.pay').forEach(x => x.classList.toggle('on', x === el));
-}
+function pickPay(el) { document.querySelectorAll('.pay').forEach(x => x.classList.toggle('on', x === el)); }
 function refresh() {
   $('#amt').textContent = '¥' + fmt(AMOUNT);
   $('#after').textContent = '¥' + fmt(BALANCE + AMOUNT);
 }
-function tip(n) { alert('演示环境：「' + n + '」页面尚未实现。'); return false; }
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
+}
 function pay() {
-  if (AMOUNT <= 0) { alert('请输入充值金额'); return; }
+  if (AMOUNT <= 0) { toast('请输入充值金额', false); return; }
   const way = document.querySelector('.pay.on').dataset.pay;
-  alert(`演示环境：已选择 ${way} 充值 ¥${fmt(AMOUNT)}。\n真实环境会跳转支付网关并回调入账。`);
+  BALANCE += AMOUNT;
+  $('#bal').textContent = '¥' + fmt(BALANCE);
+  refresh();
+  toast('模拟支付成功：' + way + ' ¥' + fmt(AMOUNT) + ' 已到账（演示环境未真实扣款）', true);
 }
-async function logout() {
-  try { await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN } }); } catch (e) {}
-  localStorage.clear(); location.replace('/login.html');
-}
+
 (async function () {
   try {
     const r = await fetch('/api/tenants', { headers: { Authorization: 'Bearer ' + TOKEN } });
