@@ -1,6 +1,10 @@
 /* 顶部导航「算力市场」下拉：点击展开 / 点击外部收起 / 当前项高亮 */
 (function () {
-  var link = document.querySelector('.navlinks a[href="/market.html"]');
+  var link = null;
+  var links = document.querySelectorAll('.navlinks a');
+  for (var i = 0; i < links.length; i++) {
+    if ((links[i].textContent || '').indexOf('算力市场') >= 0) { link = links[i]; break; }
+  }
   if (!link || link.parentNode.classList.contains('nav-drop')) return;
 
   var wrap = document.createElement('div');
@@ -49,4 +53,9 @@
   /* 当前页高亮：市场落地 / 容器云 / 拼团 / 裸金属 都算「算力市场」 */
   var inMarket = ['/market.html', '/portal.html', '/group.html', '/baremetal.html'].indexOf(path) >= 0;
   link.classList.toggle('on', inMarket);
+
+  /* autoOpen：进了这三个产品页，菜单默认展开，方便直接切另一个 */
+  if (['/portal.html', '/group.html', '/baremetal.html'].indexOf(path) >= 0) {
+    wrap.classList.add('open');
+  }
 })();
