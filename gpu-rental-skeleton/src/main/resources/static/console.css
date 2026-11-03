@@ -1,0 +1,29 @@
+/* 控制台外壳（侧栏 + 顶部标签）共用于所有 console 子页 */
+body{background:#f7f8fb}
+.console{display:flex;min-height:100vh;background:#f7f8fb}
+.cs{width:196px;flex:0 0 196px;background:#fff;border-right:1px solid #eef0f5;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.cs .logo{padding:18px 16px 14px;display:flex;align-items:center;gap:9px}
+.cs nav{flex:1;overflow-y:auto;padding:4px 8px 12px}
+.cs a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:12.5px;
+  color:#5b6478;cursor:pointer;margin-bottom:2px;transition:.14s}
+.cs a:hover{background:#faf7ff;color:#6d28d9}
+.cs a.on{background:#f4edff;color:#6d28d9;font-weight:600}
+.cs a .ic{width:15px;text-align:center;font-size:11px;opacity:.8}
+.cs a .arw{margin-left:auto;font-size:9px;color:#b9bfcc}
+.cs .foot{padding:12px 16px;border-top:1px solid #f2f4f8;color:#b9bfcc;font-size:11px}
+.cmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.ctopbar{background:#fff;border-bottom:1px solid #eef0f5;padding:0 18px;position:sticky;top:0;z-index:20}
+.ctabs{display:flex;align-items:center;gap:2px;height:52px;overflow-x:auto}
+.ctab2{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:8px;font-size:12.5px;
+  color:#5b6478;cursor:pointer;white-space:nowrap;text-decoration:none}
+.ctab2:hover{background:#faf7ff;color:#6d28d9}
+.ctab2.on{background:#f4edff;color:#6d28d9;font-weight:600}
+.ctab2 .x{font-size:10px;color:#c3c8d4;margin-left:2px}
+.cbody{padding:18px 20px 60px;max-width:1500px}
+.ck2{background:#fbfbfe;border:1px solid #f3f1f9;border-radius:11px;padding:13px 14px}
+.ck2 .k{font-size:11.5px;color:#98a1b3;display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.ck2 .v{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.ck2 .v small{font-size:11px;color:#98a1b3;font-weight:400}
+.link-sm{font-size:11.5px;color:#7c3aed;cursor:pointer;font-weight:400}
+@media(max-width:1100px){.cs{display:none}}
