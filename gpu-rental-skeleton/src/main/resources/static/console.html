@@ -6,11 +6,71 @@
 <title>主控制台 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/app.css">
+<style>
+body{background:#f7f8fb}
+.cs{width:196px;flex:0 0 196px;background:#fff;border-right:1px solid #eef0f5;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.cs .logo{padding:18px 16px 14px;display:flex;align-items:center;gap:9px}
+.cs nav{flex:1;overflow-y:auto;padding:4px 8px 12px}
+.cs a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:12.5px;
+  color:#5b6478;cursor:pointer;margin-bottom:2px;transition:.14s}
+.cs a:hover{background:#faf7ff;color:#6d28d9}
+.cs a.on{background:#f4edff;color:#6d28d9;font-weight:600}
+.cs a .ic{width:15px;text-align:center;font-size:11px;opacity:.8}
+.cs a .arw{margin-left:auto;font-size:9px;color:#b9bfcc}
+.cs .foot{padding:12px 16px;border-top:1px solid #f2f4f8;color:#b9bfcc;font-size:11px}
+.cmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.ctopbar{background:#fff;border-bottom:1px solid #eef0f5;padding:0 18px;position:sticky;top:0;z-index:20}
+.ctabs{display:flex;align-items:center;gap:2px;height:52px;overflow-x:auto}
+.ctab2{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:8px;font-size:12.5px;
+  color:#5b6478;cursor:pointer;white-space:nowrap}
+.ctab2:hover{background:#faf7ff;color:#6d28d9}
+.ctab2.on{background:#f4edff;color:#6d28d9;font-weight:600}
+.ctab2 .x{font-size:10px;color:#c3c8d4;margin-left:2px}
+.cbody{padding:18px 20px 60px;max-width:1500px}
+.welcome2{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #f1eef9;
+  border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.welcome2 .ava{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#f3e8ff,#fdeaf6);
+  display:flex;align-items:center;justify-content:center;font-size:22px}
+.welcome2 b{font-size:15px;font-weight:650}
+.welcome2 .sub{font-size:11.5px;color:#98a1b3;margin-top:3px}
+.welcome2 .luck{margin-left:auto;text-align:right;font-size:11px;color:#98a1b3}
+.welcome2 .luck b{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#5b6478;
+  background:#fbf8ff;border:1px solid #f2eaff;border-radius:8px;padding:5px 10px;margin-top:4px;font-weight:400}
+.grid-c{display:grid;grid-template-columns:1.18fr .82fr;gap:14px;align-items:start}
+.grid-b{display:grid;grid-template-columns:1.18fr .82fr;gap:14px;align-items:start;margin-top:14px}
+.ck2{background:#fbfbfe;border:1px solid #f3f1f9;border-radius:11px;padding:13px 14px}
+.ck2 .k{font-size:11.5px;color:#98a1b3;display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.ck2 .k i{width:18px;height:18px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-style:normal}
+.ck2 .v{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.ck2 .v small{font-size:11px;color:#98a1b3;font-weight:400}
+.ck2.pink{background:#fff8fd;border-color:#fbe4f4}
+.ck2.pink .v{color:#db2777}
+.ck2.warm{background:#fffaf0;border-color:#fbe8d6}
+.ck2.warm .v{color:#d97706}
+.link-sm{font-size:11.5px;color:#7c3aed;cursor:pointer;font-weight:400}
+.help-row{display:flex;gap:11px;padding:11px 0;border-bottom:1px dashed #f3f1f9;align-items:flex-start}
+.help-row:last-child{border-bottom:none}
+.help-row .ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex:0 0 auto}
+.help-row b{font-size:12.5px;display:block}
+.help-row span{font-size:10.5px;color:#98a1b3}
+.inv-card{background:linear-gradient(120deg,#fff8f4,#fdf4ff);border:1px solid #fbe8d6;border-radius:12px;
+  padding:14px 16px}
+.inv-title{font-size:13px;font-weight:650;line-height:1.7}
+.inv-title em{font-style:normal;color:#db2777;font-weight:700}
+.inv-rule{font-size:10.5px;color:#98a1b3;line-height:1.9}
+.code-box{margin-top:12px;border:1px dashed #f3c98b;border-radius:9px;background:#fffdf8;
+  padding:9px 12px;font-size:11px;color:#b45309}
+.code-box b{font-size:14px;letter-spacing:.08em;color:#d97706}
+@media(max-width:1100px){.grid-c,.grid-b{grid-template-columns:1fr}.cs{display:none}}
+</style>
 </head>
 <body>
 
 <div class="console">
-  <aside class="cside">
+  <aside class="cs">
     <a class="logo brand" href="/index.html">
       <span class="brand-mark" style="width:28px;height:28px;border-radius:9px">
         <svg width="15" height="15" viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -23,77 +83,114 @@
     </a>
     <nav>
       <a class="on"><span class="ic">▦</span>主控制台</a>
-      <a href="#instances" onclick="return go('instances')"><span class="ic">▤</span>实例队列</a>
+      <a href="/portal.html#instances"><span class="ic">▤</span>实例列表</a>
       <a onclick="return tip('文件存储')"><span class="ic">▧</span>文件存储</a>
       <a onclick="return tip('我的镜像')"><span class="ic">◫</span>我的镜像</a>
       <a onclick="return tip('大模型 API')"><span class="ic">✦</span>大模型 API</a>
-      <div class="grp">财务管理</div>
-      <a href="/recharge.html"><span class="ic">¥</span>在线充值</a>
-      <a onclick="return tip('我的钱包')"><span class="ic">◉</span>我的钱包</a>
-      <a onclick="return tip('我的订单')"><span class="ic">▤</span>我的订单</a>
-      <a href="/portal.html#billing"><span class="ic">◔</span>消费账单</a>
-      <a onclick="return tip('收支明细')"><span class="ic">◈</span>收支明细</a>
-      <div class="grp">账号管理</div>
-      <a onclick="return tip('账号设置')"><span class="ic">⚙</span>账号设置</a>
+      <a onclick="return tip('财务管理')"><span class="ic">¥</span>财务管理<span class="arw">▸</span></a>
+      <a onclick="return tip('账号管理')"><span class="ic">⚙</span>账号管理<span class="arw">▸</span></a>
     </nav>
+    <div class="foot">v1.0.0 · 演示环境</div>
   </aside>
 
   <div class="cmain">
-    <div class="ctop">
+    <div class="ctopbar">
       <div class="ctabs">
-        <span class="ctab on">主控制台</span>
-        <span class="ctab" onclick="go('instances')">实例队列</span>
-      </div>
-      <div class="right">
-        <span class="hint">文档</span>
-        <span class="hint">消息</span>
-        <span class="avatar" id="ava">L</span>
-        <a class="hint" href="#" onclick="logout();return false">退出</a>
+        <span class="ctab2 on">▦ 主控制台</span>
+        <span class="ctab2" onclick="go('instances')">▤ 实例列表 <span class="x">×</span></span>
+        <span class="ctab2" onclick="tip('我的镜像')">◫ 我的镜像 <span class="x">×</span></span>
+        <span class="ctab2" onclick="tip('文件存储')">▧ 文件存储 <span class="x">×</span></span>
+        <span class="ctab2" onclick="tip('大模型 API')">✦ 大模型 API <span class="x">×</span></span>
+        <span class="ctab2" onclick="location.href='/recharge.html'">¥ 在线充值 <span class="x">×</span></span>
+        <span class="ctab2" onclick="tip('个人资料')">◉ 个人资料 <span class="x">×</span></span>
+        <span class="ctab2" onclick="tip('账号管理')">⚙ 账号管理 <span class="x">×</span></span>
+        <span class="ctab2" onclick="tip('消息通知')">◔ 消息通知 <span class="x">×</span></span>
       </div>
     </div>
 
     <div class="cbody">
-      <div class="welcome">
-        <span class="ava" id="wAva">L</span>
-        <div>下午好，<b id="wName">–</b>！如果卡住了，就找个角度问问那朵云！</div>
-        <span class="close">×</span>
+      <div class="welcome2">
+        <span class="ava">🐱</span>
+        <div>
+          <b><span id="greet">下午好</span>，<span id="wName">–</span> 同学！让下一次运行比上一次更可靠 👋</b>
+          <div class="sub">显卡温度正常，今天又是炼丹成功的一天~</div>
+        </div>
+        <div class="luck">
+          今日 AI 运势
+          <b>🪄 宜：画图作图　—— 表达直观，沟通顺畅</b>
+        </div>
       </div>
 
-      <div class="cgrid">
+      <div class="grid-c">
         <div class="card panel">
-          <h3>实例信息 <span class="s" onclick="load()" style="cursor:pointer">↻ 刷新</span></h3>
-          <div class="grid g2" id="instKpi"></div>
-        </div>
-
-        <div class="card panel">
-          <h3>账户概览 <span class="s">¥ 人民币</span></h3>
+          <h3>实例信息 <span class="link-sm" onclick="go('instances')">管理实例</span></h3>
           <div class="grid g2">
-            <div class="ckpi"><div class="k">账户总余额</div><div class="v" id="bal">¥0.00</div></div>
-            <div class="ckpi"><div class="k">可用余额</div><div class="v" id="bal2">¥0.00</div></div>
-            <div class="ckpi"><div class="k">本月消费</div><div class="v" id="month">¥0.00</div></div>
-            <div class="ckpi" style="background:#fffaf0;border-color:#fbe8d6">
-              <div class="k">代金券余额</div><div class="v" style="color:#d97706">¥0.00</div></div>
+            <div class="ck2"><div class="k"><i style="background:#f3ecff;color:#7c3aed">▦</i>实例总数</div>
+              <div class="v" id="kTotal">0</div></div>
+            <div class="ck2"><div class="k"><i style="background:#e8f9f1;color:#10b981">◉</i>运行中</div>
+              <div class="v" id="kRun">0</div></div>
+            <div class="ck2"><div class="k"><i style="background:#fef4e8;color:#f59e0b">◔</i>即将到期</div>
+              <div class="v" id="kSoon">0</div></div>
+            <div class="ck2"><div class="k"><i style="background:#fdeced;color:#ef4444">◈</i>即将释放</div>
+              <div class="v" id="kRel">0</div></div>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <h3>账户概览 <span class="link-sm" onclick="location.href='/recharge.html'">去充值</span></h3>
+          <div class="grid g2">
+            <div class="ck2"><div class="k">账户总余额</div>
+              <div class="v" id="balTotal">¥0<small> 元</small></div></div>
+            <div class="ck2"><div class="k">现金余额</div>
+              <div class="v" id="balCash">¥0<small> 元</small></div></div>
+            <div class="ck2 pink"><div class="k">模型余额 <span style="margin-left:auto;font-size:9.5px;color:#db2777">去余额明细</span></div>
+              <div class="v">¥0<small> 元</small></div></div>
+            <div class="ck2 warm"><div class="k">代金券余额 <span style="margin-left:auto;font-size:9.5px;color:#d97706">券包</span></div>
+              <div class="v">¥0<small> 元</small></div></div>
           </div>
         </div>
       </div>
 
-      <div class="cgrid2" style="margin-top:16px">
+      <div class="grid-b">
         <div class="card panel">
-          <h3>帮助文档 <span class="s">共 4 篇</span></h3>
-          <div class="help-grid">
-            <div class="help-item" onclick="tip('快速开始')"><span class="ic">◈</span>快速开始</div>
-            <div class="help-item" onclick="tip('GPU 选型')"><span class="ic">▦</span>GPU 选型指南</div>
-            <div class="help-item" onclick="tip('连接实例')"><span class="ic">⚡</span>连接实例</div>
-            <div class="help-item" onclick="tip('常见问题')"><span class="ic">?</span>常见问题</div>
+          <h3>帮助文档 <span class="link-sm" onclick="tip('AI 问答')">AI 问答</span></h3>
+          <div class="help-row">
+            <span class="ic" style="background:#eaf2fe;color:#3b82f6">◈</span>
+            <div><b>快速开始</b><span>创建第一个实例</span></div>
+          </div>
+          <div class="help-row">
+            <span class="ic" style="background:#e8f9f1;color:#10b981">▦</span>
+            <div><b>GPU 选型</b><span>选择适合您的 GPU</span></div>
+          </div>
+          <div class="help-row">
+            <span class="ic" style="background:#fef4e8;color:#f59e0b">✦</span>
+            <div><b>功能导读</b><span>查看平台功能总览</span></div>
+          </div>
+          <div class="help-row">
+            <span class="ic" style="background:#f3ecff;color:#7c3aed">⚡</span>
+            <div><b>连接实例</b><span>SSH / Jupyter 接入方式</span></div>
           </div>
         </div>
 
         <div class="card panel">
-          <h3>邀请福利 <span class="s">最高 8,000 元</span></h3>
-          <div class="invite">
-            新用户首次充值满 <b>1 元</b>，即得 <b>5 元代金券</b>。邀请好友再得 <b>3 元</b>！<br>
-            <span style="font-size:11px;color:#98a1b3">被邀请人首单消费后，奖励自动到账；同一设备/手机号视为同一用户。</span>
-            <div style="margin-top:10px">我的邀请码：<code id="code">AHH2QJ9G</code></div>
+          <h3 style="margin-bottom:0">
+            邀请赠送
+            <span style="display:flex;align-items:center;gap:8px">
+              <span class="link-sm" style="color:#d97706" onclick="tip('联系客服')">联系客服</span>
+              <span class="link-sm" style="color:#2563eb" onclick="tip('技术交流群')">技术交流群</span>
+              <span class="link-sm" onclick="tip('邀请记录')">查看邀请记录</span>
+            </span>
+          </h3>
+          <div class="inv-card" style="margin-top:12px">
+            <div class="inv-title">新人首次充值满 1 元 <em>送 5 元</em> 代金券，邀请好友再赚 <em>3 元</em>！</div>
+            <div class="inv-rule" style="margin-top:8px">
+              注意事项：<br>
+              1. 目前活动赠送金额自动发放，满足条件请登录后查收。<br>
+              2. 被邀请人需完成首次充值，邀请人可获得 3 元代金券。<br>
+              3. 所有赠送金额有效期三个月，请及时使用。<br>
+              4. 如存在异常套现行为，平台有权回收已发放的代金券。
+            </div>
+            <div class="code-box">我的邀请码：<b id="invCode">AHH2QJ9G</b></div>
           </div>
         </div>
       </div>
@@ -103,58 +200,44 @@
 
 <script>
 const $ = s => document.querySelector(s);
-const fmt = n => (Number(n) || 0).toFixed(2);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
 if (!TOKEN || !U) location.replace('/login.html');
-let TENANT = U.tenantId || 't1';
-
+const TENANT = U.tenantId || 't1';
+const h = new Date().getHours();
+$('#greet').textContent = h < 6 ? '凌晨好' : h < 12 ? '上午好' : h < 18 ? '下午好' : '晚上好';
 $('#wName').textContent = U.username;
-$('#wAva').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
-$('#ava').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
-$('#code').textContent = 'AHH' + (U.username || 'USER').slice(0, 3).toUpperCase() + '9G';
+$('#invCode').textContent = 'AHH' + (U.username || 'USER').slice(0, 3).toUpperCase() + '9G';
 
-async function api(path) {
-  const r = await fetch('/api' + path, { headers: { Authorization: 'Bearer ' + TOKEN } });
+async function api(p) {
+  const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
   if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
   const t = await r.text();
-  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) { j = {}; }
-  if (!r.ok) throw new Error(j.message || ('HTTP ' + r.status));
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
   return j;
 }
-function tip(name) { alert('演示环境：「' + name + '」页面尚未实现，当前只做导航占位。'); return false; }
+function tip(n) { alert('演示环境：「' + n + '」页面尚未实现。'); return false; }
 function go(v) { location.href = '/portal.html#' + v; return false; }
-async function logout() {
-  try { await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN } }); } catch (e) {}
-  localStorage.clear(); location.replace('/login.html');
-}
 
-async function load() {
+(async function () {
   try {
-    const [list, tenants, ov, bill] = await Promise.all([
-      api('/instances?tenantId=' + TENANT), api('/tenants'), api('/overview'),
-      api('/billing?tenantId=' + TENANT)
+    const [list, tenants] = await Promise.all([
+      api('/instances?tenantId=' + TENANT), api('/tenants')
     ]);
-    const me = tenants.find(t => t.id === TENANT) || {};
-    const active = list.filter(i => i.status !== 'released');
     const running = list.filter(i => i.status === 'running');
     const soon = list.filter(i => i.expire_at && (new Date(i.expire_at) - Date.now()) < 86400000 && i.status !== 'released');
+    $('#kTotal').textContent = list.length;
+    $('#kRun').textContent = running.length;
+    $('#kSoon').textContent = soon.length;
+    $('#kRel').textContent = list.filter(i => i.status === 'releasing').length;
 
-    $('#instKpi').innerHTML = [
-      ['实例总数', list.length, '含已释放'],
-      ['运行中', running.length, '当前可用'],
-      ['即将到期', soon.length, '24 小时内'],
-      ['租期预定', 0, '待开通']
-    ].map(k => `<div class="ckpi"><div class="k">${k[0]}</div>
-      <div class="v">${k[1]}<small> 个</small></div>
-      <div class="hint" style="font-size:10px">${k[2]}</div></div>`).join('');
-
-    $('#bal').textContent = '¥' + fmt(me.balance_yuan);
-    $('#bal2').textContent = '¥' + fmt(me.balance_yuan);
-    $('#month').textContent = '¥' + fmt(bill.settled);
+    const me = tenants.find(t => t.id === TENANT) || {};
+    const bal = Number(me.balance_yuan) || 0;
+    $('#balTotal').innerHTML = '¥' + bal.toFixed(2) + '<small> 元</small>';
+    $('#balCash').innerHTML = '¥' + bal.toFixed(2) + '<small> 元</small>';
   } catch (e) { console.error(e); }
-}
-load();
+})();
 </script>
 </body>
 </html>
