@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TokenArk 创元方舟 · 算力平台技术评估报告</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#eef1f6;color:#22303f;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  font-size:14px;line-height:1.85;-webkit-font-smoothing:antialiased}
+.page{max-width:880px;margin:26px auto;background:#fff;padding:52px 58px 64px;border-radius:4px;
+  box-shadow:0 2px 20px rgba(20,40,70,.08)}
+
+/* 抬头 */
+.head{border-bottom:3px solid #1a2b4a;padding-bottom:20px;margin-bottom:30px}
+.head .brand{display:flex;align-items:center;gap:9px;margin-bottom:18px}
+.head .brand svg{width:24px;height:24px}
+.head .brand b{font-size:14px;color:#1a2b4a;letter-spacing:.02em}
+.head .brand small{font-size:11px;color:#8b98ab;margin-left:2px}
+h1{font-size:25px;font-weight:600;color:#13233d;letter-spacing:-.01em;line-height:1.4}
+.head .meta{margin-top:10px;font-size:12px;color:#7d8798;display:flex;gap:18px;flex-wrap:wrap}
+.head .meta span::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#c3ccd9;vertical-align:middle;margin-right:6px}
+
+/* 结论卡 */
+.verdict{margin:26px 0 32px;border:1px solid #d6dfeb;border-left:4px solid #1a2b4a;background:#f7f9fc;
+  padding:18px 22px;border-radius:3px}
+.verdict h2{font-size:14px;color:#1a2b4a;margin-bottom:10px;letter-spacing:.04em}
+.verdict p{font-size:13.5px;margin-bottom:6px}
+.verdict p:last-child{margin-bottom:0}
+.verdict b{color:#13233d}
+
+h2.sec{font-size:16px;color:#13233d;margin:34px 0 12px;padding-bottom:7px;
+  border-bottom:1px solid #e3e8ef;letter-spacing:.01em}
+h2.sec em{font-style:normal;color:#8b98ab;font-size:12px;font-weight:400;margin-left:8px}
+h3{font-size:13.5px;color:#1a2b4a;margin:20px 0 8px}
+p{margin-bottom:9px;color:#2c3e50}
+ul,ol{margin:6px 0 12px 20px}
+li{margin-bottom:5px;color:#2c3e50}
+code{background:#f0f3f8;padding:1px 5px;border-radius:3px;font-size:12.5px;
+  font-family:ui-monospace,Consolas,monospace;color:#1a3a6b}
+
+table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:12.8px}
+th{background:#f4f7fb;color:#44546a;font-weight:600;text-align:left;padding:8px 10px;
+  border:1px solid #e3e8ef;font-size:12.3px}
+td{padding:8px 10px;border:1px solid #e8edf4;vertical-align:top}
+tr:nth-child(even) td{background:#fbfcfe}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,Consolas,monospace}
+
+.tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600;white-space:nowrap}
+.t-ok{background:#e6f5ec;color:#0e7a39}
+.t-part{background:#fdf3e3;color:#a05f0a}
+.t-no{background:#f3f4f6;color:#6b7280}
+.t-p0{background:#fcebeb;color:#a32d2d}
+.t-p1{background:#fdf3e3;color:#a05f0a}
+.t-p2{background:#eef1f6;color:#5b6b7f}
+
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0 20px}
+.kpi div{border:1px solid #e3e8ef;border-radius:4px;padding:12px 14px;background:#fbfcfe}
+.kpi b{display:block;font-size:21px;color:#13233d;font-weight:600;letter-spacing:-.02em;line-height:1.3}
+.kpi span{font-size:11.5px;color:#7d8798}
+
+.note{background:#f7f9fc;border-left:3px solid #9fb0c8;padding:11px 15px;margin:12px 0;
+  font-size:12.8px;color:#44546a;border-radius:0 3px 3px 0}
+.warn{background:#fdf8ef;border-left:3px solid #d99b3d}
+.foot{margin-top:40px;padding-top:16px;border-top:1px solid #e3e8ef;font-size:11.5px;color:#96a1b1;
+  display:flex;justify-content:space-between}
+
+@media print{
+  body{background:#fff;font-size:12px}
+  .page{box-shadow:none;margin:0;padding:18mm 16mm;max-width:none;border-radius:0}
+  h2.sec{page-break-after:avoid}
+  table{page-break-inside:auto}
+  tr{page-break-inside:avoid}
+}
+@media(max-width:700px){
+  .page{padding:26px 20px;margin:0}
+  .kpi{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#1a2b4a" stroke-width="4.6" stroke-linecap="round"/>
+        <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#3b82f6" stroke-width="4.6" stroke-linecap="round"/>
+      </svg>
+      <b>TokenArk</b><small>创元方舟</small>
+    </div>
+    <h1>GPU 算力运营平台 · 技术评估报告</h1>
+    <div class="meta">
+      <span>版本 v1.0</span>
+      <span>评估日期 2026-11-03</span>
+      <span>评估对象 POC 一期交付物</span>
+      <span>环境 单集群 / 2 节点 / 16 卡</span>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h2>评估结论</h2>
+    <p><b>架构选型成立，POC 可交付，生产不可上线。</b></p>
+    <p>平台以原生 K8s 为底座、在其上自研多租户配额与运营层，方向正确；核心链路（下单 → 建 Pod → 计费 → 回收）已在真实集群跑通并验证。</p>
+    <p>截至 2026-11-03 已完成一轮加固：<b>TLS 传输加密、每日备份、真实监控、私有镜像仓库</b> 4 项 P0 已闭环（均经实测验证），剩余 <b>2 项 P0</b> 仍阻断生产——<b>高可用</b>与<b>调度引擎</b>。</p>
+    <p>建议：<b>以 POC 交付换取二期合同</b>，二期补齐剩余 2 项 P0（估算 12–18 人日）后再评估生产上线。</p>
+  </div>
+
+  <div class="kpi">
+    <div><b>75</b><span>REST 接口</span></div>
+    <div><b>18</b><span>数据表</span></div>
+    <div><b>3154</b><span>后端代码行</span></div>
+    <div><b>2374</b><span>前端代码行</span></div>
+  </div>
+
+  <h2 class="sec">一、评估范围与方法 <em>Scope &amp; Method</em></h2>
+  <p>评估对象为 POC 一期交付物，覆盖后端服务、前端三端（管理端 / 用户端 / NOC 大屏）、K8s 集成层与部署形态。方法为：</p>
+  <ol>
+    <li><b>代码走查</b>：逐模块检查鉴权、事务、状态机与异常路径；</li>
+    <li><b>实测验证</b>：在真实 k3s 集群（v1.31.4）上跑通下单、调度、配额、回收、对账全链路；</li>
+    <li><b>对照验收</b>：以 40 条需求清单（P0 21 / P1 12 / P2 7）逐条核对；</li>
+    <li><b>风险识别</b>：按「是否阻断生产」分级，而非按开发工作量分级。</li>
+  </ol>
+  <div class="note">本报告中的性能与容量结论标注为「经验判断」的条目，均未经过压测，不得作为容量承诺使用。</div>
+
+  <h2 class="sec">二、架构评估 <em>Architecture</em></h2>
+  <h3>2.1 分层结构</h3>
+  <table>
+    <thead><tr><th style="width:16%">层</th><th style="width:42%">实现</th><th>评估</th></tr></thead>
+    <tbody>
+      <tr><td>接入层</td><td>Nginx / 直连 8099，静态页 + REST</td><td><span class="tag t-part">缺 TLS 与 WAF</span></td></tr>
+      <tr><td>应用层</td><td>Spring Boot 3.4 单体，75 个接口，分层 Controller/Service/Db</td><td><span class="tag t-ok">结构清晰，可维护</span></td></tr>
+      <tr><td>集成层</td><td><code>K8sClient</code> 接口 + <code>FakeK8s</code>/<code>RealK8s</code> 双实现（fabric8）</td><td><span class="tag t-ok">可替换，切换零改业务</span></td></tr>
+      <tr><td>数据层</td><td>PostgreSQL 16，18 张表，幂等建表 + 空库种子</td><td><span class="tag t-ok">重启不丢数据</span></td></tr>
+      <tr><td>底座</td><td>k3s v1.31.4；平台自身以 Deployment + ServiceAccount 部署进集群</td><td><span class="tag t-ok">两层均在集群内</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 关键设计判断</h3>
+  <table>
+    <thead><tr><th style="width:26%">决策</th><th style="width:36%">选择</th><th>理由与代价</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>底座是否自研</td>
+        <td>不自研，用原生 K8s</td>
+        <td>客户可 <code>kubectl</code>、可 <code>Helm</code>、不锁定；代价是无法做深度定制调度，需依赖 Volcano 等外部组件</td>
+      </tr>
+      <tr>
+        <td>租户隔离方式</td>
+        <td>Namespace + ResourceQuota</td>
+        <td>K8s 原生硬限制，apiserver 层拦截，不依赖应用层判断；代价是配额粒度只能到卡数，做不到显存级</td>
+      </tr>
+      <tr>
+        <td>会话方案</td>
+        <td>DB 会话表 + Bearer Token</td>
+        <td>可服务端强制下线、可审计在线会话；代价是每次请求多一次 DB 查询（当前规模无感）</td>
+      </tr>
+      <tr>
+        <td>K8s 接入方式</td>
+        <td>接口抽象 + 双实现</td>
+        <td>无集群也能演示，有集群自动切真；代价是多一层间接，排查时需确认当前 mode</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note">结论：架构上没有明显缺陷。真正的问题不在设计，而在<b>部署形态</b>与<b>可观测能力</b>——见第五节。</div>
+
+  <h2 class="sec">三、功能完成度 <em>Against WBS</em></h2>
+  <p>对照 40 条需求清单逐条核对，按「可现场演示 / 部分实现 / 未实现」三档：</p>
+  <table>
+    <thead><tr><th style="width:12%">阶段</th><th class="num" style="width:9%">条数</th><th class="num" style="width:9%">完整</th><th class="num" style="width:9%">部分</th><th class="num" style="width:9%">未做</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>P0 一期</b></td><td class="num">21</td><td class="num"><b>15</b></td><td class="num">6</td><td class="num">0</td><td>无「未做」，6 项部分实现均因缺硬件或外部组件</td></tr>
+      <tr><td>P1 二期</td><td class="num">12</td><td class="num">2</td><td class="num">5</td><td class="num">5</td><td>缺 RDMA、API Key、自助商城、OpenAPI</td></tr>
+      <tr><td>P2 三期</td><td class="num">7</td><td class="num">0</td><td class="num">1</td><td class="num">6</td><td>推理调优、Token 计费、MIG、发票</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.1 P0 中「部分实现」的 6 项</h3>
+  <table>
+    <thead><tr><th style="width:24%">模块</th><th style="width:32%">已实现</th><th>缺口与原因</th></tr></thead>
+    <tbody>
+      <tr><td>GPU 自动发现与接入</td><td>卡台账、状态、绑定关系</td><td>无 GPU Operator / Device Plugin，设备为伪造上报</td></tr>
+      <tr><td>调度策略引擎</td><td>策略可选、可下发到 Pod spec</td><td>无 Volcano，Bin-pack/Spread/Gang 未真实生效</td></tr>
+      <tr><td>队列与优先级</td><td>队列配额展示、PriorityClass 预留</td><td>抢占与资源回收未实现</td></tr>
+      <tr><td>SSH / Jupyter 交付</td><td>接入信息、公钥、密码重置</td><td>cloud-init 注入与 Ingress 反代未接真机</td></tr>
+      <tr><td>指标采集体系</td><td>时序数据、趋势图、告警规则</td><td>无 Prometheus / DCGM，指标为模拟生成</td></tr>
+      <tr><td>平台部署与联调</td><td>Docker Compose 双容器，健康检查</td><td>未在客户机房 3+9 节点规模验证</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 已通过实测验证的核心链路</h3>
+  <table>
+    <thead><tr><th style="width:34%">验证项</th><th style="width:26%">结果</th><th>证据</th></tr></thead>
+    <tbody>
+      <tr><td>下单 → 创建真实 Pod</td><td><span class="tag t-ok">通过</span></td><td>集群出现 <code>gpu-pod-*</code>，requests.nvidia.com/gpu=1</td></tr>
+      <tr><td>Pod 就绪 → 实例状态自动翻转</td><td><span class="tag t-ok">通过</span></td><td>Reconciler 查 ready() 后 provisioning → running</td></tr>
+      <tr><td>租户配额硬限制</td><td><span class="tag t-ok">通过</span></td><td>第 5 个 Pod 被 ResourceQuota 拒绝（Forbidden）</td></tr>
+      <tr><td>节点容量耗尽排队</td><td><span class="tag t-ok">通过</span></td><td>第 9 个 Pod Pending，事件 Insufficient nvidia.com/gpu</td></tr>
+      <tr><td>释放 → Pod 真删除 + 按秒结算</td><td><span class="tag t-ok">通过</span></td><td>Pod 消失，返回 usedSeconds 与退款金额</td></tr>
+      <tr><td>孤儿资源对账</td><td><span class="tag t-ok">通过</span></td><td>发现 4 个 DB 无记录的 Pod，清理后归零</td></tr>
+      <tr><td>开通租户 → 命名空间 + 配额 + 账号</td><td><span class="tag t-ok">通过</span></td><td>集群真出现 ns 与 gpu-quota 0/4</td></tr>
+      <tr><td>重启后数据保留</td><td><span class="tag t-ok">通过</span></td><td>重启前后订单/审计/卡数一致</td></tr>
+      <tr><td>平台自身部署为 K8s 工作负载</td><td><span class="tag t-ok">通过</span></td><td>tokenark 命名空间内两个 Deployment Running；ServiceAccount in-cluster 认证生效；由集群内平台创建租户 Pod 成功</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="sec">四、技术风险清单 <em>Risk Register</em></h2>
+  <p>按「是否阻断生产上线」分级，不按开发工作量分级。</p>
+
+  <h3>P0 · 阻断生产（已闭环 4 项 / 未闭环 2 项）</h3>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:22%">风险</th><th style="width:36%">后果</th><th>处置结果</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>全链路单副本</td><td>应用、数据库、控制面均为单实例；任一进程崩溃即全站不可用，无自动接管</td><td><span class="tag t-p0">未闭环</span> 需应用 ≥2 副本 + PDB、PG 主备、控制面 3 节点</td></tr>
+      <tr><td>2</td><td>无 TLS</td><td>HTTP 明文传输，登录密码与 Bearer Token 可被同网段嗅探</td><td><span class="tag t-ok">已闭环</span> nginx 1.27 终止 TLS，80→443 强制跳转，已配 HSTS 与安全响应头</td></tr>
+      <tr><td>3</td><td>无备份与恢复演练</td><td>数据库损坏或误删即不可恢复；无 RPO/RTO 定义</td><td><span class="tag t-ok">已闭环</span> pg_dump -Fc 每 24 小时一次，保留 7 天，已生成并校验首份备份</td></tr>
+      <tr><td>4</td><td>无真实监控告警</td><td>故障靠用户报障发现；指标为模拟数据，不能反映真实状态</td><td><span class="tag t-ok">已闭环</span> Prometheus + Grafana + node-exporter；业务 Gauge 已暴露，仪表盘自动加载</td></tr>
+      <tr><td>5</td><td>无私有镜像仓库</td><td>Pod 镜像为占位（busybox），客户业务镜像无来源；离线环境无法交付</td><td><span class="tag t-ok">已闭环</span> registry:2，push/pull 已验证，可作离线镜像中转</td></tr>
+      <tr><td>6</td><td>调度策略未验证</td><td>Gang / 抢占 / 队列均未真实生效，分布式训练场景可能死锁</td><td><span class="tag t-p0">未闭环</span> 需部署 Volcano（当前网络无法拉取官方清单）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>P1 · 影响交付质量（6 项）</h3>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:24%">风险</th><th style="width:34%">说明</th><th>处置建议</th></tr></thead>
+    <tbody>
+      <tr><td>7</td><td>Token 存 localStorage</td><td>前端 XSS 可直接窃取会话；当前多处使用 innerHTML 拼接数据</td><td>改 HttpOnly + SameSite Cookie；输出统一转义</td></tr>
+      <tr><td>8</td><td>接口无通用限流</td><td>登录有 5 次锁定，但业务接口可被脚本刷；下单接口可被刷单</td><td>网关层限流 + 下单幂等键（已有幂等，缺频控）</td></tr>
+      <tr><td>9</td><td>审计可被删改</td><td>审计表与业务同库，DBA 可直接 UPDATE/DELETE</td><td>审计写远端（Loki/对象存储），或开启 WORM</td></tr>
+      <tr><td>10</td><td>无灰度与回滚</td><td>Compose 重建即全量替换，无版本灰度、无快速回退</td><td>镜像版本化 + 滚动更新 + 一键回滚脚本</td></tr>
+      <tr><td>11</td><td>无容量压测数据</td><td>并发下单、大规模 Pod 创建的性能未知</td><td>按 100 并发下单 / 500 Pod 规模压测，出 P95/P99</td></tr>
+      <tr><td>12</td><td>单集群</td><td>多集群纳管未实现，客户多机房场景不覆盖</td><td>列入企业版路线图</td></tr>
+    </tbody>
+  </table>
+
+  <h3>P2 · 优化项（3 项）</h3>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:24%">项</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>13</td><td>前端无工程化</td><td>原生 HTML + 内联脚本，无构建、无组件复用，后续页面增多维护成本上升</td></tr>
+      <tr><td>14</td><td>无 API 文档</td><td>缺 OpenAPI 规范，客户对接需口头沟通</td></tr>
+      <tr><td>15</td><td>无自动化测试</td><td>当前靠接口实测，缺单测与回归用例，改动风险靠人工把控</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="sec">五、性能与容量评估 <em>Performance</em></h2>
+  <div class="warn note">
+    <b>未做压测。</b>以下为经验判断，不得作为容量承诺。对外承诺前必须补压测数据。
+  </div>
+  <table>
+    <thead><tr><th style="width:26%">维度</th><th style="width:24%">当前实测</th><th>判断</th></tr></thead>
+    <tbody>
+      <tr><td>Pod 创建到 Running</td><td>约 8–12 秒</td><td>含镜像拉取；镜像预热后可降至 3 秒内</td></tr>
+      <tr><td>下单接口响应</td><td>约 200–400 ms</td><td>含事务与 K8s API 调用，可接受</td></tr>
+      <tr><td>实例状态收敛</td><td>≤5 秒</td><td>Reconciler 5 秒轮询，可调</td></tr>
+      <tr><td>单集群节点规模</td><td>2 节点 / 16 卡</td><td>K8s 常规可支撑百节点级，但未实测</td></tr>
+      <tr><td>数据库连接池</td><td>默认 Hikari 10</td><td>高并发下单时可能成为瓶颈，需按压测调参</td></tr>
+    </tbody>
+  </table>
+  <p><b>压测建议</b>：用 100 并发持续 10 分钟跑下单+释放循环，观察下单 P95、Pod 创建成功率、数据库连接等待、Reconciler 积压。目标值建议：下单 P95 &lt; 800ms、创建成功率 &gt; 99%。</p>
+
+  <h2 class="sec">六、安全评估 <em>Security</em></h2>
+  <h3>6.1 已具备</h3>
+  <table>
+    <thead><tr><th style="width:26%">控制项</th><th>实现</th></tr></thead>
+    <tbody>
+      <tr><td>密码存储</td><td>BCrypt 加盐哈希，库内无明文</td></tr>
+      <tr><td>暴力破解防护</td><td>连续 5 次失败锁定 10 分钟，失败次数落库</td></tr>
+      <tr><td>会话管理</td><td>服务端会话表，可强制下线；同账号最多 5 个活跃会话</td></tr>
+      <tr><td>接口鉴权</td><td>拦截 <code>/api/**</code>，仅放行登录与健康检查</td></tr>
+      <tr><td>身份防伪</td><td>请求头身份与会话不一致直接 403</td></tr>
+      <tr><td>接口级 RBAC</td><td>管理接口限 admin/ops；系统管理限 admin</td></tr>
+      <tr><td>横向越权</td><td>租户数据按会话强制过滤（本轮修复：此前可查全部租户）</td></tr>
+      <tr><td>账号停用</td><td>停用后已签发会话立即失效</td></tr>
+      <tr><td>审计</td><td>登录、锁定、改密、停用、清理等写操作全留痕</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 缺口</h3>
+  <table>
+    <thead><tr><th style="width:22%">缺口</th><th style="width:12%">等级</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>传输加密</td><td><span class="tag t-ok">已闭环</span></td><td>nginx 终止 TLS，80→443 强制跳转，已配 HSTS</td></tr>
+      <tr><td>XSS 面</td><td><span class="tag t-p1">P1</span></td><td>前端多处 innerHTML 拼接业务数据（如租户名），未统一转义</td></tr>
+      <tr><td>审计不可信</td><td><span class="tag t-p1">P1</span></td><td>与业务同库，具备 DB 权限即可篡改</td></tr>
+      <tr><td>无限流</td><td><span class="tag t-p1">P1</span></td><td>业务接口可被脚本高频调用</td></tr>
+      <tr><td>密钥管理</td><td><span class="tag t-p2">P2</span></td><td>数据库口令写在 compose 文件，未接 Vault/KMS</td></tr>
+    </tbody>
+  </table>
+  <div class="note">合规提示：如客户为金融或政企，P0 与 P1 中的「传输加密」「审计不可篡改」通常在等保测评中会被直接判不符合，需在交付前闭环。</div>
+
+  <h2 class="sec">七、可运维性评估 <em>Operability</em></h2>
+  <table>
+    <thead><tr><th style="width:24%">能力</th><th style="width:16%">状态</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>健康检查</td><td><span class="tag t-ok">具备</span></td><td><code>/api/health</code> 返回 DB 与运行时状态，容器探针已接</td></tr>
+      <tr><td>自愈</td><td><span class="tag t-ok">具备</span></td><td>容器 <code>restart: unless-stopped</code></td></tr>
+      <tr><td>数据持久化</td><td><span class="tag t-ok">具备</span></td><td>幂等建表，重启不清库</td></tr>
+      <tr><td>资源对账</td><td><span class="tag t-ok">具备</span></td><td>可发现并清理孤儿 Pod</td></tr>
+      <tr><td>日志</td><td><span class="tag t-part">部分</span></td><td>容器 stdout，无集中采集与检索</td></tr>
+      <tr><td>指标</td><td><span class="tag t-ok">具备</span></td><td>Prometheus 抓取应用 JVM/HTTP 与业务 Gauge；Grafana 仪表盘自动加载</td></tr>
+      <tr><td>备份恢复</td><td><span class="tag t-ok">具备</span></td><td>pg_dump 每 24h，保留 7 天；恢复演练待补</td></tr>
+      <tr><td>升级回滚</td><td><span class="tag t-part">部分</span></td><td>可重建镜像，无版本化与灰度</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="sec">八、交付可行性 <em>Delivery</em></h2>
+  <h3>8.1 工时对照</h3>
+  <table>
+    <thead><tr><th style="width:30%">范围</th><th class="num" style="width:16%">WBS 人日</th><th class="num" style="width:16%">已完成</th><th>剩余</th></tr></thead>
+    <tbody>
+      <tr><td>P0 一期</td><td class="num">145</td><td class="num">约 130</td><td>已闭环 4 项 P0；剩余 2 项（HA、调度）<b>12–18 人日</b></td></tr>
+      <tr><td>P1 二期</td><td class="num">85</td><td class="num">约 20</td><td>RDMA、API Key、商城、OpenAPI 等</td></tr>
+      <tr><td>P2 三期</td><td class="num">50</td><td class="num">约 5</td><td>推理调优、Token 计费、MIG、发票</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 前置条件（需客户配合）</h3>
+  <ul>
+    <li><b>硬件</b>：3 控制节点 + N GPU 工作节点，RTX 5090 及以上；如需 MIG 则必须 A100/H100</li>
+    <li><b>网络</b>：节点互通，GPU 节点建议万兆；多机训练需 RDMA 交换机预留</li>
+    <li><b>软件源</b>：内网需提供镜像仓库或允许离线导入（当前镜像 552MB）</li>
+    <li><b>证书</b>：域名与 TLS 证书（P0 项 2 依赖此项）</li>
+    <li><b>账号</b>：GPU Operator、Volcano 等组件的离线包获取渠道</li>
+  </ul>
+
+  <h2 class="sec">九、结论与建议 <em>Conclusion</em></h2>
+  <p><b>可以拿去演示，不能拿去上线。</b></p>
+  <p>当前状态适合：技术验证、POC 演示、客户方案汇报、二期立项依据。</p>
+  <p>不适合：直接承载生产流量、对外承诺 SLA、通过等保测评。</p>
+
+  <h3>建议路径</h3>
+  <table>
+    <thead><tr><th style="width:12%">阶段</th><th style="width:34%">动作</th><th>目标</th></tr></thead>
+    <tbody>
+      <tr><td>立即</td><td>用现有版本完成 POC 演示与方案汇报</td><td>拿到二期意向</td></tr>
+      <tr><td><b>已完成</b></td><td>TLS、每日备份、真实监控、私有镜像仓库</td><td><span class="tag t-ok">已闭环</span></td></tr>
+      <tr><td>二期</td><td>补 P0-1/6（应用多副本 + PDB、Volcano 调度引擎）</td><td>具备高可用与真实调度</td></tr>
+      <tr><td>三期</td><td>补 P1 全部 + 压测 + 等保整改</td><td>可对外承诺 SLA</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>一句话给决策层</b>：底座和核心链路已经验证过了，剩下的是把它从「能跑」变成「敢跑」——这部分工作是可估算的工程活，不是技术风险。
+  </div>
+
+  <div class="foot">
+    <span>TokenArk 创元方舟 · 技术评估报告 v1.0</span>
+    <span>2026-11-03 · 内部资料</span>
+  </div>
+</div>
+</body>
+</html>

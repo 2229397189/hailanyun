@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>海兰云 · POC 交付对标清单 v1.0</title>
+<style>
+:root{
+  --ink:#171a23; --sub:#596171; --muted:#7d8392; --line:#e6e9f0;
+  --blue:#185fa5; --blue-ink:#0c447c; --blue-bg:#e6f1fb;
+  --gray-bg:#f4f5f8; --amber:#854f0b; --amber-bg:#faeeda;
+  --red:#a32d2d; --red-bg:#fcebeb; --green:#3b6d11; --green-bg:#eaf3de;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:#eef1f6; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  font-size:14px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+.page{width:900px; margin:24px auto; background:#fff; padding:56px 64px 64px;
+  box-shadow:0 1px 3px rgba(23,26,35,.06); border-radius:4px;}
+h1{font-size:25px; line-height:1.35; margin:0 0 8px; font-weight:600; letter-spacing:-.02em}
+h2{font-size:17px; margin:42px 0 14px; font-weight:600; letter-spacing:-.01em;
+   padding-bottom:8px; border-bottom:1px solid var(--line)}
+h3{font-size:14.5px; margin:24px 0 8px; font-weight:600}
+p{margin:0 0 12px}
+.lede{font-size:15px; color:var(--sub); margin:0 0 4px}
+.meta{font-size:12.5px; color:var(--muted); margin-top:18px; padding-top:14px; border-top:1px solid var(--line)}
+.meta span{margin-right:18px; white-space:nowrap}
+.box{border:1px solid var(--line); border-radius:10px; padding:16px 20px; background:var(--gray-bg)}
+.box.blue{background:var(--blue-bg); border-color:#b5d4f4}
+.box.amber{background:var(--amber-bg); border-color:#f0c37e}
+.box.red{background:var(--red-bg); border-color:#f2b8b8}
+.box h3{margin-top:0}
+.box p:last-child,.box ul:last-child{margin-bottom:0}
+table{width:100%; border-collapse:collapse; font-size:12.5px; margin:10px 0 6px}
+th{text-align:left; font-weight:600; color:var(--sub); font-size:12px; white-space:nowrap;
+   padding:8px 9px; border-bottom:1.5px solid #cfd5e2; background:#fafbfd}
+td{padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:top}
+td.num{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block; font-size:11px; line-height:1.55; padding:0 6px; border-radius:4px; white-space:nowrap; font-weight:500}
+.p0{background:var(--red-bg); color:var(--red)}
+.p1{background:var(--amber-bg); color:var(--amber)}
+.ok{background:var(--green-bg); color:var(--green)}
+.no{background:var(--gray-bg); color:var(--sub)}
+.half{background:var(--blue-bg); color:var(--blue-ink)}
+ol,ul{margin:0 0 12px; padding-left:22px}
+li{margin-bottom:6px}
+li::marker{color:var(--muted)}
+.small{font-size:12.5px; color:var(--sub)}
+code{font-family:ui-monospace,Consolas,"Courier New",monospace; font-size:12px;
+  background:var(--gray-bg); padding:1px 4px; border-radius:3px; color:#3c3489}
+pre{background:#f7f8fb; border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+  font-size:11.5px; line-height:1.7; overflow-x:auto; margin:10px 0 14px;
+  font-family:ui-monospace,Consolas,"Courier New",monospace; color:#2c2c2a}
+.step{display:grid; grid-template-columns:34px 1fr 92px; gap:10px; padding:9px 0;
+  border-bottom:1px solid var(--line); font-size:13px; align-items:baseline}
+.step:last-child{border-bottom:none}
+.step .n{font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+.step .t{font-weight:600}
+.step .d{font-size:12px; color:var(--sub)}
+.step .m{font-size:11.5px; color:var(--muted); text-align:right; white-space:nowrap}
+.foot{font-size:11.5px; color:var(--muted); margin-top:34px; padding-top:14px; border-top:1px solid var(--line)}
+@media print{
+  body{background:#fff}
+  .page{width:auto; margin:0; padding:16mm 13mm; box-shadow:none; border-radius:0}
+  h2{page-break-after:avoid}
+  table,.box{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>海兰云 · K8s 原生 GPU 算力调度平台<br>POC 交付对标清单</h1>
+<p class="lede">逐条对标需求文档 v1.0，明确 POC 做什么、做到什么程度、还差什么</p>
+<div class="meta">
+  <span>版本 v1.0</span><span>2026-11-02</span><span>依据：需求文档 v1.0（2026-10-29）</span><span>技术执行：陆强</span>
+</div>
+
+<h2>一 · 三条结论</h2>
+<div class="box blue">
+  <p><strong>1. POC 不等于生产交付。</strong>成功标准写的是"技术接口人确认闭环成立"，风险项写的是"用示例租户演示、数据标注为演示数据"。所以 POC 的目标是<strong>让接口人点头</strong>，不是上线收钱。四个 P0 真跑起来，三个 P1 用示例数据演完整，就够了。</p>
+  <p><strong>2. 调度器选 Volcano，不选 Kueue。</strong>需求 3 明确要 Bin-packing、Spread、Gang、队列优先级抢占四项。Kueue 只解决配额与抢占（且是准入层，不管调度），Volcano 一个组件全覆盖。只装一个，少学一套。</p>
+  <p style="margin-bottom:0"><strong>3. 切分（需求 4）先留口不落地。</strong>5090 无 MIG，HAMi 对新架构的支持尚未验证。POC 阶段用时间片共享演示 + 数据模型预留切分字段，真上切分等卡型确认后再做。</p>
+</div>
+
+<h2>二 · 八条需求逐条对标</h2>
+<table>
+<thead><tr>
+<th style="width:4%">#</th><th style="width:15%">需求点</th><th style="width:6%">优先级</th>
+<th style="width:9%">现有原型</th><th style="width:30%">POC 做什么</th><th style="width:26%">生产化还差什么</th><th class="num">人天</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>1</td><td>K8s 原生底座</td><td><span class="tag p0">P0</span></td><td><span class="tag ok">有界面</span></td>
+<td>k3s 集群（2 或 3 节点）；Pod / Deployment / Namespace / Label / Taint / ResourceQuota 全部可查看与操作</td>
+<td>多控制面 HA（3 server 起）、升级与回滚流程</td><td class="num">1</td>
+</tr>
+<tr>
+<td>2</td><td>GPU 算力纳管</td><td><span class="tag p0">P0</span></td><td><span class="tag ok">有界面</span></td>
+<td>GPU Operator 纳管全部卡；DCGM 上报利用率/显存/温度/功耗；节点上下线可操作</td>
+<td>异构卡型适配（后续更高规格）、驱动版本矩阵</td><td class="num">1.5</td>
+</tr>
+<tr>
+<td>3</td><td>GPU 调度</td><td><span class="tag p0">P0</span></td><td><span class="tag half">仅界面</span></td>
+<td>Volcano：队列 + 优先级 + 抢占 + <strong>Gang（2 Pod 同起同停）</strong> + Bin-packing（同节点装满）</td>
+<td>按租户/机架的拓扑感知、抢占策略调优、跨队列借用（默认关闭）</td><td class="num">2</td>
+</tr>
+<tr>
+<td>4</td><td>GPU 共享切分</td><td><span class="tag p1">P1</span></td><td><span class="tag half">仅界面</span></td>
+<td>用 GPU Operator time-slicing 做时间片共享演示；MIG/vGPU 仅做能力探测，不做承诺</td>
+<td>HAMi 落地（须先验证新架构 sm120 / CUDA 版本支持）、切分粒度与计费口径</td><td class="num">1</td>
+</tr>
+<tr>
+<td>5</td><td>集群监控</td><td><span class="tag p0">P0</span></td><td><span class="tag ok">有界面</span></td>
+<td>Prometheus + DCGM 接<strong>真数据</strong>，替换原型里的写死数据；监控页与大屏同源</td>
+<td>长期存储、告警分级、多集群聚合</td><td class="num">2</td>
+</tr>
+<tr>
+<td>6</td><td>多租户与租赁运营</td><td><span class="tag p1">P1</span></td><td><span class="tag half">运营视角</span></td>
+<td>示例租户 + <strong>租户自助申请页</strong> + 实例交付 + API Key + 卡时计量与账单（演示数据，页面标注）</td>
+<td><strong>真实计费、账单、对账、支付</strong>；合同与配额审批流</td><td class="num">5</td>
+</tr>
+<tr>
+<td>7</td><td>告警与巡检</td><td><span class="tag p1">P1</span></td><td><span class="tag half">仅界面</span></td>
+<td>4 条阈值告警（XID 非 0 / 温度 >85 / 显存 >95% / 节点 NotReady）+ 规则版巡检报告</td>
+<td>日志审计、自愈动作（需人工确认）、LLM 诊断可后续叠加</td><td class="num">1.5</td>
+</tr>
+<tr>
+<td>8</td><td>高可用与演进</td><td><span class="tag p1">P1</span></td><td><span class="tag no">无</span></td>
+<td>POC 以 3 控制节点部署示意（若客户只给 2 台则仅展示单控制面 + 说明路径）</td>
+<td>真 HA、平滑扩容、卡型演进方案</td><td class="num">0.5</td>
+</tr>
+<tr>
+<td colspan="6"><strong>POC 合计</strong>（含演示数据构造与联调彩排）</td><td class="num"><strong>≈ 14</strong></td>
+</tr>
+</tbody>
+</table>
+<p class="small">采购后再补 P1 的生产化部分（真实计费与账单、切分落地、HA），追加约 15 人天。不建议把两步合成一次报价——客户预算敏感，先给能验证的小闭环。</p>
+
+<h2>三 · POC 两周节奏</h2>
+<table>
+<thead><tr><th style="width:9%">天</th><th style="width:44%">动作</th><th>当天必须看到的证据</th></tr></thead>
+<tbody>
+<tr><td>D1</td><td>宿主机装 NVIDIA 驱动，组 k3s 集群</td><td><code>nvidia-smi</code> 出卡；<code>kubectl get nodes</code> 全 Ready</td></tr>
+<tr><td>D2</td><td>装 GPU Operator（关闭自带驱动安装）</td><td>每节点 <code>nvidia.com/gpu</code> 可分配数正确</td></tr>
+<tr><td>D3</td><td>装 Volcano，建队列与优先级，跑通 gang</td><td>2 个 Pod 要么同时起、要么都不起</td></tr>
+<tr><td>D4</td><td>Prometheus + DCGM 接入</td><td>每张卡有实时曲线，序列数等于卡数</td></tr>
+<tr><td>D5</td><td>卡池页接真数据（替换写死数据）</td><td>关掉一台节点的 kubelet，页面 30 秒内变红</td></tr>
+<tr><td>D6</td><td>租户 + Namespace + ResourceQuota</td><td>租户超额后第 N+1 个 Pod 起不来</td></tr>
+<tr><td>D7</td><td>实例交付链路：申请 → 创建 → 连接入口</td><td>点一次，90 秒内拿到可用实例</td></tr>
+<tr><td>D8</td><td>卡时计量与账单页（演示数据）</td><td>页面数字与实例时长一致，且明确标注"演示"</td></tr>
+<tr><td>D9</td><td>告警规则 + 巡检报告</td><td>制造一次高温或掉卡，收到告警</td></tr>
+<tr><td>D10</td><td>大屏接真数据 + 全流程彩排</td><td>10 分钟演示一遍不卡壳</td></tr>
+</tbody>
+</table>
+
+<h2>四 · 演示脚本（10 分钟）</h2>
+<div class="step"><div class="n">01</div><div><div class="t">集群总览</div><div class="d">一句话定调："这套是 K8s 原生，下面每一个对象都能用 kubectl 管。"</div></div><div class="m">30 秒</div></div>
+<div class="step"><div class="n">02</div><div><div class="t">节点管理 · 打开 YAML 抽屉</div><div class="d">展示标准 Node 对象与 Label/Taint，执行一次 Cordon，现场看到不可调度。</div></div><div class="m">1.5 分钟</div></div>
+<div class="step"><div class="n">03</div><div><div class="t">GPU 资源池 · 跑一个 gang 任务</div><div class="d">同时提交 2 个 Pod，展示"要么一起上、要么都不上"。这是需求 3 最硬的一条。</div></div><div class="m">2 分钟</div></div>
+<div class="step"><div class="n">04</div><div><div class="t">工作负载 · 看调度事件</div><div class="d">说明不是封装的假界面，Pod 的调度过程可追溯。</div></div><div class="m">1 分钟</div></div>
+<div class="step"><div class="n">05</div><div><div class="t">租户 · 新建 → 配额 → 自助申请 → 交付实例</div><div class="d">走完一个租户从申请到拿到卡的完整闭环，明确说明"计费为演示数据"。</div></div><div class="m">2.5 分钟</div></div>
+<div class="step"><div class="n">06</div><div><div class="t">监控与告警</div><div class="d">真数据曲线 + 现场触发一条告警，证明不是截图。</div></div><div class="m">1.5 分钟</div></div>
+<div class="step"><div class="n">07</div><div><div class="t">大屏</div><div class="d">投屏演示，给领导看的那一页。</div></div><div class="m">30 秒</div></div>
+<div class="step"><div class="n">08</div><div><div class="t">收尾三句话</div><div class="d">"底座是你们要的 K8s 原生，上层是能赚钱的调度与租赁，规模从 2 台到 72 卡不用重做。"</div></div><div class="m">1 分钟</div></div>
+
+<h2>五 · 必须先确认的五件事</h2>
+<div class="box red">
+  <h3>两个矛盾，会直接改变工作量</h3>
+  <ol style="margin-bottom:10px">
+    <li><strong>规模到底是 72 卡还是 16 卡？</strong>售前交流说"现有 2 台 5090 测试"，需求文档写"生产集群 3 控制节点 + 9 工作节点共 72 卡"。差 3 倍工作量，且决定 HA 是不是 P0。</li>
+    <li><strong>切分做不做？</strong>口头说"不做微切分没必要"，书面需求 4 列 P1"提升单卡出租率"。建议按书面准备、按口头谈范围。</li>
+  </ol>
+  <h3>三个环境前提，不给就停工</h3>
+  <ol style="margin-bottom:0">
+    <li>集群访问权限：root 还是 sudo，能否直连</li>
+    <li>OS 与内核版本：5090 需要较新内核，版本不足要先升级（隐藏工期）</li>
+    <li>能否出外网：决定是否需要准备离线安装包（约 5–8 GB，需提前一天准备）</li>
+  </ol>
+</div>
+
+<h2>六 · 风险与应对</h2>
+<table>
+<thead><tr><th style="width:26%">风险（需求文档已列）</th><th>我们的应对</th></tr></thead>
+<tbody>
+<tr><td>客户纠结 K8s 细节</td><td><strong>主动展示，不隐藏。</strong>每个页面都留 YAML 抽屉与 kubectl 等价命令，让接口人确认"这是真 K8s，不是套壳"</td></tr>
+<tr><td>预算低，要求分批</td><td>POC 报价与生产化报价分开；POC 只做四个 P0 加演示级 P1，约 14 人天</td></tr>
+<tr><td>无真实租户</td><td>用示例租户演示完整闭环，<strong>所有演示数据在页面上打"演示"标记</strong>，避免验收争议</td></tr>
+<tr><td>HAMi 对新架构支持未验证</td><td>POC 不承诺切分能力，只做时间片演示；切分列入采购后评估项</td></tr>
+<tr><td>2 台机器无法做真 HA</td><td>如实说明：控制面高可用需 3 节点，若只有 2 台则展示部署路径与扩容方案，不承诺 SLA</td></tr>
+</tbody>
+</table>
+
+<h2>七 · POC 交付物清单</h2>
+<ol>
+  <li>可访问的 POC 环境（地址 + 账号），含真实集群数据</li>
+  <li>演示脚本与讲解词（10 分钟版）</li>
+  <li>需求对标表（本文件，逐条勾选完成度）</li>
+  <li>集群部署记录（版本、驱动、组件清单、端口）</li>
+  <li>待确认项与后续采购建议（P1 生产化范围与报价）</li>
+</ol>
+
+<div class="foot">
+本清单依据《海兰云 · K8s 原生 GPU 算力调度管理平台 需求文档 v1.0（2026-10-29）》编制，人天为量级估算，客户侧规模与计费口径确认后需重新校准。
+</div>
+
+</div>
+</body>
+</html>

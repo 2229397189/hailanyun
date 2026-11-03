@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>海兰云算力租赁平台 · 第一阶段技术方案 v0.2</title>
+<style>
+:root{
+  --ink:#171a23; --sub:#596171; --muted:#7d8392; --line:#e6e9f0;
+  --blue:#185fa5; --blue-ink:#0c447c; --blue-bg:#e6f1fb;
+  --gray-bg:#f4f5f8; --amber:#854f0b; --amber-bg:#faeeda;
+  --red:#a32d2d; --red-bg:#fcebeb; --green:#3b6d11; --green-bg:#eaf3de;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:#eef1f6; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  font-size:14px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+.page{
+  width:880px; margin:24px auto; background:#fff; padding:56px 64px 64px;
+  box-shadow:0 1px 3px rgba(23,26,35,.06); border-radius:4px;
+}
+h1{font-size:26px; line-height:1.35; margin:0 0 8px; font-weight:600; letter-spacing:-.02em}
+h2{font-size:17px; margin:44px 0 14px; font-weight:600; letter-spacing:-.01em;
+   padding-bottom:8px; border-bottom:1px solid var(--line)}
+h3{font-size:14.5px; margin:26px 0 8px; font-weight:600}
+p{margin:0 0 12px}
+.lede{font-size:15px; color:var(--sub); margin:0 0 4px}
+.meta{font-size:12.5px; color:var(--muted); margin-top:20px; padding-top:16px; border-top:1px solid var(--line)}
+.meta span{margin-right:20px; white-space:nowrap}
+.hr{height:1px; background:var(--line); margin:28px 0}
+
+.box{border:1px solid var(--line); border-radius:10px; padding:18px 20px; background:var(--gray-bg)}
+.box.blue{background:var(--blue-bg); border-color:#b5d4f4}
+.box.amber{background:var(--amber-bg); border-color:#f0c37e}
+.box.red{background:var(--red-bg); border-color:#f2b8b8}
+.box h3{margin-top:0}
+.box p:last-child{margin-bottom:0}
+
+table{width:100%; border-collapse:collapse; font-size:13px; margin:10px 0 6px}
+th{text-align:left; font-weight:600; color:var(--sub); font-size:12.5px;
+   padding:9px 10px; border-bottom:1.5px solid #cfd5e2; background:#fafbfd}
+td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+td.num{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block; font-size:11.5px; line-height:1.6; padding:0 7px; border-radius:4px; white-space:nowrap}
+.tag.own{background:var(--blue-bg); color:var(--blue-ink)}
+.tag.oss{background:var(--gray-bg); color:var(--sub); border:1px solid var(--line)}
+.tag.no{background:var(--red-bg); color:var(--red)}
+.tag.go{background:var(--green-bg); color:var(--green)}
+
+.arch{border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0 8px}
+.arch .row{display:grid; grid-template-columns:96px 1fr; border-bottom:1px solid var(--line)}
+.arch .row:last-child{border-bottom:none}
+.arch .lb{background:#fafbfd; border-right:1px solid var(--line); padding:14px 10px;
+  font-size:12px; color:var(--sub); display:flex; flex-direction:column; gap:5px;
+  align-items:center; justify-content:center; text-align:center; white-space:nowrap}
+.arch .cells{display:flex; gap:8px; padding:12px; flex-wrap:wrap}
+.arch .cell{flex:1; min-width:110px; border:1px solid #b5d4f4; background:var(--blue-bg);
+  border-radius:8px; padding:10px 12px; font-size:12.5px; color:var(--blue-ink); text-align:center}
+.arch .cell.oss{border-color:#d3d1c7; background:#f4f5f8; color:var(--sub)}
+.arch .cell small{display:block; font-size:11px; color:#5f8bb8; margin-top:2px}
+.arch .cell.oss small{color:var(--muted)}
+
+.phase{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0}
+.phase .p{border:1px solid var(--line); border-radius:10px; padding:14px 16px}
+.phase .p.now{border-color:#85b7eb; background:#f7fbff}
+.phase .p .k{font-size:11.5px; color:var(--muted); letter-spacing:.04em}
+.phase .p .t{font-size:13.5px; font-weight:600; margin:4px 0 6px}
+.phase .p .d{font-size:12.5px; color:var(--sub); line-height:1.65}
+
+ol,ul{margin:0 0 12px; padding-left:22px}
+li{margin-bottom:6px}
+li::marker{color:var(--muted)}
+.small{font-size:12.5px; color:var(--sub)}
+.kv{display:grid; grid-template-columns:120px 1fr; gap:6px 16px; font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.q{counter-reset:q}
+.q li{margin-bottom:10px}
+pre{background:#f7f8fb; border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+  font-size:12px; line-height:1.75; overflow-x:auto; margin:10px 0 14px;
+  font-family:ui-monospace,Consolas,"Courier New",monospace; color:#2c2c2a}
+code{font-family:ui-monospace,Consolas,"Courier New",monospace; font-size:12.5px;
+  background:var(--gray-bg); padding:1px 4px; border-radius:3px; color:#3c3489}
+.foot{font-size:11.5px; color:var(--muted); margin-top:36px; padding-top:14px; border-top:1px solid var(--line)}
+@media print{
+  body{background:#fff}
+  .page{width:auto; margin:0; padding:18mm 16mm; box-shadow:none; border-radius:0}
+  h2{page-break-after:avoid} table,.box,.arch,.phase{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>海兰云算力租赁平台<br>第一阶段技术方案</h1>
+<p class="lede">以 2 台 RTX 5090 起步，60 天交付可对外收费的卡池自助服务</p>
+<div class="meta">
+  <span>版本 v0.2</span><span>2026-11-02</span><span>技术方案 / Demo：陆强</span><span>评审：曹胜建</span>
+</div>
+
+<h2>0 · 一页结论</h2>
+<div class="box blue">
+  <p><strong>我们卖的不是一个"平台"，是一套"能让卡马上租出去并收到钱"的最小闭环。</strong></p>
+  <p>60 天只做四件事：<strong>卡能分配、租户能隔离、订单能计费、客户能自助</strong>。调度、监控、容器、镜像全部用成熟开源，不自研。</p>
+  <p>三个必须让客户记住的点：</p>
+  <ol style="margin-bottom:0">
+    <li><strong>不做 GPU 切分</strong>——5090 本身不支持 MIG，客户也明确说不需要，这块最贵的成本直接不存在。</li>
+    <li><strong>60 天出的是能收钱的卡池，不是 PPT 架构</strong>——第 8 周演示"下单→拿卡→跑任务→出账单"完整链路。</li>
+    <li><strong>第三阶段的 Token 平台不用重做</strong>——账户、额度、计费、模型网关已有在跑的版本，第一阶段建的账户以后直接接着用。</li>
+  </ol>
+</div>
+
+<h2>1 · 需求还原</h2>
+<p class="small">下表是从 10 月 30 日会议纪要中提炼的客户原话与工程含义，用于确认双方理解一致。</p>
+<table>
+<thead><tr><th style="width:29%">客户说的</th><th style="width:25%">工程含义</th><th>第一阶段怎么做</th></tr></thead>
+<tbody>
+<tr><td>颗粒度覆盖单卡、单机、多卡、多机</td><td>资源分配单元是"卡"，不是虚拟机</td><td>单卡 / 整机两种规格先上；多机走同一套编排，不额外开发</td></tr>
+<tr><td>不需要做 GPU 微切分</td><td>不做 vGPU / MIG / 时间片共享</td><td>整卡独占，一张卡同一时刻只属于一个租户</td></tr>
+<tr><td>优先基于 K8s 行业标准架构</td><td>运维、招人、扩展都按 K8s 生态走</td><td>K8s + 标准 Device Plugin，不引入私有调度器</td></tr>
+<tr><td>自助下单、资源发放、计费</td><td>公有云式自助体验</td><td>控制台下单 → 自动创建实例 → 按卡时计费 → 出账</td></tr>
+<tr><td>资源自动下发、回收释放</td><td>租期结束必须自动收回，不能靠人手动删</td><td>实例生命周期状态机 + 到期回收 + 异常兜底</td></tr>
+<tr><td>三阶段平滑演进，起步成本优先</td><td>架构要留口，但不能一次建完</td><td>P1 只建 P1 需要的；对外接口与账户体系按 P3 预留</td></tr>
+</tbody>
+</table>
+
+<h2>2 · 交付边界</h2>
+<div class="phase">
+  <div class="p now">
+    <div class="k">P1 · 本次交付</div>
+    <div class="t">卡池租赁平台</div>
+    <div class="d">单卡 / 整机 / 小集群，自助下单、自动发放、按卡时计费。2 台 5090 起步。</div>
+  </div>
+  <div class="p">
+    <div class="k">P2 · 后续</div>
+    <div class="t">多节点分布式</div>
+    <div class="d">面向大 B 的多机训练任务，RDMA 高速网络、拓扑感知调度、gang scheduling。</div>
+  </div>
+  <div class="p">
+    <div class="k">P3 · 远期</div>
+    <div class="t">Token / MaaS</div>
+    <div class="d">模型广场、推理服务、按 token 计费。账户与计费体系复用 P1。</div>
+  </div>
+</div>
+
+<h3>P1 分层架构</h3>
+<div class="arch">
+  <div class="row">
+    <div class="lb">客户面</div>
+    <div class="cells">
+      <div class="cell">自助控制台<small>下单 / 实例 / 账单</small></div>
+      <div class="cell">连接方式<small>SSH · Jupyter · API</small></div>
+      <div class="cell">监控大屏<small>只读展示</small></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="lb">业务面<br><span class="tag own" style="margin-top:4px">自研</span></div>
+    <div class="cells">
+      <div class="cell">租户与配额<small>开通 / 限额 / 隔离</small></div>
+      <div class="cell">订单状态机<small>下单 → 生效 → 到期</small></div>
+      <div class="cell">计费与账单<small>预扣 / 结算 / 对账</small></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="lb">调度面<br><span class="tag own" style="margin-top:4px">薄封装</span></div>
+    <div class="cells">
+      <div class="cell">卡池管理<small>分配 / 回收 / 健康</small></div>
+      <div class="cell">配额与队列<small>Volcano Queue</small></div>
+      <div class="cell">告警<small>掉卡 / 高温 / 离线</small></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="lb">资源面<br><span class="tag oss" style="margin-top:4px">开源</span></div>
+    <div class="cells">
+      <div class="cell oss">K8s<small>k3s / rke2</small></div>
+      <div class="cell oss">GPU Operator<small>驱动 · Device Plugin</small></div>
+      <div class="cell oss">Volcano<small>批量与配额调度</small></div>
+      <div class="cell oss">Prometheus + DCGM<small>指标采集</small></div>
+    </div>
+  </div>
+</div>
+<p class="small">蓝色为需要写的部分，灰色为直接部署的开源组件。三层自研合计约 40–45 人天，是整个 60 天工期的实际工作量。</p>
+
+<h2>3 · 模块清单与工作量</h2>
+<table>
+<thead><tr><th style="width:18%">模块</th><th style="width:32%">做什么</th><th style="width:30%">用什么</th><th style="width:10%">性质</th><th class="num">人天</th></tr></thead>
+<tbody>
+<tr><td>卡池管理</td><td>把节点上的卡登记成池，按单卡 / 整机分配，租期结束自动回收</td><td>K8s Device Plugin + 自研资源模型</td><td><span class="tag own">自研</span></td><td class="num">8–10</td></tr>
+<tr><td>租户与配额</td><td>开通租户、限制卡数上限、网络与数据隔离</td><td>Namespace + ResourceQuota + Kyverno</td><td><span class="tag own">自研</span></td><td class="num">5</td></tr>
+<tr><td>订单与计费</td><td>下单、预扣、按分钟计量、结算、出账、对账</td><td>自研（复用现有支付幂等模型）</td><td><span class="tag own">自研</span></td><td class="num">12–15</td></tr>
+<tr><td>自助控制台</td><td>客户下单页、实例列表、连接入口、账单页</td><td>React + 现有组件库</td><td><span class="tag own">自研</span></td><td class="num">10–12</td></tr>
+<tr><td>监控采集</td><td>卡利用率、显存、温度、功耗、ECC、掉卡</td><td>Prometheus + DCGM Exporter + node_exporter</td><td><span class="tag oss">部署</span></td><td class="num">3</td></tr>
+<tr><td>监控大屏</td><td>卡池地图、总利用率、今日卡时与收入、告警滚动</td><td>Grafana 或自研单页</td><td><span class="tag own">薄</span></td><td class="num">2</td></tr>
+<tr><td>运维管理页</td><td>节点管理、实例强制释放、租户封禁、账单导出</td><td>并入控制台后台</td><td><span class="tag own">自研</span></td><td class="num">含上</td></tr>
+</tbody>
+</table>
+<p class="small">合计约 40–45 人天。60 个自然日按 1 名主力 + 1 名兼职投入，含 20% 缓冲。</p>
+
+<h2>4 · 开源选型</h2>
+<p>结论先说：<strong>没有一套现成开源能直接当"算力租赁平台"卖。</strong>能直接用开源顶上的是调度、监控、容器、镜像这几层；订单、计费、租户开通必须自己写——这三块恰好是和客户账户体系绑死、也是最愿意付钱的部分。</p>
+<table>
+<thead><tr><th style="width:20%">组件</th><th style="width:12%">许可证</th><th style="width:34%">在我们方案里的角色</th><th>为什么不选替代品</th></tr></thead>
+<tbody>
+<tr><td>Kubernetes / k3s</td><td>Apache-2.0</td><td>统一资源底座，客户已认可</td><td>OpenStack 体量过大，2 台机器跑不动也用不上</td></tr>
+<tr><td>NVIDIA GPU Operator</td><td>Apache-2.0</td><td>驱动、容器运行时、Device Plugin 一键纳管</td><td>手装驱动在 2 台以上就无法维护</td></tr>
+<tr><td>Volcano</td><td>Apache-2.0</td><td>队列配额、gang scheduling，为 P2 多机预留</td><td>默认调度器不支持队列与组调度</td></tr>
+<tr><td>Prometheus + DCGM Exporter</td><td>Apache-2.0</td><td>GPU 指标采集与告警的事实标准</td><td>自研采集器成本高且拿不到 XID / ECC</td></tr>
+<tr><td>Grafana</td><td>AGPL-3.0</td><td>运维看板；对外大屏建议自研单页</td><td>AGPL 只部署不改源码即可，但对外产品化时规避</td></tr>
+<tr><td>JupyterHub</td><td>BSD-3</td><td>租户开箱即用的开发环境</td><td>自研 Notebook 编排不划算</td></tr>
+<tr><td>Harbor</td><td>Apache-2.0</td><td>租户私有镜像仓库</td><td>—</td></tr>
+<tr><td>KubeVirt</td><td>Apache-2.0</td><td>仅当客户要求"给整机 / 给 Root 虚拟机"时启用</td><td>P1 默认给容器，虚拟机按需开启</td></tr>
+</tbody>
+</table>
+<div class="box amber" style="margin-top:16px">
+  <h3>关于 "开源包一下就能卖"</h3>
+  <p>能做，但要说清包的是哪一层。调度器和监控是"零件"，谁都拿得到，卖不出价；客户付钱买的是<strong>计费准不准、回收干不干净、出问题谁兜</strong>。所以我们的做法是：零件全用开源省时间，把 60 天花在业务层和稳定性上。</p>
+</div>
+
+<h2>5 · 60 天节奏</h2>
+<table>
+<thead><tr><th style="width:12%">周次</th><th style="width:26%">目标</th><th style="width:38%">交付物</th><th>验收</th></tr></thead>
+<tbody>
+<tr><td>W1–W2</td><td>底座就位</td><td>K8s + GPU Operator 跑通；2 台机器 16 卡全部可识别；Prometheus + DCGM 出图；卡池数据模型定稿</td><td>能在大屏上看到每张卡的状态</td></tr>
+<tr><td>W3–W4</td><td>链路打通</td><td>下单 → 创建实例 → SSH / Jupyter 连进去 → 到期回收</td><td>手动下单能完整跑一遍，不靠人删资源</td></tr>
+<tr><td>W5–W6</td><td>能收钱</td><td>预扣、按分钟计量、结算、账单页、对账任务</td><td>跑 24 小时，账单与真实占用对得上</td></tr>
+<tr><td>W7–W8</td><td>能演示</td><td>控制台打磨、大屏、运维管理页、交付文档、2 台机器压测</td><td>客户现场 10 分钟演示不翻车</td></tr>
+</tbody>
+</table>
+<p class="small">原则：<strong>先砍功能，不砍时间。</strong>时间一压缩，交付质量就没有下限；功能砍掉只是少一个卖点。</p>
+
+<h2>6 · 明确不做的范围</h2>
+<table>
+<thead><tr><th style="width:34%">不做的事</th><th>原因</th></tr></thead>
+<tbody>
+<tr><td>GPU 微切分 / vGPU / MIG</td><td>5090 硬件不支持 MIG；客户明确不需要；做了也没有收益</td></tr>
+<tr><td>RDMA 多机分布式训练调度</td><td>属于 P2；P1 只有 2 台机器，做不出真实拓扑</td></tr>
+<tr><td>模型推理服务与 token 计费</td><td>属于 P3；但账户与计费结构按 P3 预留</td></tr>
+<tr><td><strong>AI 自动调优 Agent</strong></td><td>见下方专门说明——不是 P1 需求，放进 P1 会挤掉计费工期</td></tr>
+<tr><td>平台自身高可用</td><td>2 台机器无法做主备；如实告知，不承诺 99.9%</td></tr>
+</tbody>
+</table>
+
+<div class="box red" style="margin-top:18px">
+  <h3>"AI 自动调优 Agent" 的定位（请评审确认）</h3>
+  <p>会议纪要中客户<strong>全程没有提过</strong>调优、Agent、自动化优化。客户的原话是"自动化调度与维护"，指的是<strong>资源按需分配和自动回收</strong>，属于 K8s 调度器的工作，不是模型层的参数或推理性能调优。这两件事名字像，工程量差一个数量级。</p>
+  <p>如果 P1 投入做 Agent：卡租不出去、账单算不对，客户第一阶段就跑不通，后面两阶段自然没有。建议这样处理：</p>
+  <ul style="margin-bottom:0">
+    <li><strong>P1 只做一个规则版"智能推荐"</strong>（≈3 人天）：根据历史占用推荐空闲卡、对掉卡和高负载节点做健康度打分。不叫 Agent，能演示、能讲故事。</li>
+    <li><strong>真正的调优 Agent 放到 P2</strong>，和多机场景一起做——那时才有真实的拓扑数据和 QoS 指标可优化。</li>
+    <li>对客户的话术："自动化调度第一阶段就有；AI 调优要等多机跑起来才有数据，我们现在不拿 PPT 换你的预算。"</li>
+  </ul>
+</div>
+
+<h2>7 · 技术风险与对策</h2>
+<table>
+<thead><tr><th style="width:30%">风险</th><th style="width:12%">影响</th><th>对策</th></tr></thead>
+<tbody>
+<tr><td>5090 为消费级卡，无 ECC、无 MIG、驱动与企业卡不同</td><td>高</td><td>对外 SLA 按实际能力写，不承诺企业级可用性；掉卡告警必须做</td></tr>
+<tr><td>2 台机器 = 平台单点，节点故障即全停</td><td>高</td><td>平台组件与卡池分离部署；如实告知，不写高可用承诺</td></tr>
+<tr><td>计费与真实占用不一致（抢占、节点宕机、时钟漂移）</td><td>高</td><td>以"实例事件流"为唯一计费依据，而非定时采样；预扣 + 结算 + 每日对账三层兜底</td></tr>
+<tr><td>资源回收不干净，卡被占死</td><td>中</td><td>Finalizer + 定时巡检强制回收，运维页可手动释放</td></tr>
+<tr><td>对外经营算力租赁涉及资质</td><td>中</td><td>资质由客户侧解决，方案不承诺合规主体；合同口径需商务确认</td></tr>
+<tr><td>单人 60 天满配排期，需求一变就崩</td><td>中</td><td>范围变更必须重算工期；每周固化一次可演示版本</td></tr>
+</tbody>
+</table>
+
+<h2>8 · 需要客户确认的五个问题</h2>
+<ol class="q">
+  <li><strong>2 台 5090 各装几张卡？</strong>是 16 卡还是 8 卡——直接决定可售算力与报价模型。</li>
+  <li><strong>最小计费单位是什么？</strong>按小时还是按天；是否允许被抢占（允许则单价可降，但需在合同写明）。</li>
+  <li><strong>实例是否需要公网访问？</strong>开放 SSH / Jupyter 到公网，还是只给内网 + VPN。这决定安全投入。</li>
+  <li><strong>结算方式？</strong>预付余额实时扣，还是后付月结；开票主体是谁。决定计费模块的复杂度。</li>
+  <li><strong>租户是谁？</strong>对外部客户经营，还是集团内部 / 关联方自用。涉及资质与合规口径。</li>
+</ol>
+
+<h2>9 · 下一步</h2>
+<dl class="kv">
+  <dt>今天</dt><dd>本方案过评审，确认范围与 P1 边界</dd>
+  <dt>本周</dt><dd>拿到 2 台 5090 的访问权限与配置清单，跑通 GPU Operator</dd>
+  <dt>第 2 周</dt><dd>出可演示的第一版：大屏 + 手动下单一条链路</dd>
+  <dt>第 4 周</dt><dd>第一次内部 Demo，同步给客户看进度</dd>
+</dl>
+
+<h2>附录 A · 工作包拆解与修正（TP0–TP9）</h2>
+<p class="small">本表在原有拆解基础上做了四处选型修正，并把总工期压到单人可交付的范围。原拆解合计 57 人天，接近 60 天工期的 1.35 倍人力。</p>
+<table>
+<thead><tr><th style="width:20%">工作包</th><th style="width:22%">原方案</th><th style="width:42%">修正</th><th class="num">人天</th></tr></thead>
+<tbody>
+<tr><td>TP0 K8s 底座</td><td>直接用</td><td>2 台机器用 k3s，不调优 CNI，控制面与 GPU 共节点</td><td class="num">3 → 2</td></tr>
+<tr><td>TP1 GPU 纳管</td><td>GPU Operator</td><td>驱动装宿主机，Operator 关闭 driver 安装；5090 需 570 以上驱动</td><td class="num">5 → 5</td></tr>
+<tr><td>TP2 调度</td><td>KAI-Scheduler</td><td><strong>换 Volcano</strong>。KAI 于 2026-10 才开源，生态与踩坑资料不足，60 天项目不承担试错</td><td class="num">5 → 3</td></tr>
+<tr><td>TP3 实例生命周期</td><td>二开 GPUStack GPUaaS</td><td><strong>不二开，改 API 对接</strong>。GPUStack 为 Python + Vue 栈，读码改造成本高于自研同功能</td><td class="num">8 → 5</td></tr>
+<tr><td>TP4 多租户与配额</td><td>KAI Resource + K8s Quota</td><td>保留。Namespace + ResourceQuota + Volcano Queue 足够 P1</td><td class="num">5 → 5</td></tr>
+<tr><td>TP5 自助门户</td><td>GPUStack 白标 + 自研</td><td>砍购物车与算力市场，改为运营代下单 + 客户只读账单页</td><td class="num">10 → 3</td></tr>
+<tr><td>TP6 计量计费</td><td>CSGHub 参考 + 自研</td><td><strong>加码</strong>。原估未覆盖支付通道、退款与对账，这是唯一不能省的部分</td><td class="num">8 → 12</td></tr>
+<tr><td>TP7 监控告警</td><td>直接用</td><td>保留，补 XID 掉卡告警与自动摘卡</td><td class="num">4 → 4</td></tr>
+<tr><td>TP8 白标打包</td><td>二开</td><td>延后，不影响客户第一轮验收</td><td class="num">3 → 0</td></tr>
+<tr><td>TP9 测试上线</td><td>自研</td><td>只做端到端 + 演示环境，客户现场部署另算</td><td class="num">6 → 5</td></tr>
+<tr><td><strong>合计</strong></td><td><strong>57 人天</strong></td><td>单人承诺版 <strong>44 人天</strong>；若投入 2 人可回到 57 人天完整范围</td><td class="num"><strong>44</strong></td></tr>
+</tbody>
+</table>
+<p class="small">另外两处冗余建议直接删除：<code>metal3</code> 用于裸金属自动装机，2 台已装系统的机器上需要配 Redfish / PXE，调试成本高且无收益；<code>dstack</code> 的实例编排能力与 GPUStack 的 GPUaaS 完全重叠，二者只留一个。</p>
+
+<h2>附录 B · 硬件监控指标</h2>
+<p class="small">全部由 GPU Operator 自带的 DCGM Exporter 采集，不自研采集器。RTX 5090 为消费级卡，下表中标注的字段能力需在 W1 实测确认。</p>
+<table>
+<thead><tr><th style="width:17%">指标</th><th style="width:29%">DCGM 字段</th><th style="width:30%">用途</th><th>告警阈值</th></tr></thead>
+<tbody>
+<tr><td>GPU 利用率</td><td><code>DCGM_FI_DEV_GPU_UTIL</code></td><td>判定卡是否闲置，影响能否超卖</td><td>&lt;5% 持续 30 分钟</td></tr>
+<tr><td>显存已用 / 剩余</td><td><code>DCGM_FI_DEV_FB_USED</code></td><td>容量判断与 OOM 预警</td><td>&gt;95% 持续 10 分钟</td></tr>
+<tr><td>温度</td><td><code>DCGM_FI_DEV_GPU_TEMP</code></td><td>降频与宕机预警</td><td>&gt;85°C 告警，&gt;90°C 熔断</td></tr>
+<tr><td>功耗</td><td><code>DCGM_FI_DEV_POWER_USAGE</code></td><td>电费成本核算</td><td>长期贴近 TDP</td></tr>
+<tr><td>降频原因</td><td><code>DCGM_FI_DEV_CLOCK_THROTTLE_REASONS</code></td><td>性能投诉归因（温度墙 / 功耗墙）</td><td>非 0 持续 5 分钟</td></tr>
+<tr><td>XID 错误</td><td><code>DCGM_FI_DEV_XID_ERRORS</code></td><td><strong>掉卡识别</strong>，79 = 设备从总线掉落</td><td>任何非 0 立即告警并摘卡</td></tr>
+<tr><td>PCIe 吞吐</td><td><code>DCGM_FI_PROF_PCIE_TX/RX_BYTES</code></td><td>数据加载瓶颈</td><td>长期打满</td></tr>
+<tr><td>ECC 错误</td><td><code>DCGM_FI_DEV_ECC_*</code></td><td>—</td><td><strong>5090 不支持，跳过</strong></td></tr>
+</tbody>
+</table>
+<div class="box amber" style="margin-top:14px">
+  <h3>5090 的三个硬性事实</h3>
+  <ul style="margin-bottom:0">
+    <li><code>DCGM_FI_PROF_*</code> 类 profiling 指标在消费卡上大概率不可用，W1 需用 <code>dcgmproftester</code> 探测后再决定看板字段，避免大屏上一半是空图。</li>
+    <li>不支持 MIG、不支持 vGPU、没有 NVLink。整卡独占是唯一形态，多卡通信走 PCIe——这一点需在 P2 多机场景前向客户说明。</li>
+    <li>XID 79 是消费卡高频故障。告警必须联动"把该卡标记为不可售并从池子摘除"，否则客户会租到坏卡。</li>
+  </ul>
+</div>
+
+<h2>附录 C · W1 落地清单</h2>
+<table>
+<thead><tr><th style="width:12%">时间</th><th style="width:44%">动作</th><th>当天必须看到的证据</th></tr></thead>
+<tbody>
+<tr><td>周一</td><td>宿主机装 NVIDIA 驱动（570+），两台组 k3s 集群</td><td><code>nvidia-smi</code> 出卡；<code>kubectl get nodes</code> 两个 Ready</td></tr>
+<tr><td>周二</td><td>装 GPU Operator（关闭 driver），纳管全部 GPU</td><td>allocatable 的 <code>nvidia.com/gpu</code> 合计等于总卡数</td></tr>
+<tr><td>周三</td><td>DCGM + Prometheus 采集，探测可用字段</td><td><code>count(DCGM_FI_DEV_GPU_UTIL)</code> 等于总卡数；N/A 字段清单</td></tr>
+<tr><td>周四</td><td>Volcano + 租户队列与配额</td><td>超配 Pod 被 Pending，原因可读</td></tr>
+<tr><td>周五</td><td>卡池地图页（每卡一格的实时状态）</td><td>能投屏演示，卡状态随实例变化</td></tr>
+</tbody>
+</table>
+
+<h3>集群搭建</h3>
+<pre># 节点 1（控制面，与 GPU 共节点，2 台规模无需独立 master）
+curl -sfL https://get.k3s.io | INSTALL_K3S_MIRROR=cn sh -s - server --disable traefik
+
+# 节点 2（工作节点）
+curl -sfL https://get.k3s.io | INSTALL_K3S_MIRROR=cn \
+  K3S_URL=https://&lt;节点1内网IP&gt;:6443 K3S_TOKEN=&lt;节点1的 /var/lib/rancher/k3s/server/node-token&gt; sh -</pre>
+
+<h3>GPU 纳管</h3>
+<pre># 驱动只装在宿主机，Operator 不再装驱动（避免容器内编译内核模块失败）
+helm install gpu-operator nvidia/gpu-operator -n gpu-operator --create-namespace \
+  --set driver.enabled=false \
+  --set toolkit.enabled=true \
+  --set dcgmExporter.enabled=true
+
+# 验收
+kubectl get nodes -o json | jq '.items[].status.allocatable["nvidia.com/gpu"]'</pre>
+
+<h3>整卡独占的说明</h3>
+<p><code>nvidia.com/gpu</code> 是 Kubernetes 扩展资源，只能申请整数，因此 <code>nvidia.com/gpu: 1</code> 天然就是独占一张卡，不需要任何隔离配置。Volcano 在 P1 只承担两件事：租户队列配额、排队公平；gang scheduling 留到 P2。</p>
+
+<div class="foot">
+本方案为技术评估稿，范围与工期基于 2026-10-30 售前交流信息。客户侧资源规格、计费口径、租户性质确认后需重新校准工作量。
+</div>
+
+</div>
+</body>
+</html>
