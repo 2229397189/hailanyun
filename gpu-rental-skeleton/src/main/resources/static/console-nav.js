@@ -1,4 +1,4 @@
-/* 控制台外壳：官网顶栏 + 侧栏 + 浏览器式标签栏（对齐智川云控制台） */
+/* 控制台外壳：官网顶栏 + 侧栏 + 浏览器式标签栏（对齐参考控制台） */
 (function () {
   var U = JSON.parse(localStorage.getItem('gu_user') || 'null') || { username: '未登录' };
   var active = document.body.dataset.active || 'main';
@@ -46,11 +46,11 @@
 
   /* ---------- 侧栏 ---------- */
   var side = [
-    { k: 'main', t: '主页概览', i: '▦', h: '/console.html' },
-    { k: 'inst', t: '实例市场', i: '▤', h: '/portal.html#market' },
-    { k: 'store', t: '文件存储', i: '▧', h: '/storage.html' },
-    { k: 'img', t: '我的镜像', i: '◫', h: '/images.html' },
-    { k: 'llm', t: '大模型 API', i: '✦', h: '/llm-api.html' }
+    { k: 'main', t: '主页概览', i: '▦', c: 'p' },
+    { k: 'inst', t: '实例列表', i: '▤', c: 'b' },
+    { k: 'store', t: '文件存储', i: '▧', c: 'g' },
+    { k: 'img', t: '我的镜像', i: '◫', c: 'v' },
+    { k: 'llm', t: '大模型 API', i: '✦', c: 'p' }
   ];
   var fin = [
     { k: 'recharge', t: '在线充值', h: '/recharge.html' },
@@ -64,21 +64,36 @@
     { k: 'push', t: '订单推送', h: '/notifications.html' }
   ];
   function link(s) {
-    return '<a class="' + (s.k === active ? 'on' : '') + '" href="' + s.h + '">' +
-      (s.i ? '<span class="ic">' + s.i + '</span>' : '<span class="ic dot"></span>') + s.t + '</a>';
+    var on = s.k === active ? 'on' : '';
+    var ico = s.i
+      ? '<span class="ic ' + (s.c || 'p') + '">' + s.i + '</span>'
+      : '<span class="ic dot"></span>';
+    return '<a class="' + on + '" href="' + s.h + '">' + ico + s.t + '</a>';
+  }
+  function group(title, items, open) {
+    return '<div class="grp2" data-open="' + (open ? '1' : '0') + '">' +
+      '<span>' + title + '</span><i>⌄</i></div>' +
+      '<div class="gsub" style="display:' + (open ? '' : 'none') + '">' +
+      items.map(link).join('') + '</div>';
   }
   var el = document.getElementById('cside');
   if (el) {
     el.innerHTML =
-      '<div class="cs-logo"><span class="cs-mark">◈</span><b>控制台</b></div>' +
       '<nav>' +
         side.map(link).join('') +
-        '<div class="grp2"><span>费用管理</span><i>⌄</i></div>' +
-        fin.map(link).join('') +
-        '<div class="grp2"><span>账号管理</span><i>⌄</i></div>' +
-        acc.map(link).join('') +
+        group('费用管理', fin, false) +
+        group('账号管理', acc, false) +
       '</nav>' +
-      '<div class="foot">v1.0.0 · ' + U.username + '</div>';
+      '<div class="foot">v1.0.0</div>';
+    el.querySelectorAll('.grp2').forEach(function (g) {
+      g.addEventListener('click', function () {
+        var sub = g.nextElementSibling;
+        var open = g.dataset.open === '1';
+        g.dataset.open = open ? '0' : '1';
+        g.querySelector('i').style.transform = open ? '' : 'rotate(180deg)';
+        sub.style.display = open ? 'none' : '';
+      });
+    });
   }
 
   /* ---------- 标签栏 + 面包屑 ---------- */
@@ -86,15 +101,20 @@
   if (host) {
     host.classList.add('c-tabsbar');
     host.innerHTML =
-      '<div class="ctabs">' + tabs.map(function (x) {
-        return '<a class="ctab2 ' + (x.k === active ? 'on' : '') + '" href="' + x.h + '">' + x.t +
-          '<span class="x">×</span></a>';
-      }).join('') + '</div>';
+      '<div class="ctabs">' +
+        '<a class="ctab2 on" href="' + cur.h + '"><span class="ti">▦</span>' + cur.t +
+        '<span class="x">×</span></a>' +
+      '</div>' +
+      '<div class="ctools">' +
+        '<span class="ctool" title="主题">🌙</span>' +
+        '<span class="ctool" title="日间模式">☀</span>' +
+        '<span class="ctool" title="设置">⚙</span>' +
+      '</div>';
     var bc = document.createElement('div');
     bc.className = 'c-breadcrumb';
     bc.innerHTML = cur.k === 'main'
-      ? '<span>▦</span><b>主页概览</b>'
-      : '<span>▦</span><span>主页概览</span><span>›</span><b>' + cur.t + '</b>';
+      ? '<span>🏠</span><b>主页概览</b>'
+      : '<span>🏠</span><span>主页概览</span><span class="sep">›</span><b>' + cur.t + '</b>';
     host.parentNode.insertBefore(bc, host.nextSibling);
   }
 })();

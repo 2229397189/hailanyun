@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>算力市场 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v12">
-<link rel="stylesheet" href="/ref.css?v12">
+<link rel="stylesheet" href="/app.css?v13">
+<link rel="stylesheet" href="/ref.css?v13">
 </head>
 <body>
 
@@ -68,14 +68,17 @@
 
     <div class="rm-toolbar">
       <div class="rm-tool-left">
-        <span class="rm-icon" title="列表">▤</span>
-        <span class="rm-pill on" id="sortDefault" onclick="setSort('default')">✦ 综合</span>
-        <span class="rm-pill" id="sortPrice" onclick="toggleSortPrice()">↑ 升序</span>
-        <span class="rm-pill" id="onlyStock" onclick="toggleStock()">只看有货</span>
+        <span class="rm-pill on" id="sortDefault" onclick="setSort('default')">
+          <i class="rm-sort-ic">◆</i>综合<span class="cv">⌄</span></span>
+        <span class="rm-pill" id="sortPrice" onclick="toggleSortPrice()">
+          <i class="rm-sort-ic">↑</i>升序<span class="cv">⌄</span></span>
+        <span class="rm-pill" id="onlyStock" onclick="toggleStock()">
+          <i class="rm-sort-ic">○</i>只看有货</span>
       </div>
       <div class="rm-tool-right">
-        <span class="rm-icon" title="刷新" onclick="loadMarket()">↻</span>
-        <span class="rm-icon" title="网格">▦</span>
+        <span class="rm-count">(<b id="viewCount">0</b>)</span>
+        <span class="rm-icon on" id="viewGrid" title="网格" onclick="setView('grid')"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>
+        <span class="rm-icon" id="viewList" title="列表" onclick="setView('list')"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><rect x="9" y="4.6" width="12" height="2.8" rx="1.4"/><rect x="9" y="10.6" width="12" height="2.8" rx="1.4"/><rect x="9" y="16.6" width="12" height="2.8" rx="1.4"/></svg></span>
       </div>
     </div>
 
@@ -296,6 +299,12 @@ function toggleStock() {
   $('#onlyStock').classList.toggle('on', S.onlyStock);
   renderProducts();
 }
+function setView(v) {
+  S.view = v;
+  $('#viewGrid').classList.toggle('on', v === 'grid');
+  $('#viewList').classList.toggle('on', v === 'list');
+  $('#productGrid').classList.toggle('list-view', v === 'list');
+}
 
 function marketCard(d) {
   const sold = !!d.soldOut;
@@ -345,6 +354,8 @@ function renderProducts() {
   $('#productGrid').innerHTML = list.length
     ? list.map(marketCard).join('')
     : `<div class="card panel" style="grid-column:1/-1"><div class="empty">当前筛选条件下没有可用规格，换个条件试试</div></div>`;
+  const vc = document.getElementById('viewCount');
+  if (vc) vc.textContent = list.length;
 }
 
 /* 真实库存只对 RTX 5090 生效，其余机型走预约 */
@@ -532,6 +543,6 @@ async function submitPwd() {
 /* ---------------- 启动 ---------------- */
 route();
 </script>
-<script src="/nav.js?v12"></script>
+<script src="/nav.js?v13"></script>
 </body>
 </html>

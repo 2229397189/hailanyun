@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>B端裸金属 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v12">
-<link rel="stylesheet" href="/ref.css?v12">
+<link rel="stylesheet" href="/app.css?v13">
+<link rel="stylesheet" href="/ref.css?v13">
 </head>
 <body>
 
@@ -66,7 +66,7 @@
 
   <section class="wrap" id="list" style="padding:22px 24px 60px">
     <div class="bm-filter">
-      <label>筛选：</label>
+      <label>☰ 筛选：</label>
       <select id="fModel" onchange="renderRows()"></select>
       <select id="fZone" onchange="renderRows()"></select>
       <select id="fSort" onchange="renderRows()">
@@ -99,6 +99,14 @@ const ZONE_CLS = { '重庆': '', '浙江': 'z-green', '新疆': 'z-yellow', '成
 const PIN_IC = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
   <path d="M6 10.6S2.4 7.6 2.4 4.9a3.6 3.6 0 1 1 7.2 0c0 2.7-3.6 5.7-3.6 5.7Z"/>
   <circle cx="6" cy="4.9" r="1.1"/></svg>`;
+const ICO = {
+  layers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 2.2a2 2 0 0 0-1.6 0L2.6 6.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8z"/><path d="M2 12a1 1 0 0 0 .6.9l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .6.9l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9A1 1 0 0 0 22 17"/></svg>`,
+  cpu: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>`,
+  chip: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7V4M12 7V4M17 7V4M7 17v3M12 17v3M17 17v3"/></svg>`,
+  mem: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M6 12v3M10 12v3M14 12v3M18 12v3"/></svg>`,
+  disk: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>`,
+  db: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>`
+};
 function specCell(cls, icon, label, value) {
   return `<div class="xc-spec ${cls}"><span class="i">${icon}</span>${label} <b>${value}</b></div>`;
 }
@@ -111,12 +119,12 @@ function metalCard(r) {
         <span class="xc-zone ${ZONE_CLS[r.zone] || ''}">${PIN_IC}${r.zone}</span>
       </div>
       <div class="xc-specs">
-        ${specCell('pink', '▤', '显存', r.vram)}
-        ${specCell('purple', '▦', '核心数', r.cores)}
-        ${specCell('violet', '▣', 'CPU', r.cpu)}
-        ${specCell('blue', '▥', '内存', r.ram)}
-        ${specCell('amber', '▧', '系统盘', r.sysDisk)}
-        ${specCell('blue', '◫', '数据盘', r.dataDisk)}
+        ${specCell('pink', ICO.layers, '显存', r.vram)}
+        ${specCell('purple', ICO.cpu, '核心数', r.cores)}
+        ${specCell('violet', ICO.chip, 'CPU', r.cpu)}
+        ${specCell('blue', ICO.mem, '内存', r.ram)}
+        ${specCell('amber', ICO.disk, '系统盘', r.sysDisk)}
+        ${specCell('indigo', ICO.db, '数据盘', r.dataDisk)}
       </div>
     </div>
     <div class="xc-buy">
@@ -160,6 +168,6 @@ function apply(model) {
   alert(`演示环境：已记录需求${model ? '（' + model + '）' : ''}。\n真实流程会创建工单并通知商务，当前仅展示交互。`);
 }
 </script>
-<script src="/nav.js?v12"></script>
+<script src="/nav.js?v13"></script>
 </body>
 </html>

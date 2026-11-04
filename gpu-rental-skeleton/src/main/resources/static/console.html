@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>主控制台 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v12">
-<link rel="stylesheet" href="/console.css?v12">
+<link rel="stylesheet" href="/app.css?v13">
+<link rel="stylesheet" href="/console.css?v13">
 <style>
 /* 主页概览专属样式；外壳样式统一在 console.css */
 .cbody{padding-top:2px}
@@ -29,6 +29,7 @@
 .ck2 .k i{width:15px;height:15px;border-radius:4px;display:flex;align-items:center;
   justify-content:center;font-size:8px;font-style:normal}
 .ck2 .v{font-size:22px}
+.ck2.total{background:#fffafd;border-color:#fbe7f3}
 .ck2.total .v{color:#d6358f}
 .ck2.pink{background:#fffafd;border-color:#fbe7f3}
 .ck2.pink .v{color:#d6358f}
@@ -59,6 +60,14 @@
   box-shadow:0 6px 16px -8px rgba(17,24,39,.25);display:flex;align-items:center;justify-content:center;
   color:#6b7280;font-size:13px;text-decoration:none}
 .float2 a.main{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border-color:transparent}
+.qh{font-style:normal;width:12px;height:12px;border-radius:50%;border:1px solid #d8dbe4;color:#b6bcc9;
+  font-size:8px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px}
+.kmini{margin-left:auto;font-size:9px;font-weight:600;border-radius:4px;padding:1px 5px}
+.kmini.pink{color:#db2777;background:#fdf2f8}
+.kmini.warm{color:#d97706;background:#fff7ed}
+.hdr-tags{display:flex;align-items:center;gap:6px}
+.tag-mini.blue{background:#eaf2fe;color:#2563eb}
+.tag-mini{cursor:pointer}
 @media(max-width:1100px){.grid-c,.grid-b{grid-template-columns:1fr}}
 </style>
 </head>
@@ -74,42 +83,42 @@
 
     <div class="cbody">
       <div class="welcome2">
-        <span class="ava">🐱</span>
+        <span class="ava">🐰</span>
         <div>
-          <b><span id="greet">下午好</span>，<em>TokenArk <span id="wName">–</span> 同学</em>！让每一次训练都有迹可循 🌙</b>
-          <div class="sub">我是派小云，它可能正是你的突破口。</div>
+          <b><span id="greet">早安</span>，<em>TokenArk <span id="wName">9469</span>同学</em>！新鲜算力已到站，今天从一个小目标开始 🚀</b>
+          <div class="sub">学术之火燃起时，显卡与你一直在场 🔥</div>
         </div>
         <div class="luck">
-          今日 AI 运势
-          <b>🪄 宜：<i>安顿情绪</i>　—— 别急着赶路，明天更清醒</b>
+          今日 AI 追踪
+          <b>🪄 宜：<i>整理环境</i>　—— 收敛干净，少遇意外</b>
         </div>
       </div>
 
       <div class="grid-c">
         <div class="card panel">
-          <h3>实例信息 <span class="link-sm" onclick="go('instances')">管理实例</span></h3>
+          <h3>实例信息 <span class="link-sm" onclick="go('instances')">▤ 管理实例</span></h3>
           <div class="grid g2">
-            <div class="ck2"><div class="k"><i style="background:#fdeef7;color:#e0459a">▦</i>实例总数</div>
+            <div class="ck2"><div class="k"><i style="background:#fdeef7;color:#e0459a">▦</i>实例总数<em class="qh">?</em></div>
               <div class="v" id="kTotal">0</div></div>
-            <div class="ck2"><div class="k"><i style="background:#e8f9f1;color:#10b981">◉</i>运行中</div>
+            <div class="ck2"><div class="k"><i style="background:#e8f9f1;color:#10b981">◉</i>运行中<em class="qh">?</em></div>
               <div class="v" id="kRun">0</div></div>
-            <div class="ck2"><div class="k"><i style="background:#fef4e8;color:#f59e0b">◔</i>即将到期</div>
+            <div class="ck2"><div class="k"><i style="background:#fef4e8;color:#f59e0b">◔</i>即将到期<em class="qh">?</em></div>
               <div class="v" id="kSoon">0</div></div>
-            <div class="ck2"><div class="k"><i style="background:#fdeced;color:#ef4444">◈</i>即将释放</div>
+            <div class="ck2"><div class="k"><i style="background:#fdeced;color:#ef4444">◈</i>即将释放<em class="qh">?</em></div>
               <div class="v" id="kRel">0</div></div>
           </div>
         </div>
 
         <div class="card panel">
-          <h3>账户概览 <span class="link-sm" onclick="location.href='/recharge.html'">去充值</span></h3>
+          <h3>账户概况 <span class="link-sm" onclick="location.href='/recharge.html'">▤ 充值</span></h3>
           <div class="grid g2">
             <div class="ck2 total"><div class="k">账户总余额</div>
               <div class="v" id="balTotal">¥0<small> 元</small></div></div>
-            <div class="ck2"><div class="k">现金余额</div>
+            <div class="ck2"><div class="k">现金余额<em class="qh">?</em></div>
               <div class="v" id="balCash">¥0<small> 元</small></div></div>
-            <div class="ck2 pink"><div class="k">模型余额 <span style="margin-left:auto;font-size:9.5px;color:#db2777">去余额明细</span></div>
+            <div class="ck2 pink"><div class="k">模型余额 <span class="kmini pink">余额明细</span></div>
               <div class="v">¥0<small> 元</small></div></div>
-            <div class="ck2 warm"><div class="k">代金券余额 <span style="margin-left:auto;font-size:9.5px;color:#d97706">券包</span></div>
+            <div class="ck2 warm"><div class="k">代金券余额 <span class="kmini warm">券包</span></div>
               <div class="v">¥0<small> 元</small></div></div>
           </div>
         </div>
@@ -128,21 +137,17 @@
           </div>
           <div class="help-row">
             <span class="ic" style="background:#fef4e8;color:#f59e0b">✦</span>
-            <div><b>功能导读</b><span>查看平台功能总览</span></div>
-          </div>
-          <div class="help-row">
-            <span class="ic" style="background:#f3ecff;color:#7c3aed">⚡</span>
-            <div><b>连接实例</b><span>SSH / Jupyter 接入方式</span></div>
+            <div><b>功能导览</b><span>查看平台功能总览</span></div>
           </div>
         </div>
 
         <div class="card panel">
           <h3 style="margin-bottom:0">
-            <span>邀请赠送 <span class="tag-mini pink">新手任务</span><span class="tag-mini green">技术交流群</span></span>
-            <span style="display:flex;align-items:center;gap:8px">
-              <span class="link-sm" style="color:#d97706" onclick="tip('联系客服')">联系客服</span>
-              <span class="link-sm" style="color:#2563eb" onclick="tip('技术交流群')">技术交流群</span>
-              <span class="link-sm" onclick="tip('邀请记录')">查看邀请记录</span>
+            <span>邀请赠送</span>
+            <span class="hdr-tags">
+              <span class="tag-mini green" onclick="tip('联系客服')">联系客服</span>
+              <span class="tag-mini blue" onclick="tip('技术交流群')">技术交流群</span>
+              <span class="link-sm" onclick="tip('邀请记录')">邀请记录</span>
             </span>
           </h3>
           <div class="inv-card" style="margin-top:12px">
@@ -168,7 +173,7 @@
   <a class="main" href="#" onclick="tip('在线客服');return false" title="在线客服">💬</a>
 </div>
 
-<script src="/console-nav.js?v12"></script>
+<script src="/console-nav.js?v13"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';

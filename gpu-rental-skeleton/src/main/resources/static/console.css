@@ -3,28 +3,36 @@ body{background:#f7f7fa}
 .console{display:flex;min-height:100vh;background:#f7f7fa}
 
 /* ---------- 左侧栏 ---------- */
-.cs{width:150px;flex:0 0 150px;background:#fff;border-right:1px solid #efeff3;
-  display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-.cs-logo{display:flex;align-items:center;gap:7px;padding:14px 14px 12px;font-size:12.5px;color:#1f2937}
+.cs{width:182px;flex:0 0 182px;background:#fff;border-right:1px solid #efeff3;
+  display:flex;flex-direction:column;position:sticky;top:0;height:calc(100vh - 56px)}
+.cs-logo{display:none}
 .cs-mark{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,#f472b6,#c026d3);color:#fff;font-size:10px}
-.cs nav{flex:1;overflow-y:auto;padding:2px 7px 10px}
-.cs a{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;font-size:11.5px;
-  color:#4b5563;cursor:pointer;margin-bottom:1px;transition:.14s;text-decoration:none}
-.cs a:hover{background:#fdf7fb;color:#c026d3}
-.cs a.on{background:#fdf1f8;color:#d6358f;font-weight:600}
-.cs a .ic{width:13px;text-align:center;font-size:10px;opacity:.75;flex:0 0 13px}
-.cs a .ic.dot{height:3px;border-radius:2px;background:#d1d5db;opacity:.9}
-.cs .grp2{display:flex;align-items:center;justify-content:space-between;padding:13px 9px 5px;
-  font-size:10.5px;color:#9aa2b1;letter-spacing:.02em}
+.cs nav{flex:1;overflow-y:auto;padding:10px 9px 10px}
+.cs a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;font-size:12.5px;
+  color:#475569;cursor:pointer;margin-bottom:2px;transition:.14s;text-decoration:none;font-weight:500}
+.cs a:hover{background:#faf5ff;color:#7e22ce}
+.cs a.on{background:#f6effd;color:#9333ea;font-weight:700}
+.cs a .ic{width:19px;height:19px;flex:0 0 19px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;font-size:10px;background:#f5f3ff;color:#a855f7}
+.cs a .ic.b{background:#eff6ff;color:#3b82f6}
+.cs a .ic.g{background:#ecfdf5;color:#10b981}
+.cs a .ic.v{background:#f5f3ff;color:#8b5cf6}
+.cs a .ic.dot{background:transparent;color:#cbd5e1;font-size:12px;justify-content:flex-start}
+.cs .grp2{display:flex;align-items:center;justify-content:space-between;padding:14px 10px 6px;
+  font-size:11px;color:#94a3b8;letter-spacing:.02em;cursor:pointer;user-select:none;font-weight:600}
+.cs .grp2:hover{color:#7e22ce}
+.cs .gsub{padding-left:0}
 .cs .grp2 i{font-style:normal;font-size:9px;color:#c3c8d4}
 .cs .foot{padding:10px 14px;border-top:1px solid #f2f2f6;color:#b9bfcc;font-size:10px}
 
 /* ---------- 主区 ---------- */
 .cmain{flex:1;min-width:0;display:flex;flex-direction:column}
-.ctopbar{background:#fbfbfd;border-bottom:1px solid #efeff3;padding:0 12px;position:sticky;top:0;z-index:20}
-.ctabs{display:flex;align-items:stretch;height:38px;overflow-x:auto}
-.ctab2{display:inline-flex;align-items:center;gap:7px;padding:0 12px;font-size:11px;color:#6b7280;
+.ctopbar{background:#fbfbfd;border-bottom:1px solid #f1f1f5;padding:0 12px;position:sticky;
+  top:56px;z-index:20;display:flex;align-items:center}
+.ctabs{display:flex;align-items:stretch;height:42px;overflow-x:auto;flex:1}
+.ctab2{display:inline-flex;align-items:center;gap:7px;padding:0 14px;font-size:11.5px;color:#6b7280;
+  background:#fff;
   cursor:pointer;white-space:nowrap;text-decoration:none;border-right:1px solid #f0f0f4;position:relative}
 .ctab2:hover{background:#fff;color:#d6358f}
 .ctab2.on{background:#fff;color:#d6358f;font-weight:600}
@@ -33,9 +41,14 @@ body{background:#f7f7fa}
 .ctab2 .x{font-size:10px;color:#c3c8d4;margin-left:1px}
 .ctab2:hover .x{color:#d6358f}
 
+.ctools{display:flex;align-items:center;gap:4px;padding-left:8px}
+.ctool{width:24px;height:24px;border-radius:6px;display:inline-flex;align-items:center;
+  justify-content:center;font-size:12px;color:#94a3b8;cursor:pointer}
+.ctool:hover{background:#f5efff;color:#9333ea}
+.ctab2 .ti{font-size:11px;color:#a855f7}
 /* 面包屑：内容区顶部一行 */
-.c-breadcrumb{display:flex;align-items:center;gap:6px;height:30px;padding:0 16px;
-  font-size:10.5px;color:#9aa2b1;background:#f7f7fa}
+.c-breadcrumb{display:flex;align-items:center;gap:7px;height:34px;padding:0 18px;
+  font-size:11px;color:#9aa2b1;background:#fff;border-bottom:1px solid #f6f6f9}
 .c-breadcrumb b{color:#374151;font-weight:600}
 .c-breadcrumb span:first-child{color:#c026d3}
 

@@ -1,0 +1,194 @@
+/* ============================================================
+   解决方案页（1:1 复刻参考站服务区块）
+   ============================================================ */
+.sol-page{
+  background:
+    linear-gradient(to right,rgba(148,163,184,.05) 1px,transparent 1px) 0 0/56px 56px,
+    linear-gradient(to bottom,rgba(148,163,184,.05) 1px,transparent 1px) 0 0/56px 56px,
+    #fff;
+}
+.sol-wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+
+/* ---------- Hero ---------- */
+.sol-hero{padding:56px 0 26px;
+  background:linear-gradient(180deg,#fbfaff 0%,#fff 88%)}
+.sol-hero-in{display:grid;grid-template-columns:1.06fr .94fr;gap:48px;align-items:center}
+.sol-badge{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;
+  border:1px solid #e9d5ff;background:#fff;color:#7e22ce;font-size:12.5px;font-weight:700}
+.sol-badge i{width:7px;height:7px;border-radius:50%;background:#a855f7}
+.sol-h1{margin:18px 0 0;font-size:46px;line-height:1.22;font-weight:900;letter-spacing:-.02em;color:#0f172a}
+.sol-h1 em{font-style:normal;background:linear-gradient(90deg,#a855f7,#ec4899);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sol-lead{margin:18px 0 0;max-width:560px;font-size:13.5px;line-height:1.95;color:#64748b}
+.sol-btn{display:inline-flex;align-items:center;gap:6px;margin-top:26px;height:46px;padding:0 26px;
+  border-radius:999px;background:linear-gradient(90deg,#a855f7,#ec4899);color:#fff;font-size:14px;
+  font-weight:700;text-decoration:none;box-shadow:0 16px 30px -16px rgba(168,85,247,.85)}
+.sol-btn:hover{transform:translateY(-1px)}
+
+.sol-monitor{background:#fff;border:1px solid #f1eef9;border-radius:20px;padding:18px 20px;
+  box-shadow:0 24px 60px -34px rgba(76,29,149,.45);width:100%;max-width:380px;justify-self:end}
+.sol-monitor .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sol-monitor .mh span{font-size:11px;color:#98a1b3}
+.sol-monitor .mh b{font-size:11px;color:#10b981;display:flex;align-items:center;gap:5px;font-weight:500}
+.sol-monitor .mh b i{width:6px;height:6px;border-radius:50%;background:#10b981}
+.sol-monitor .mchip{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#a855f7,#c026d3);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:21px;margin-bottom:8px;
+  box-shadow:0 12px 26px -12px rgba(168,85,247,.8)}
+.sol-monitor .msvg{width:100%;height:88px;display:block}
+.sol-monitor .mrow{display:flex;justify-content:space-between;font-size:10.5px;color:#98a1b3;margin:10px 0 6px}
+.sol-monitor .mrow b{color:#374151;font-size:11px}
+.sol-monitor .mbar{height:8px;border-radius:5px;background:#f4effc;overflow:hidden}
+.sol-monitor .mbar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#c084fc,#7c3aed)}
+.sol-monitor .mtwo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.sol-monitor .mtwo div{border:1px solid #f2eef9;border-radius:11px;padding:9px;text-align:center}
+.sol-monitor .mtwo span{font-size:10px;color:#98a1b3;display:block}
+.sol-monitor .mtwo b{font-size:17px;font-weight:800;color:#0f172a}
+
+/* ---------- 通用区块 ---------- */
+.sol-sec{padding:38px 0}
+.sol-sec-last{padding:38px 0 72px}
+.sol-tag{font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.18em;
+  color:#ec4899;font-weight:700;text-transform:uppercase;margin-bottom:8px}
+.sol-h2{position:relative;margin:0;padding-left:14px;font-size:24px;font-weight:900;
+  letter-spacing:-.02em;color:#0f172a}
+.sol-h2::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;border-radius:2px;
+  background:#9333ea}
+.sol-desc{margin:12px 0 0;max-width:720px;font-size:13px;line-height:1.95;color:#64748b}
+.sol-desc b{color:#7c3aed;font-weight:600}
+.sol-split{display:grid;grid-template-columns:1fr 1.05fr;gap:56px;align-items:center}
+.sol-split>.sol-h2{padding-left:14px}
+
+/* Service 01 四特性 */
+.sol-feats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:24px}
+.sol-feats .feat{background:#fff;border:1px solid #f1f5f9;border-radius:14px;padding:18px 16px;
+  box-shadow:0 1px 2px rgba(17,24,39,.03);transition:.16s}
+.sol-feats .feat:hover{border-color:#e9d5ff;box-shadow:0 14px 30px -24px rgba(124,58,237,.6)}
+.sol-feats .feat .fi{display:inline-flex;width:36px;height:36px;border-radius:10px;align-items:center;
+  justify-content:center;background:#faf5ff;color:#9333ea;font-size:16px;margin-bottom:10px}
+.sol-feats .feat b{display:block;font-size:14px;color:#1e293b;font-weight:800}
+.sol-feats .feat p{margin:7px 0 0;font-size:11.5px;line-height:1.85;color:#94a3b8}
+
+/* Service 02 NVIDIA 卡 */
+.sol-nvcard{background:#fff;border:1px solid #f1f5f9;border-radius:22px;padding:34px 30px;
+  text-align:center;box-shadow:0 18px 44px -34px rgba(15,23,42,.35)}
+.nvword{font-size:42px;font-weight:900;letter-spacing:.02em;color:#76b900;line-height:1;
+  font-family:Arial,Helvetica,sans-serif}
+.nvsub{margin-top:12px;font-size:13px;color:#64748b}
+.nvline{margin:22px 0;border-top:1px dashed #e2e8f0}
+.nvtags{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.nvtags span{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:999px;
+  background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:12px;font-weight:700}
+.nvtags i{font-style:normal;width:15px;height:15px;border-radius:50%;background:#22c55e;color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-size:9px}
+
+/* 右侧列表行 */
+.sol-list{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.srow{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #f1f5f9;
+  border-radius:12px;padding:12px 14px}
+.srow .sic{width:34px;height:34px;flex:0 0 34px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:14px}
+.srow .sic.pink{background:#fdf2f8;color:#ec4899}
+.srow .sic.violet{background:#f5f3ff;color:#8b5cf6}
+.srow b{display:block;font-size:13px;color:#1e293b;font-weight:800;line-height:1.5}
+.srow i{display:block;font-style:normal;font-size:11.5px;color:#94a3b8;margin-top:2px;line-height:1.6}
+.srow.check .sck{width:20px;height:20px;flex:0 0 20px;border-radius:50%;background:#faf5ff;
+  border:1px solid #e9d5ff;color:#9333ea;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700}
+.srow.check{align-items:flex-start;padding:13px 14px}
+.srow.check .sck{margin-top:1px}
+
+/* Service 03 集群卡 */
+.clcard{background:#fff;border:1px solid #f1f5f9;border-radius:22px;padding:16px 18px;
+  box-shadow:0 18px 44px -34px rgba(15,23,42,.35)}
+.clhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.cltitle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1e293b}
+.clic{width:26px;height:26px;border-radius:8px;background:#faf5ff;color:#9333ea;
+  display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+.clring{position:relative;width:78px;height:78px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.clring svg{position:absolute;inset:0;width:78px;height:78px}
+.clring b{font-size:15px;font-weight:900;color:#7c3aed;line-height:1;z-index:1}
+.clring i{font-style:normal;font-size:8px;color:#94a3b8;margin-top:2px;z-index:1}
+.clgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.clnode{position:relative;border:1px dashed #e2e8f0;border-radius:10px;padding:10px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;background:#fff}
+.clnode .nsv{font-size:17px;line-height:1}
+.clnode em{font-style:normal;font-size:9.5px;font-weight:600}
+.clnode.wait{background:#fffbf3;border-color:#fde3b8}
+.clnode.wait .nsv,.clnode.wait em{color:#f59e0b}
+.clnode.wait.dim{background:#fff;border-color:#e9d5ff}
+.clnode.wait.dim .nsv,.clnode.wait.dim em{color:#c4b5fd}
+.clnode.tune{background:#faf5ff;border-color:#e9d5ff}
+.clnode.tune .nsv,.clnode.tune em{color:#9333ea}
+.clnode.run{background:#f0fdf4;border-color:#bbf7d0}
+.clnode.run .nsv,.clnode.run em{color:#16a34a}
+.clmon{margin-top:14px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:10px 12px}
+.clmon-h{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#64748b;font-weight:700}
+.clmon-g{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.clmon-g div{background:#fff;border:1px solid #f1f5f9;border-radius:9px;padding:8px 4px;text-align:center}
+.clmon-g span{display:block;font-size:9px;color:#94a3b8}
+.clmon-g b{display:block;font-size:16px;font-weight:900;margin-top:2px;letter-spacing:-.02em}
+.clmon-g b i{font-style:normal;font-size:9px;font-weight:600;margin-left:1px;color:#94a3b8}
+
+/* Service 04 运维卡 */
+.opscard{background:#fff;border:1px solid #f1f5f9;border-radius:20px;padding:16px 18px;
+  box-shadow:0 18px 44px -34px rgba(15,23,42,.35)}
+.ops-h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:#1e293b;
+  padding-bottom:12px;border-bottom:1px solid #f1f5f9}
+.ops-h .dot{width:7px;height:7px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+.ops-h em{margin-left:auto;font-style:normal;font-size:10px;color:#16a34a;font-weight:600}
+.ops-bars{margin-top:12px;display:flex;flex-direction:column;gap:9px}
+.ops-bars label{display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;margin-bottom:4px}
+.ops-bars label b{color:#475569;font-weight:700}
+.ob{height:6px;border-radius:4px;background:#f1f5f9;overflow:hidden}
+.ob i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#c084fc,#9333ea)}
+.ops-log-h{margin:14px 0 7px;font-size:10.5px;color:#94a3b8;font-weight:700}
+.ops-log{display:flex;flex-direction:column;gap:6px}
+.ops-log div{display:flex;gap:9px;align-items:center;background:#f8fafc;border-radius:8px;
+  padding:6px 9px;font-family:ui-monospace,Consolas,monospace}
+.ops-log span{font-size:9.5px;color:#a8b0bf;flex:0 0 32px}
+.ops-log em{font-style:normal;font-size:9.5px;color:#64748b}
+
+/* Service 05 场景卡 */
+.sol-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px}
+.scard{background:#fff;border:1px solid #f1f5f9;border-radius:16px;padding:20px 18px;
+  box-shadow:0 1px 2px rgba(17,24,39,.03);transition:.16s}
+.scard:hover{border-color:#e9d5ff;box-shadow:0 16px 34px -26px rgba(124,58,237,.65)}
+.scic{display:inline-flex;width:38px;height:38px;border-radius:11px;align-items:center;justify-content:center;
+  background:#faf5ff;color:#9333ea;font-size:16px;margin-bottom:12px}
+.scard b{display:block;font-size:14.5px;font-weight:800;color:#1e293b}
+.scard p{margin:8px 0 0;font-size:11.5px;line-height:1.9;color:#94a3b8}
+.sctags{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+.sctags span{font-size:10px;font-weight:600;color:#7e22ce;background:#faf5ff;border:1px solid #e9d5ff;
+  border-radius:6px;padding:3px 8px}
+
+/* ---------- 页脚 ---------- */
+.site-foot{border-top:1px solid #f1f5f9;background:#fff;padding:40px 0 22px;margin-top:10px}
+.foot-in{display:grid;grid-template-columns:1.5fr 1fr 1fr .9fr;gap:30px}
+.fbrand{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.fbrand b{font-size:15px;font-weight:800;color:#0f172a;letter-spacing:-.01em}
+.brandcol p{margin:0;font-size:11.5px;line-height:1.9;color:#94a3b8}
+.fcol h4{margin:0 0 12px;font-size:12.5px;font-weight:800;color:#1e293b}
+.fcol a{display:block;font-size:11.5px;color:#94a3b8;text-decoration:none;margin-bottom:8px}
+.fcol a:hover{color:#7e22ce}
+.qrs{display:flex;gap:14px}
+.qrs div{text-align:center}
+.qrs span{display:block;font-size:10px;color:#94a3b8;margin-top:5px}
+.qr{display:block;width:58px;height:58px;border-radius:8px;border:1px solid #f1f5f9;
+  background:
+    repeating-linear-gradient(90deg,#1e293b 0 3px,transparent 3px 6px),
+    repeating-linear-gradient(0deg,#1e293b 0 3px,transparent 3px 6px),
+    #fff;
+  opacity:.82}
+.foot-bottom{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin-top:26px;padding-top:16px;border-top:1px solid #f8fafc;font-size:11px;color:#b3b9c6}
+
+@media(max-width:1020px){
+  .sol-hero-in,.sol-split{grid-template-columns:1fr;gap:26px}
+  .sol-monitor{justify-self:start;max-width:100%}
+  .sol-feats{grid-template-columns:repeat(2,1fr)}
+  .sol-cards{grid-template-columns:1fr}
+  .foot-in{grid-template-columns:1fr 1fr}
+  .sol-h1{font-size:34px}
+}
