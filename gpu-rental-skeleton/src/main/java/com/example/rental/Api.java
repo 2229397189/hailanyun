@@ -5,9 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
@@ -99,6 +101,15 @@ public class Api {
     /** 售卖的规格：库存按当前卡池实时算，单价按调用者所属租户实时算 */
     @GetMapping("/skus")
     public List<Map<String, Object>> skus(@RequestAttribute(value = "authTenant", required = false) String authTenant) {
+        List<Map<String, Object>> all = allSkus(authTenant);
+        // 运营下架的规格不再出现在用户端（已下单的实例不受影响）
+        Map<String, Boolean> shelf = db.skuStates();
+        all.removeIf(m -> Boolean.FALSE.equals(shelf.get(String.valueOf(m.get("code")))));
+        return all;
+    }
+
+    /** 全量规格（不过滤上下架），管理端与用户端共用同一份定义，顺序固定 */
+    private List<Map<String, Object>> allSkus(String authTenant) {
         // 库存按型号分别统计：不能把本机的 4060 算进 5090 的库存，否则页面上「5090 有 17 张」是假的
         int free5090 = db.q("SELECT COUNT(*) AS c FROM gpus WHERE status='free' AND model='RTX 5090'")
                 .stream().mapToInt(r -> ((Number) r.get("c")).intValue()).sum();
@@ -155,6 +166,38 @@ public class Api {
             m.put("priceBoard", rental.priceBoard(code, tenant));
         }
         return out;
+    }
+
+    /** 管理端：全部规格 + 上下架状态，顺序与用户端一致，不因下架而移位 */
+    @GetMapping("/admin/sku-shelf")
+    public List<Map<String, Object>> skuShelf() {
+        Map<String, Boolean> shelf = db.skuStates();
+        List<Map<String, Object>> out = new java.util.ArrayList<>();
+        for (Map<String, Object> m : allSkus(null)) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("code", m.get("code"));
+            row.put("model", m.get("model"));
+            row.put("gpuCount", m.get("gpuCount"));
+            row.put("unitPrice", m.get("unitPrice"));
+            row.put("stock", m.get("stock"));
+            row.put("onSale", !Boolean.FALSE.equals(shelf.get(String.valueOf(m.get("code")))));
+            out.add(row);
+        }
+        return out;
+    }
+
+    /** 管理端：上架 / 下架某个规格。下架后用户端不再出现，已开实例不受影响。 */
+    @PostMapping("/admin/sku-shelf/{code}")
+    public Map<String, Object> setShelf(@PathVariable String code, @RequestBody(required = false) Map<String, Object> body,
+                                        @RequestAttribute(value = "authUsername", required = false) String actor) {
+        Map<String, Object> b = body == null ? Map.of() : body;
+        boolean onSale = !"false".equalsIgnoreCase(String.valueOf(b.getOrDefault("onSale", true)));
+        String note = b.get("note") == null ? null : String.valueOf(b.get("note"));
+        db.setSkuState(code, onSale, note);
+        db.insertAudit(actor == null ? "admin" : actor,
+                onSale ? "SKU_ON_SALE" : "SKU_OFF_SALE", code, note == null ? "" : note);
+        return Map.of("code", code, "onSale", onSale,
+                "message", onSale ? "已上架：" + code : "已下架：" + code);
     }
 
     /**

@@ -91,8 +91,14 @@ public class MaaSController {
         if (authKey(req) == null) {
             return error(HttpStatus.UNAUTHORIZED, "invalid_request_error", "无效的 API Key");
         }
+        Map<String, Map<String, Object>> states = db.maasModelStates();
         List<Map<String, Object>> data = new ArrayList<>();
         for (MaasCatalog.Model m : MaasCatalog.MODELS) {
+            Map<String, Object> st = states.get(m.id());
+            // 运营下架的模型不再出现在可用列表里
+            if (st != null && "offline".equals(String.valueOf(st.get("status")))) {
+                continue;
+            }
             Map<String, Object> o = new LinkedHashMap<>();
             o.put("id", m.id());
             o.put("object", "model");
@@ -101,6 +107,7 @@ public class MaaSController {
             p.put("input", m.inPerM());
             p.put("output", m.outPerM());
             o.put("pricing_yuan_per_1m_tokens", p);
+            o.put("group", st == null ? "通用" : st.get("grp"));
             data.add(o);
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -114,6 +121,7 @@ public class MaaSController {
     @PostMapping("/chat/completions")
     public ResponseEntity<Map<String, Object>> chat(@RequestBody(required = false) String raw,
                                                     HttpServletRequest req) {
+        long t0 = System.currentTimeMillis();
         Map<String, Object> key = authKey(req);
         if (key == null) {
             return error(HttpStatus.UNAUTHORIZED, "invalid_request_error", "无效的 API Key");
@@ -127,7 +135,13 @@ public class MaaSController {
         String modelId = body.path("model").asText("");
         MaasCatalog.Model model = MaasCatalog.byId(modelId);
         if (model == null) {
+            logCall(key, modelId, 0, 0, BigDecimal.ZERO, "error", 404, t0);
             return error(HttpStatus.NOT_FOUND, "invalid_request_error", "模型不存在：" + modelId + "，可用 /v1/models 查询");
+        }
+        Map<String, Object> st = db.maasModelStates().get(modelId);
+        if (st != null && "offline".equals(String.valueOf(st.get("status")))) {
+            logCall(key, modelId, 0, 0, BigDecimal.ZERO, "error", 403, t0);
+            return error(HttpStatus.FORBIDDEN, "model_offline", "模型已下架：" + modelId);
         }
         JsonNode messages = body.path("messages");
         if (!messages.isArray() || messages.isEmpty()) {
@@ -149,6 +163,7 @@ public class MaaSController {
         // 预估扣费（按 max_tokens 上限），余额不足直接拒绝，不产生调用
         BigDecimal estimated = cost(model, promptTokens, maxTokens);
         if (balance.compareTo(estimated) < 0) {
+            logCall(key, modelId, promptTokens, 0, BigDecimal.ZERO, "error", 402, t0);
             return error(HttpStatus.PAYMENT_REQUIRED, "insufficient_quota",
                     "余额不足：预计本次调用需 ¥" + estimated + "（按 max_tokens=" + maxTokens + " 上限估算），当前余额 ¥" + balance + "，请先充值");
         }
@@ -163,6 +178,7 @@ public class MaaSController {
         db.insertMaaSUsage(newId("mu"), tenantId, String.valueOf(key.get("id")), modelId,
                 up.promptTokens(), up.completionTokens(), actual);
         db.touchApiKey(String.valueOf(key.get("id")));
+        logCall(key, modelId, up.promptTokens(), up.completionTokens(), actual, "ok", 200, t0);
         log.info("MaaS 计费：tenant={} model={} prompt={} completion={} cost={}", tenantId, modelId,
                 up.promptTokens(), up.completionTokens(), actual);
 
@@ -272,6 +288,18 @@ public class MaaSController {
 
     private static String truncate(String s, int maxChars) {
         return s.length() <= maxChars ? s : s.substring(0, maxChars);
+    }
+
+    /** 请求日志：成功失败都落库，支持按租户审计与对账 */
+    private void logCall(Map<String, Object> key, String modelId, int promptTokens, int completionTokens,
+                         BigDecimal cost, String status, int httpStatus, long t0) {
+        try {
+            int latency = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - t0);
+            db.insertMaasLog(newId("ml"), String.valueOf(key.get("tenant_id")), String.valueOf(key.get("id")),
+                    modelId, promptTokens, completionTokens, cost, status, httpStatus, latency);
+        } catch (Exception e) {
+            log.warn("写 MaaS 请求日志失败：{}", e.getMessage());
+        }
     }
 
     private static String newId(String prefix) {

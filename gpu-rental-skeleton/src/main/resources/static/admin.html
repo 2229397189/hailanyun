@@ -35,6 +35,8 @@
       <a data-p="leads"><span class="ic">◩</span>商务需求</a>
       <a data-p="groups"><span class="ic">◪</span>拼团管理</a>
       <a data-p="stock"><span class="ic">◫</span>到货提醒</a>
+      <a data-p="goods"><span class="ic">▣</span>商品与规格</a>
+      <a data-p="maas"><span class="ic">◭</span>MaaS 治理</a>
       <div class="grp">租户与运营</div>
       <a data-p="tenants"><span class="ic">◉</span>租户管理</a>
       <a data-p="alerts"><span class="ic">◔</span>监控告警</a>
@@ -382,6 +384,34 @@
       </div>
 
       <!-- 6 监控告警 -->
+      <div class="page" id="page-goods">
+        <div class="card panel">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">商品与规格 <span class="s">下架后创建页不再可选、/api/skus 不再返回；已开实例不受影响</span></h3>
+            <button class="sm ghost" onclick="loadGoods()">刷新</button>
+          </div>
+          <div id="goodsTable"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-maas">
+        <div class="card panel mb10">
+          <h3>模型上下架与分组 <span class="s">下架后 /v1/models 不再返回，调用直接 403</span></h3>
+          <div id="maasModelTable"></div>
+        </div>
+        <div class="card panel">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">调用日志 <span class="s">全量留存：成功与失败都记，可按租户过滤</span></h3>
+            <div class="flex" style="gap:8px">
+              <input id="maasLogTenant" placeholder="租户 ID（留空=全部）" style="max-width:200px">
+              <button class="sm" onclick="loadMaasLogs()">查询</button>
+            </div>
+          </div>
+          <div id="maasLogSummary" class="grid g4 mb10"></div>
+          <div id="maasLogTable"></div>
+        </div>
+      </div>
+
       <div class="page" id="page-alerts">
         <div class="grid g4 mb10" id="alKpi"></div>
         <div class="grid g21 mb10">
@@ -396,6 +426,13 @@
           </div>
           <div id="ruleTable"></div>
           <div class="hint mt10">注意：租户实例之间<b>不配置抢占类自动动作</b>——对客户实例做自动干预属于违约，只告警不处置。</div>
+        </div>
+        <div class="card panel mt10">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">通知渠道 <span class="s">钉钉 / 飞书 / 企业微信 / 自定义 Webhook，命中告警即真发</span></h3>
+            <button class="sm" onclick="addChannelPrompt()">新增渠道</button>
+          </div>
+          <div id="channelTable"></div>
         </div>
       </div>
 
@@ -614,6 +651,7 @@ const TITLES = {overview:['集群总览','集群 / 总览'],nodes:['节点管理
   resources:['资源对象','集群 / 资源对象'],pools:['资源池与调度','集群 / 资源池'],tenants:['租户管理','运营 / 租户'],
   instances:['算力实例','业务运营 / 算力实例'],leads:['商务需求','业务运营 / 商务需求'],
   groups:['拼团管理','业务运营 / 拼团'],stock:['到货提醒','业务运营 / 到货提醒'],
+  goods:['商品与规格','业务运营 / 商品'],maas:['MaaS 治理','业务运营 / 模型与调用'],
   alerts:['监控告警','运营 / 告警'],inspections:['智能巡检','运营 / 巡检'],
   certs:['认证与优惠','运营 / 认证与优惠'],report:['经营报表','运营 / 报表'],system:['系统管理','运营 / 系统']};
 
@@ -872,6 +910,138 @@ function donut(box, segs){
 }
 
 /* ---------- 导航 ---------- */
+
+/* ---------- 商品与规格：上下架 ---------- */
+async function loadGoods(){
+  const list = await api('/admin/sku-shelf');
+  $('#goodsTable').innerHTML = `<table>
+    <thead><tr><th>规格</th><th>卡数</th><th>单价</th><th>库存</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(x=>`<tr>
+      <td><b>${esc(x.model||x.code)}</b><br><span class="hint mono">${esc(x.code)}</span></td>
+      <td>${x.gpuCount||0} 卡</td>
+      <td class="mono">${x.unitPrice==null?'—':'¥'+fmt(x.unitPrice)+' / 时'}</td>
+      <td>${x.stock==null?'—':x.stock}</td>
+      <td><span class="pill ${x.onSale?'p-green':'p-gray'}">${x.onSale?'在售':'已下架'}</span></td>
+      <td style="text-align:right">
+        <button class="sm ${x.onSale?'danger':'ghost'}" onclick="toggleSku('${esc(x.code)}',${x.onSale})">${x.onSale?'下架':'重新上架'}</button>
+      </td></tr>`).join('')}</tbody></table>`;
+}
+async function toggleSku(code, onSale){
+  try{
+    const r = await post('/admin/sku-shelf/'+encodeURIComponent(code), {onSale: !onSale});
+    toast(r.message, true); loadGoods();
+  }catch(e){ toast(e.message, false); }
+}
+
+/* ---------- MaaS：模型上下架 / 调用日志 ---------- */
+async function loadMaas(){
+  await Promise.all([loadMaasModels(), loadMaasLogs()]);
+}
+async function loadMaasModels(){
+  const list = await api('/admin/maas/models');
+  $('#maasModelTable').innerHTML = `<table>
+    <thead><tr><th>模型</th><th>分组</th><th>输入 / 输出（元·百万 token）</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(m=>`<tr>
+      <td><b>${esc(m.display)}</b><br><span class="hint mono">${esc(m.id)}</span></td>
+      <td>${esc(m.group||'通用')}</td>
+      <td class="mono">${m.inPerM} / ${m.outPerM}</td>
+      <td><span class="pill ${m.status==='online'?'p-green':'p-gray'}">${m.status==='online'?'在架':'已下架'}</span></td>
+      <td style="text-align:right">
+        <button class="sm ${m.status==='online'?'danger':'ghost'}" onclick="setModelStatus('${esc(m.id)}','${m.status==='online'?'offline':'online'}')">${m.status==='online'?'下架':'上架'}</button>
+      </td></tr>`).join('')}</tbody></table>`;
+}
+async function setModelStatus(id, status){
+  try{
+    const r = await post('/admin/maas/models/'+encodeURIComponent(id), {status});
+    toast(r.message, true); loadMaasModels();
+  }catch(e){ toast(e.message, false); }
+}
+async function loadMaasLogs(){
+  const t = ($('#maasLogTenant') && $('#maasLogTenant').value.trim()) || '';
+  const q = '/admin/maas/logs?limit=50' + (t ? '&tenantId='+encodeURIComponent(t) : '');
+  const r = await api(q);
+  const sm = r.summary || {};
+  $('#maasLogSummary').innerHTML = [
+    ['调用次数', sm.calls || 0, '含成功与失败'],
+    ['输入 Token', sm.in_tokens || 0, 'prompt_tokens 合计'],
+    ['输出 Token', sm.out_tokens || 0, 'completion_tokens 合计'],
+    ['累计费用', '¥' + fmt(sm.cost || 0), (sm.errors||0) + ' 次失败']
+  ].map(k=>`<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+  const rows = r.logs || [];
+  $('#maasLogTable').innerHTML = rows.length ? `<table>
+    <thead><tr><th>时间</th><th>租户</th><th>模型</th><th>Token（入/出）</th><th>费用</th><th>耗时</th><th>状态</th></tr></thead>
+    <tbody>${rows.map(x=>`<tr>
+      <td class="mono">${new Date(x.created_at).toLocaleString('zh-CN',{hour12:false})}</td>
+      <td class="mono">${esc(x.tenant_id||'—')}</td>
+      <td>${esc(x.model||'—')}</td>
+      <td class="mono">${x.prompt_tokens||0} / ${x.completion_tokens||0}</td>
+      <td class="mono">¥${fmt(x.cost_yuan||0)}</td>
+      <td class="mono">${x.latency_ms||0} ms</td>
+      <td><span class="pill ${x.status==='ok'?'p-green':'p-red'}">${x.status==='ok'?'成功':('失败 '+(x.http_status||''))}</span></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="hint">还没有调用记录</div>';
+}
+
+/* ---------- 告警通知渠道 ---------- */
+async function loadAlertChannels(){
+  const list = await api('/admin/alert-channels');
+  $('#channelTable').innerHTML = list.length ? `<table>
+    <thead><tr><th>名称</th><th>类型</th><th>地址</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(c=>`<tr>
+      <td><b>${esc(c.name)}</b></td>
+      <td>${esc(c.type)}</td>
+      <td class="mono" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.url)}</td>
+      <td><span class="pill ${c.enabled?'p-green':'p-gray'}">${c.enabled?'启用':'停用'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="sm ghost" onclick="testChannel('${esc(c.id)}')">发测试</button>
+        <button class="sm ghost" style="margin-left:4px" onclick="toggleChannel('${esc(c.id)}',${c.enabled})">${c.enabled?'停用':'启用'}</button>
+        <button class="sm danger" style="margin-left:4px" onclick="delChannel('${esc(c.id)}')">删除</button>
+      </td></tr>`).join('')}</tbody></table>` : '<div class="hint">还没有通知渠道，点右上角新增。支持钉钉 / 飞书 / 企业微信 / 自定义 Webhook。</div>';
+}
+function addChannelPrompt(){
+  openAsk({title:'新增告警通知渠道', okText:'添加', fields:[
+    {k:'name', label:'渠道名称', value:'运维群', required:true},
+    {k:'type', label:'类型', type:'select', value:'dingtalk',
+      options:[{v:'dingtalk',t:'钉钉群机器人'},{v:'feishu',t:'飞书群机器人'},{v:'wecom',t:'企业微信群机器人'},{v:'webhook',t:'自定义 Webhook'}]},
+    {k:'url', label:'Webhook 地址', value:'', required:true, ph:'https://oapi.dingtalk.com/robot/send?access_token=...'}
+  ], tip:'添加后可点「发测试」验证连通性；告警命中时会向所有启用渠道推送。',
+  run: async v => {
+    const r = await post('/admin/alert-channels', v);
+    toast(r.message, true); loadAlertChannels();
+  }});
+}
+async function testChannel(id){
+  try{ const r = await post('/admin/alert-channels/'+id+'/test'); toast(r.message, r.ok); }
+  catch(e){ toast(e.message, false); }
+}
+async function toggleChannel(id, enabled){
+  try{ const r = await post('/admin/alert-channels/'+id+'/toggle', {enabled: !enabled}); toast(r.message, true); loadAlertChannels(); }
+  catch(e){ toast(e.message, false); }
+}
+async function delChannel(id){
+  try{ const r = await api('/admin/alert-channels/'+id, {method:'DELETE'}); toast(r.message, true); loadAlertChannels(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 租户：余额调整 / 标签 ---------- */
+function openBalanceDialog(t){
+  openAsk({title:'调整余额 · '+t.name, okText:'确认调整', fields:[
+    {k:'amount', label:'调整金额（元，正数充值 / 负数扣减）', value:'0', required:true},
+    {k:'reason', label:'调整原因（必填，写入审计）', value:'', required:true}
+  ], tip:'调整会计入审计日志，并给租户发一条站内通知；不能把余额扣成负数。',
+  run: async v => {
+    const r = await post('/admin/tenants/'+t.id+'/balance', {amount:Number(v.amount), reason:v.reason});
+    toast(r.message, true); loadTenants();
+  }});
+}
+function openTagsDialog(t){
+  openAsk({title:'租户标签 · '+t.name, okText:'保存', fields:[
+    {k:'tags', label:'标签（逗号分隔，如 重点客户,科研）', value:t.tags||''}
+  ], run: async v => {
+    const r = await post('/admin/tenants/'+t.id+'/tags', {tags:v.tags});
+    toast(r.message, true); loadTenants();
+  }});
+}
+
 let nodeTimer = null;
 function go(p){
   document.querySelectorAll('.side a[data-p]').forEach(a => a.classList.toggle('on', a.dataset.p === p));
@@ -889,7 +1059,7 @@ function go(p){
   const fn = {overview:loadOverview, nodes:loadNodes, workloads:loadWorkloads, resources:loadResources,
     pools:loadPools, tenants:loadTenants, instances:loadInstances, leads:loadLeads,
     groups:loadGroups, stock:loadStock, alerts:loadAlerts, inspections:loadInspections,
-    certs:loadCerts, report:loadReport, system:loadSystem}[p];
+    certs:loadCerts, report:loadReport, system:loadSystem, goods:loadGoods, maas:loadMaas}[p];
   if(fn) fn();
 }
 document.querySelectorAll('.side a[data-p]').forEach(a => a.onclick = () => go(a.dataset.p));
@@ -1471,18 +1641,22 @@ let tenantCache = null;
 async function loadTenants(){
   const list = await api('/admin/tenants');
   tenantCache = list;
+  window.__t = id => tenantCache.find(x=>x.id===id) || {id, name:id};
   $('#tCount').textContent = list.length + ' 个';
   $('#tenantTable').innerHTML = `<table>
-    <thead><tr><th>租户</th><th>配额</th><th>已用</th><th>余额</th><th>累计消费</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <thead><tr><th>租户</th><th>标签</th><th>配额</th><th>已用</th><th>余额</th><th>累计消费</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
     <tbody>${list.map(t=>`<tr>
       <td><b>${t.name}</b><br><span class="hint mono">${t.id} · ${t.owner||''}</span></td>
+      <td>${(t.tags||'').split(',').filter(Boolean).map(x=>`<span class="pill p-gray" style="margin-right:3px">${esc(x)}</span>`).join('') || '<span class="hint">—</span>'}</td>
       <td>${t.quota_gpus} 卡</td>
       <td><b>${t.used_gpus}</b></td>
       <td class="mono">¥${fmt(t.balance_yuan)}</td>
       <td class="mono">¥${fmt(t.spent)}</td>
       <td><span class="pill ${t.status==='active'?'p-green':'p-gray'}">${t.status==='active'?'正常':'冻结'}</span></td>
       <td style="text-align:right;white-space:nowrap">
-        <button class="sm ghost" onclick="editQuota('${t.id}',${t.quota_gpus})">调配额</button>
+        <button class="sm ghost" onclick="openBalanceDialog(window.__t('${t.id}'))">调余额</button>
+        <button class="sm ghost" style="margin-left:4px" onclick="openTagsDialog(window.__t('${t.id}'))">标签</button>
+        <button class="sm ghost" style="margin-left:4px" onclick="editQuota('${t.id}',${t.quota_gpus})">调配额</button>
         <button class="sm ${t.status==='active'?'danger':'ghost'}" style="margin-left:4px"
           onclick="toggleTenant('${t.id}','${t.status}')">${t.status==='active'?'冻结':'解冻'}</button>
       </td></tr>`).join('')}</tbody></table>`;
@@ -1559,6 +1733,7 @@ function toggleTenant(id, st){
 
 /* ---------- 6 告警 ---------- */
 async function loadAlerts(){
+  loadAlertChannels().catch(()=>{});
   const [d, m, rules] = await Promise.all([api('/admin/alerts'), api('/admin/metrics?minutes=30'), api('/admin/alert-rules')]);
   const active = d.alerts.filter(a=>a.status==='active');
   const p0 = active.filter(a=>a.level==='P0').length, p1 = active.filter(a=>a.level==='P1').length;

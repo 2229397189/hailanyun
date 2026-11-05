@@ -615,6 +615,19 @@ public class TenantExtApi {
         return out;
     }
 
+    /** 租户侧请求日志：与 Token 用量对齐，可按模型追溯每一次调用 */
+    @GetMapping("/maas/logs")
+    public Map<String, Object> maasLogs(@RequestAttribute(value = "authRole", required = false) String role,
+                                        @RequestAttribute(value = "authTenant", required = false) String myTenant,
+                                        @RequestParam(defaultValue = "50") int limit) {
+        String tenantId = myTenant(role, myTenant, null);
+        int n = Math.max(1, Math.min(limit, 200));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("logs", db.maasLogs(tenantId, n));
+        out.put("summary", db.maasLogSummary(tenantId));
+        return out;
+    }
+
     // ============================================================ 实例进阶动作（A-8/A-9）
 
     private Map<String, Object> ownInstance(String id, String role, String myTenant) {

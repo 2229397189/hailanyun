@@ -37,10 +37,12 @@ public class AlertEngine {
             "^(.+?)\\s*(>=|<=|!=|==|=|>|<)\\s*(\\S+?)(?:\\s+持续\\s+(\\d+)\\s*(s|sec|秒|min|分钟|m|h|小时))?\\s*$");
 
     private final Db db;
+    private final AlertNotifier notifier;
     private final Map<String, Long> firstSeen = new ConcurrentHashMap<>();
 
-    public AlertEngine(Db db) {
+    public AlertEngine(Db db, AlertNotifier notifier) {
         this.db = db;
+        this.notifier = notifier;
     }
 
     @Scheduled(fixedDelay = 30_000L, initialDelay = 30_000L)
@@ -228,7 +230,11 @@ public class AlertEngine {
         if (!webhook) {
             log.info("模拟投递（{}）：{} {} → {}", notify, rule.get("level"), title, targetId);
         }
-        db.insertAudit("alert-engine", "ALERT_DELIVER", alertId, notify + " · " + title);
+        // 配置了通知渠道就按渠道类型真发（钉钉/飞书/企微/自定义 webhook），一条告警不重复投同一渠道
+        int sent = notifier.broadcast("[" + rule.get("level") + "] " + title,
+                "对象：" + targetId + "\n" + (detail == null ? "" : detail), String.valueOf(rule.get("level")));
+        db.insertAudit("alert-engine", "ALERT_DELIVER", alertId,
+                notify + " · " + title + (sent > 0 ? " · 渠道投递 " + sent + " 条" : ""));
     }
 
     private static String esc(Object o) {

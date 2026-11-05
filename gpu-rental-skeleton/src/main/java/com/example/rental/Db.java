@@ -1375,4 +1375,126 @@ public class Db {
     public List<Map<String, Object>> runningInstancesOfTenant(String tenantId) {
         return q("SELECT * FROM instances WHERE tenant_id=? AND status='running'", tenantId);
     }
+
+    // ---------- SKU 上下架 ----------
+
+    /** code -> 上架状态。没登记过的 SKU 视为上架（首次部署不用先灌数据） */
+    public Map<String, Boolean> skuStates() {
+        Map<String, Boolean> m = new java.util.HashMap<>();
+        for (Map<String, Object> r : q("SELECT code, on_sale FROM sku_states")) {
+            m.put(String.valueOf(r.get("code")), Boolean.TRUE.equals(r.get("on_sale")));
+        }
+        return m;
+    }
+
+    public boolean isSkuOnSale(String code) {
+        Map<String, Object> r = one("SELECT on_sale FROM sku_states WHERE code=?", code);
+        return r == null || Boolean.TRUE.equals(r.get("on_sale"));
+    }
+
+    public void setSkuState(String code, boolean onSale, String note) {
+        update("""
+                INSERT INTO sku_states(code, on_sale, note, updated_at) VALUES (?,?,?,?)
+                ON CONFLICT (code) DO UPDATE SET on_sale=EXCLUDED.on_sale,
+                     note=EXCLUDED.note, updated_at=EXCLUDED.updated_at
+                """, code, onSale, note, new Timestamp(System.currentTimeMillis()));
+    }
+
+    // ---------- 租户运营：标签 / 余额调整 ----------
+
+    public void updateTenantTags(String tenantId, String tags) {
+        update("UPDATE tenants SET tags=? WHERE id=?", tags, tenantId);
+    }
+
+    /** 余额调整（可正可负），返回调整后余额；调用方负责审计与通知 */
+    public BigDecimal adjustBalance(String tenantId, BigDecimal delta) {
+        update("UPDATE tenants SET balance_yuan = balance_yuan + ? WHERE id=?", delta, tenantId);
+        Map<String, Object> t = tenant(tenantId);
+        return t == null ? BigDecimal.ZERO : (BigDecimal) t.get("balance_yuan");
+    }
+
+    // ---------- 告警通知渠道 ----------
+
+    public List<Map<String, Object>> alertChannels() {
+        return q("SELECT * FROM alert_channels ORDER BY created_at");
+    }
+
+    public List<Map<String, Object>> enabledAlertChannels() {
+        return q("SELECT * FROM alert_channels WHERE enabled=TRUE ORDER BY created_at");
+    }
+
+    public Map<String, Object> alertChannel(String id) {
+        return one("SELECT * FROM alert_channels WHERE id=?", id);
+    }
+
+    public void insertAlertChannel(String id, String name, String type, String url) {
+        update("INSERT INTO alert_channels(id, name, type, url, enabled, created_at) VALUES (?,?,?,?,TRUE,?)",
+                id, name, type, url, new Timestamp(System.currentTimeMillis()));
+    }
+
+    public int toggleAlertChannel(String id, boolean enabled) {
+        return update("UPDATE alert_channels SET enabled=? WHERE id=?", enabled, id);
+    }
+
+    public int deleteAlertChannel(String id) {
+        return update("DELETE FROM alert_channels WHERE id=?", id);
+    }
+
+    // ---------- MaaS 请求日志 ----------
+
+    public void insertMaasLog(String id, String tenantId, String keyId, String model,
+                             int promptTokens, int completionTokens, BigDecimal cost,
+                             String status, int httpStatus, int latencyMs) {
+        update("""
+                INSERT INTO maas_request_logs(id, tenant_id, key_id, model, prompt_tokens, completion_tokens,
+                                              cost_yuan, status, http_status, latency_ms, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                """, id, tenantId, keyId, model, promptTokens, completionTokens, cost,
+                status, httpStatus, latencyMs, new Timestamp(System.currentTimeMillis()));
+    }
+
+    public List<Map<String, Object>> maasLogs(String tenantId, int limit) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return q("SELECT * FROM maas_request_logs ORDER BY created_at DESC LIMIT ?", limit);
+        }
+        return q("SELECT * FROM maas_request_logs WHERE tenant_id=? ORDER BY created_at DESC LIMIT ?",
+                tenantId, limit);
+    }
+
+    public Map<String, Object> maasLogSummary(String tenantId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return one("""
+                    SELECT COUNT(*) AS calls, COALESCE(SUM(prompt_tokens),0) AS in_tokens,
+                           COALESCE(SUM(completion_tokens),0) AS out_tokens,
+                           COALESCE(SUM(cost_yuan),0) AS cost,
+                           COALESCE(SUM(CASE WHEN status='error' THEN 1 ELSE 0 END),0) AS errors
+                      FROM maas_request_logs
+                    """);
+        }
+        return one("""
+                SELECT COUNT(*) AS calls, COALESCE(SUM(prompt_tokens),0) AS in_tokens,
+                       COALESCE(SUM(completion_tokens),0) AS out_tokens,
+                       COALESCE(SUM(cost_yuan),0) AS cost,
+                       COALESCE(SUM(CASE WHEN status='error' THEN 1 ELSE 0 END),0) AS errors
+                  FROM maas_request_logs WHERE tenant_id=?
+                """, tenantId);
+    }
+
+    // ---------- 模型上下架 / 分组 ----------
+
+    public Map<String, Map<String, Object>> maasModelStates() {
+        Map<String, Map<String, Object>> m = new java.util.HashMap<>();
+        for (Map<String, Object> r : q("SELECT * FROM maas_model_states")) {
+            m.put(String.valueOf(r.get("model")), r);
+        }
+        return m;
+    }
+
+    public void setMaasModelState(String model, String status, String grp, String note) {
+        update("""
+                INSERT INTO maas_model_states(model, status, grp, note, updated_at) VALUES (?,?,?,?,?)
+                ON CONFLICT (model) DO UPDATE SET status=EXCLUDED.status, grp=EXCLUDED.grp,
+                     note=EXCLUDED.note, updated_at=EXCLUDED.updated_at
+                """, model, status, grp, note, new Timestamp(System.currentTimeMillis()));
+    }
 }

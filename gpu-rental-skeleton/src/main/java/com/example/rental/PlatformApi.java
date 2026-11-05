@@ -19,12 +19,16 @@ public class PlatformApi {
     private final Db db;
     private final K8sClient k8s;
     private final org.springframework.beans.factory.ObjectProvider<ClusterOps> clusterOps;
+    private final AlertNotifier notifier;
     private final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    public PlatformApi(Db db, K8sClient k8s, org.springframework.beans.factory.ObjectProvider<ClusterOps> clusterOps) {
+    public PlatformApi(Db db, K8sClient k8s,
+                       org.springframework.beans.factory.ObjectProvider<ClusterOps> clusterOps,
+                       AlertNotifier notifier) {
         this.db = db;
         this.k8s = k8s;
         this.clusterOps = clusterOps;
+        this.notifier = notifier;
     }
 
     /** fake 模式下 Bean 不存在，返回 null，上层回退台账 */
@@ -1023,6 +1027,200 @@ public class PlatformApi {
                 db.one("SELECT COUNT(*) AS n FROM instances WHERE status IN ('running','provisioning','resetting')"));
         out.put("totalOrders",
                 db.one("SELECT COUNT(*) AS n, SUM(amount) AS amount FROM orders"));
+        return out;
+    }
+
+    // ============================================================ 租户运营：余额调整 / 标签
+
+    /** 调整租户余额（正数充值、负数扣减）。必须写原因，落审计并通知租户。 */
+    @PostMapping("/tenants/{id}/balance")
+    public Map<String, Object> adjustTenantBalance(@PathVariable String id,
+                                                   @RequestBody Map<String, Object> body,
+                                                   @RequestHeader(value = "X-User", required = false) String user) {
+        Map<String, Object> t = db.tenant(id);
+        if (t == null) {
+            throw new RentalService.BizException("租户不存在: " + id);
+        }
+        Object amtObj = body.get("amount");
+        if (amtObj == null) {
+            throw new RentalService.BizException("amount 不能为空");
+        }
+        BigDecimal amount;
+        try {
+            amount = new BigDecimal(String.valueOf(amtObj).trim());
+        } catch (NumberFormatException e) {
+            throw new RentalService.BizException("amount 必须是数字");
+        }
+        if (amount.signum() == 0) {
+            throw new RentalService.BizException("调整金额不能为 0");
+        }
+        if (amount.abs().compareTo(new BigDecimal("100000")) > 0) {
+            throw new RentalService.BizException("单次调整上限 10 万元");
+        }
+        String reason = String.valueOf(body.getOrDefault("reason", "")).trim();
+        if (reason.isEmpty()) {
+            throw new RentalService.BizException("必须填写调整原因（审计要求）");
+        }
+        BigDecimal before = (BigDecimal) t.get("balance_yuan");
+        BigDecimal after = before.add(amount);
+        if (after.signum() < 0) {
+            throw new RentalService.BizException("调整后余额为负，已拒绝。当前余额 " + before + " 元");
+        }
+        db.adjustBalance(id, amount);
+        String actor = user == null ? "admin" : user;
+        db.insertAudit(actor, "TENANT_BALANCE_ADJUST", id,
+                (amount.signum() > 0 ? "+" : "") + amount + " 元 · " + reason + " · " + before + " → " + after);
+        db.insertNotification("nb" + UUID.randomUUID().toString().replace("-", "").substring(0, 10), id,
+                "账户", "余额已调整",
+                "账户余额调整 " + (amount.signum() > 0 ? "+" : "") + amount + " 元，原因：" + reason
+                        + "，当前余额 " + after + " 元。");
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("tenantId", id);
+        out.put("before", before);
+        out.put("delta", amount);
+        out.put("balance", after);
+        out.put("message", "余额已调整：" + before + " → " + after + " 元");
+        return out;
+    }
+
+    /** 设置租户标签（逗号分隔，如「重点客户,科研」），用于报表归集与筛选 */
+    @PostMapping("/tenants/{id}/tags")
+    public Map<String, Object> setTenantTags(@PathVariable String id,
+                                             @RequestBody Map<String, Object> body,
+                                             @RequestHeader(value = "X-User", required = false) String user) {
+        if (db.tenant(id) == null) {
+            throw new RentalService.BizException("租户不存在: " + id);
+        }
+        String tags = String.valueOf(body.getOrDefault("tags", "")).trim();
+        if (tags.length() > 200) {
+            throw new RentalService.BizException("标签过长（上限 200 字符）");
+        }
+        db.updateTenantTags(id, tags);
+        db.insertAudit(user == null ? "admin" : user, "TENANT_TAGS", id, tags);
+        return Map.of("tenantId", id, "tags", tags, "message", "标签已更新");
+    }
+
+    // ============================================================ 告警通知渠道
+
+    private static final java.util.Set<String> CHANNEL_TYPES =
+            java.util.Set.of("dingtalk", "feishu", "wecom", "webhook");
+
+    @GetMapping("/alert-channels")
+    public List<Map<String, Object>> alertChannels() {
+        return db.alertChannels();
+    }
+
+    @PostMapping("/alert-channels")
+    public Map<String, Object> addAlertChannel(@RequestBody Map<String, Object> body,
+                                               @RequestHeader(value = "X-User", required = false) String user) {
+        String name = String.valueOf(body.getOrDefault("name", "")).trim();
+        String type = String.valueOf(body.getOrDefault("type", "")).trim().toLowerCase();
+        String url = String.valueOf(body.getOrDefault("url", "")).trim();
+        if (name.isEmpty()) {
+            throw new RentalService.BizException("渠道名称不能为空");
+        }
+        if (!CHANNEL_TYPES.contains(type)) {
+            throw new RentalService.BizException("渠道类型只支持 dingtalk / feishu / wecom / webhook");
+        }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            throw new RentalService.BizException("Webhook 地址必须是 http(s) 开头");
+        }
+        String id = "ach" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        db.insertAlertChannel(id, name, type, url);
+        db.insertAudit(user == null ? "admin" : user, "ALERT_CHANNEL_ADD", id, type + " · " + name);
+        return Map.of("id", id, "message", "渠道已添加：" + name);
+    }
+
+    @PostMapping("/alert-channels/{id}/toggle")
+    public Map<String, Object> toggleAlertChannel(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                                  @RequestHeader(value = "X-User", required = false) String user) {
+        boolean enabled = !"false".equalsIgnoreCase(String.valueOf(body.getOrDefault("enabled", true)));
+        int n = db.toggleAlertChannel(id, enabled);
+        if (n == 0) {
+            throw new RentalService.BizException("渠道不存在");
+        }
+        db.insertAudit(user == null ? "admin" : user, enabled ? "ALERT_CHANNEL_ON" : "ALERT_CHANNEL_OFF", id, "");
+        return Map.of("id", id, "enabled", enabled, "message", enabled ? "已启用" : "已停用");
+    }
+
+    @DeleteMapping("/alert-channels/{id}")
+    public Map<String, Object> deleteAlertChannel(@PathVariable String id,
+                                                  @RequestHeader(value = "X-User", required = false) String user) {
+        int n = db.deleteAlertChannel(id);
+        if (n > 0) {
+            db.insertAudit(user == null ? "admin" : user, "ALERT_CHANNEL_DEL", id, "");
+        }
+        return Map.of("deleted", n, "message", n > 0 ? "渠道已删除" : "渠道不存在");
+    }
+
+    /** 向单个渠道发一条测试消息，验证 webhook 地址与机器人配置是否可用 */
+    @PostMapping("/alert-channels/{id}/test")
+    public Map<String, Object> testAlertChannel(@PathVariable String id) {
+        Map<String, Object> ch = db.alertChannel(id);
+        if (ch == null) {
+            throw new RentalService.BizException("渠道不存在");
+        }
+        boolean ok = notifier.send(ch, "[测试] TokenArk 告警通道连通性验证",
+                "这是一条测试消息，收到即表示渠道配置可用。", "P2");
+        return Map.of("ok", ok, "message", ok ? "测试消息已发送，请到群里确认" : "发送失败，检查 webhook 地址或机器人配置");
+    }
+
+    // ============================================================ MaaS：模型上下架 / 分组
+
+    @GetMapping("/maas/models")
+    public List<Map<String, Object>> maasModels() {
+        Map<String, Map<String, Object>> states = db.maasModelStates();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (MaasCatalog.Model m : MaasCatalog.MODELS) {
+            Map<String, Object> st = states.get(m.id());
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", m.id());
+            row.put("display", m.display());
+            row.put("inPerM", m.inPerM());
+            row.put("outPerM", m.outPerM());
+            row.put("status", st == null ? "online" : st.get("status"));
+            row.put("group", st == null ? "通用" : st.get("grp"));
+            row.put("note", st == null ? null : st.get("note"));
+            out.add(row);
+        }
+        return out;
+    }
+
+    @PostMapping("/maas/models/{id}")
+    public Map<String, Object> setMaasModel(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                            @RequestHeader(value = "X-User", required = false) String user) {
+        if (MaasCatalog.byId(id) == null) {
+            throw new RentalService.BizException("模型不存在: " + id);
+        }
+        Map<String, Map<String, Object>> states = db.maasModelStates();
+        Map<String, Object> cur = states.get(id);
+        String status = body.get("status") == null
+                ? (cur == null ? "online" : String.valueOf(cur.get("status")))
+                : String.valueOf(body.get("status"));
+        if (!"online".equals(status) && !"offline".equals(status)) {
+            throw new RentalService.BizException("status 只支持 online / offline");
+        }
+        String group = body.get("group") == null
+                ? (cur == null ? "通用" : String.valueOf(cur.get("grp")))
+                : String.valueOf(body.get("group"));
+        String note = body.get("note") == null ? (cur == null ? null : (String) cur.get("note"))
+                : String.valueOf(body.get("note"));
+        db.setMaasModelState(id, status, group, note);
+        db.insertAudit(user == null ? "admin" : user, "MAAS_MODEL_UPDATE", id, status + " · " + group);
+        return Map.of("id", id, "status", status, "group", group,
+                "message", "offline".equals(status) ? "已下架 " + id : "已上架 " + id);
+    }
+
+    // ============================================================ MaaS：请求日志
+
+    @GetMapping("/maas/logs")
+    public Map<String, Object> maasLogs(@RequestParam(required = false) String tenantId,
+                                        @RequestParam(defaultValue = "100") int limit) {
+        int n = Math.max(1, Math.min(limit, 500));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("logs", db.maasLogs(tenantId, n));
+        out.put("summary", db.maasLogSummary(tenantId));
+        out.put("tenantId", tenantId);
         return out;
     }
 }

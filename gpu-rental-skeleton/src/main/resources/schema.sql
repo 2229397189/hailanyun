@@ -488,3 +488,55 @@ ALTER TABLE biz_leads ADD COLUMN IF NOT EXISTS org VARCHAR(64);
 -- 创建实例页选的镜像与数据盘要落到实例上，否则「选了镜像」只是前端动画
 ALTER TABLE instances ADD COLUMN IF NOT EXISTS image_ref VARCHAR(128);
 ALTER TABLE instances ADD COLUMN IF NOT EXISTS data_disk_gb INT NOT NULL DEFAULT 0;
+
+-- ============ 批次：商品上下架 / 余额运营 / 告警多渠道 / MaaS 治理 ============
+
+-- SKU 上下架：规格定义还在代码里（价格随卡池算），但「卖不卖」必须能由运营控制
+CREATE TABLE IF NOT EXISTS sku_states (
+  code       VARCHAR(32) PRIMARY KEY,
+  on_sale    BOOLEAN     NOT NULL DEFAULT TRUE,
+  note       VARCHAR(128),
+  updated_at TIMESTAMP   NOT NULL
+);
+
+-- 租户标签：运营分组（如 重点客户/科研/试用），报表与筛选都按它归集
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tags VARCHAR(256);
+
+-- 子账号：独立配额与权限位。配额为 NULL 表示跟随主账号
+ALTER TABLE users ADD COLUMN IF NOT EXISTS quota_gpus INT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS perms VARCHAR(256);
+
+-- 告警通知渠道：钉钉/飞书/企业微信/自定义 webhook，可多条并存
+CREATE TABLE IF NOT EXISTS alert_channels (
+  id         VARCHAR(32) PRIMARY KEY,
+  name       VARCHAR(64) NOT NULL,
+  type       VARCHAR(16) NOT NULL,   -- dingtalk / feishu / wecom / webhook
+  url        VARCHAR(512) NOT NULL,
+  enabled    BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP   NOT NULL
+);
+
+-- MaaS 请求日志：全量留存，支撑用量审计与对账
+CREATE TABLE IF NOT EXISTS maas_request_logs (
+  id                VARCHAR(32) PRIMARY KEY,
+  tenant_id         VARCHAR(32),
+  key_id            VARCHAR(32),
+  model             VARCHAR(64),
+  prompt_tokens     INT,
+  completion_tokens INT,
+  cost_yuan         DECIMAL(14,6),
+  status            VARCHAR(16),      -- ok / error
+  http_status       INT,
+  latency_ms        INT,
+  created_at        TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_maas_log_tenant ON maas_request_logs(tenant_id, created_at);
+
+-- 模型上下架与分组：静态目录 + 可运营状态
+CREATE TABLE IF NOT EXISTS maas_model_states (
+  model      VARCHAR(64) PRIMARY KEY,
+  status     VARCHAR(16) NOT NULL DEFAULT 'online',  -- online / offline
+  grp        VARCHAR(32),                            -- 通用 / 国产 / 免费
+  note       VARCHAR(128),
+  updated_at TIMESTAMP   NOT NULL
+);
