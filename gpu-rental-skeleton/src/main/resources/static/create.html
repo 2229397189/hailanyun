@@ -648,7 +648,9 @@ function recalc() {
 
   // 配置费用：按量显示 /时，其余显示整周期总额
   if (S.tab === 'on' || S.tab === 'coupon') {
-    $('#barFee').textContent = '¥' + fmt(cm.perCard * cm.gpus);
+    // 按量也要把数据盘摊进每小时报价，否则页面说 ¥0.45、实际扣 ¥0.50
+    const hourly = cm.perCard * cm.gpus + extraGb() * S.diskRate / 24;
+    $('#barFee').textContent = '¥' + fmt(hourly);
     $('#barFeeU').textContent = ' / 时';
   } else {
     $('#barFee').textContent = '¥' + fmt(cm.total);

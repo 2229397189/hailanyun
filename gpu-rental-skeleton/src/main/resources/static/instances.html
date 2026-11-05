@@ -228,9 +228,12 @@ function subscribePanel() {
 }
 function specOf(i) {
   const n = Number(i.gpu_count);
-  if (n === 0) return '无卡调试 · 4C8G';
-  if (n === 8) return '整机 8 × RTX 5090';
-  return n + ' × RTX 5090';
+  const sku = String(i.sku || '');
+  if (n === 0 || sku === 'debug') return '无卡调试 · 4C8G';
+  // 型号必须跟着 SKU 走：买 4060 的实例不能显示成 5090
+  const model = sku === 'local4060' ? 'RTX 4060 Laptop' : 'RTX 5090';
+  if (sku === 'whole' || n === 8) return '整机 8 × ' + model;
+  return n + ' × ' + model;
 }
 
 function imgOf(i) {
