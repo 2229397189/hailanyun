@@ -330,9 +330,15 @@ CREATE TABLE IF NOT EXISTS agent_snapshots (
   id           VARCHAR(32) PRIMARY KEY,
   hostname     VARCHAR(128) NOT NULL,
   os           VARCHAR(64),
+  os_version   VARCHAR(128),
+  cpu_model    VARCHAR(128),
+  cpu_cores    INTEGER,
   cpu_percent  DOUBLE PRECISION,
   mem_total_gb DOUBLE PRECISION,
   mem_used_gb  DOUBLE PRECISION,
+  disk_total_gb DOUBLE PRECISION,
+  disk_used_gb  DOUBLE PRECISION,
+  uptime_seconds BIGINT,
   collected_at TIMESTAMP    NOT NULL
 );
 

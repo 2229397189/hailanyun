@@ -68,8 +68,11 @@ public class AgentApi {
         }
 
         String id = "ags" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-        db.insertAgentSnapshot(id, hostname, os, num(body.get("cpuPercent")), num(body.get("memTotalGb")),
-                num(body.get("memUsedGb")), gpus);
+        db.insertAgentSnapshot(id, hostname, os,
+                str(body.get("osVersion")), str(body.get("cpuModel")), intOf(body.get("cpuCores")),
+                num(body.get("cpuPercent")), num(body.get("memTotalGb")), num(body.get("memUsedGb")),
+                num(body.get("diskTotalGb")), num(body.get("diskUsedGb")),
+                longOf(body.get("uptimeSeconds")), gpus);
         return Map.of("ok", true, "snapshotId", id, "message",
                 "已接收 " + hostname + " 的 " + gpus.size() + " 张卡快照");
     }
@@ -88,10 +91,16 @@ public class AgentApi {
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("hostname", hostname);
             out.put("os", s.get("os"));
+            out.put("osVersion", s.get("os_version"));
+            out.put("cpuModel", s.get("cpu_model"));
+            out.put("cpuCores", s.get("cpu_cores"));
             out.put("lastSeen", s.get("collected_at"));
             out.put("cpuPercent", s.get("cpu_percent"));
             out.put("memTotalGb", s.get("mem_total_gb"));
             out.put("memUsedGb", s.get("mem_used_gb"));
+            out.put("diskTotalGb", s.get("disk_total_gb"));
+            out.put("diskUsedGb", s.get("disk_used_gb"));
+            out.put("uptimeSeconds", s.get("uptime_seconds"));
             out.put("snapshots", h.get("snapshots"));
             out.put("gpus", db.agentGpus(String.valueOf(s.get("id"))));
             hosts.add(out);
@@ -112,5 +121,19 @@ public class AgentApi {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private static Integer intOf(Object v) {
+        Double d = num(v);
+        return d == null ? null : d.intValue();
+    }
+
+    private static Long longOf(Object v) {
+        Double d = num(v);
+        return d == null ? null : d.longValue();
+    }
+
+    private static String str(Object v) {
+        return v == null ? null : String.valueOf(v);
     }
 }

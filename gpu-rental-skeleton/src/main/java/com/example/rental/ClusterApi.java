@@ -237,7 +237,10 @@ public class ClusterApi {
                 c.put("idx", g.get("idx"));
                 c.put("model", g.get("name"));
                 c.put("mem_gb", Math.round(numOf(g.get("mem_total_mb")) / 1024.0 * 10) / 10.0);
+                c.put("mem_used_gb", Math.round(numOf(g.get("mem_used_mb")) / 1024.0 * 10) / 10.0);
                 c.put("temp_c", g.get("temp_c"));
+                c.put("util", g.get("util"));
+                c.put("power_w", g.get("power_w"));
                 c.put("status", "free");
                 cards.add(c);
             }
@@ -250,7 +253,17 @@ public class ClusterApi {
             n.put("role", "host-agent");
             n.put("poolId", "p1");
             n.put("dataSource", "host-agent");
+            // 整机实时参数（agent 每 10s 上报一次，前端本机详情卡直接读这些字段）
+            n.put("cpuModel", s.get("cpu_model"));
+            n.put("cpuCores", s.get("cpu_cores"));
+            n.put("cpuPercent", s.get("cpu_percent"));
             n.put("memGb", s.get("mem_total_gb"));
+            n.put("memUsedGb", s.get("mem_used_gb"));
+            n.put("diskGb", s.get("disk_total_gb"));
+            n.put("diskUsedGb", s.get("disk_used_gb"));
+            n.put("os", s.get("os"));
+            n.put("osVersion", s.get("os_version"));
+            n.put("uptimeSeconds", s.get("uptime_seconds"));
             n.put("podCount", 0);
             n.put("gpuCount", cards.size());
             n.put("gpuLedger", cards.size());

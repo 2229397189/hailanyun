@@ -813,10 +813,19 @@ public class Db {
     // ---------- 本机 GPU 采集 agent ----------
 
     /** 写一条 agent 快照 + 每张卡一行；只保留最近 48 小时 */
-    public void insertAgentSnapshot(String id, String hostname, String os, Double cpuPercent,
-                                    Double memTotalGb, Double memUsedGb, List<Map<String, Object>> gpus) {
-        update("INSERT INTO agent_snapshots(id, hostname, os, cpu_percent, mem_total_gb, mem_used_gb, collected_at) VALUES (?,?,?,?,?,?,?)",
-                id, hostname, os, cpuPercent, memTotalGb, memUsedGb, new Timestamp(System.currentTimeMillis()));
+    public void insertAgentSnapshot(String id, String hostname, String os, String osVersion,
+                                    String cpuModel, Integer cpuCores, Double cpuPercent,
+                                    Double memTotalGb, Double memUsedGb,
+                                    Double diskTotalGb, Double diskUsedGb, Long uptimeSeconds,
+                                    List<Map<String, Object>> gpus) {
+        update("""
+                INSERT INTO agent_snapshots(id, hostname, os, os_version, cpu_model, cpu_cores, cpu_percent,
+                                            mem_total_gb, mem_used_gb, disk_total_gb, disk_used_gb,
+                                            uptime_seconds, collected_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """, id, hostname, os, osVersion, cpuModel, cpuCores, cpuPercent,
+                memTotalGb, memUsedGb, diskTotalGb, diskUsedGb, uptimeSeconds,
+                new Timestamp(System.currentTimeMillis()));
         for (Map<String, Object> g : gpus) {
             update("""
                     INSERT INTO agent_gpus(snapshot_id, idx, name, uuid, util, mem_total_mb, mem_used_mb, temp_c, power_w)

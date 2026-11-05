@@ -86,6 +86,20 @@ public class DbBootstrap implements ApplicationRunner {
         } catch (Exception e) {
             log.warn("inspection_items.ticket_id 升级跳过：{}", e.getMessage());
         }
+        // 本机 agent 补齐整机参数：CPU 型号/核心/使用率、磁盘、系统版本、运行时长
+        for (String ddl : new String[]{
+                "ALTER TABLE agent_snapshots ADD COLUMN IF NOT EXISTS os_version VARCHAR(128)",
+                "ALTER TABLE agent_snapshots ADD COLUMN IF NOT EXISTS cpu_model VARCHAR(128)",
+                "ALTER TABLE agent_snapshots ADD COLUMN IF NOT EXISTS cpu_cores INTEGER",
+                "ALTER TABLE agent_snapshots ADD COLUMN IF NOT EXISTS disk_total_gb DOUBLE PRECISION",
+                "ALTER TABLE agent_snapshots ADD COLUMN IF NOT EXISTS disk_used_gb DOUBLE PRECISION",
+                "ALTER TABLE agent_snapshots ADD COLUMN IF NOT EXISTS uptime_seconds BIGINT"}) {
+            try {
+                jdbc.execute(ddl);
+            } catch (Exception e) {
+                log.warn("agent_snapshots 升级跳过：{}", e.getMessage());
+            }
+        }
         // MaaS Token 计量按 4 位小数扣费，余额列从 DECIMAL(12,2) 加宽（老库幂等）
         try {
             jdbc.execute("ALTER TABLE tenants ALTER COLUMN balance_yuan TYPE DECIMAL(14,4)");
