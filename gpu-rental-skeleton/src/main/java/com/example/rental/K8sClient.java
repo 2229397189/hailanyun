@@ -11,7 +11,11 @@ package com.example.rental;
  */
 public interface K8sClient {
 
-    String create(String namespace, String podName, int gpuCount);
+    /**
+     * @param imageRef   用户在创建页选的镜像（目录里的 ref，不是可直接拉取的地址）
+     * @param dataDiskGb 数据盘容量，>0 时挂一块真实 PVC 到 /data
+     */
+    String create(String namespace, String podName, int gpuCount, String imageRef, int dataDiskGb);
 
     boolean ready(String namespace, String podName);
 
@@ -19,6 +23,9 @@ public interface K8sClient {
      * @return true 表示 Pod 已经真的不在了；false 表示还在删除中（Terminating 卡住）
      */
     boolean delete(String namespace, String podName);
+
+    /** 释放实例时才删数据盘；关机/重启只删 Pod，PVC 留着，开机挂回同一个盘 */
+    void deleteData(String namespace, String podName);
 
     /** 当前运行时模式：fake / real */
     String mode();

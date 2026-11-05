@@ -5,16 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>消息通知 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 </head>
 <body data-active="msg">
 
 <div class="console">
   <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="ctopbar"></div>
     <div class="cbody">
+      <div class="msg" id="msg"></div>
       <div class="card panel">
         <h3>消息通知 <span class="s">共 <b id="cnt">0</b> 条，未读 <b id="unread">0</b> 条</span>
           <button class="ghost sm" onclick="readAll()">全部标为已读</button>
@@ -25,45 +26,74 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v13"></script>
+<script src="/console-nav.js?v17"></script>
 <script>
 const $ = s => document.querySelector(s);
-const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if (!localStorage.getItem('gu_token') || !U) location.replace('/login.html');
+const TOKEN = localStorage.getItem('gu_token') || '';
+if (!TOKEN || !localStorage.getItem('gu_user')) location.replace('/login');
+let ITEMS = [];
 
-const MSGS = [
-  { id: 'm1', type: '系统', title: '平台已升级至 v1.0.0', body: '新增资源对账、审计导出与在线会话管理。', time: '2026-11-03 09:12', unread: true },
-  { id: 'm2', type: '账单', title: '本月消费提醒', body: '您本月已产生消费，可在「我的钱包 → 收支明细」查看明细。', time: '2026-11-02 20:40', unread: true },
-  { id: 'm3', type: '实例', title: '实例已释放', body: '实例已按实际使用秒数结算，预扣差额已退回余额。', time: '2026-11-02 15:08', unread: false },
-  { id: 'm4', type: '安全', title: '新设备登录', body: '检测到您的账号在新的浏览器登录，如非本人操作请立即修改密码。', time: '2026-11-01 10:26', unread: false }
-];
-const KEY = 'gu_read_msgs';
-const read = JSON.parse(localStorage.getItem(KEY) || '[]');
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opt.headers || {});
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
+}
 
 function render() {
-  const list = MSGS.map(m => ({ ...m, unread: m.unread && read.indexOf(m.id) < 0 }));
-  $('#cnt').textContent = list.length;
-  $('#unread').textContent = list.filter(m => m.unread).length;
-  $('#list').innerHTML = list.map(m => `
-    <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px dashed #f3f1f9;align-items:flex-start">
+  $('#cnt').textContent = ITEMS.length;
+  $('#unread').textContent = ITEMS.filter(m => !m.is_read).length;
+  if (!ITEMS.length) {
+    $('#list').innerHTML = '<div class="empty-state"><div class="ic">◔</div><b>暂无消息</b>' +
+      '<span>下单、释放、告警等事件会在这里通知你</span></div>';
+    return;
+  }
+  $('#list').innerHTML = ITEMS.map(m => `
+    <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px dashed #f3f1f9;align-items:flex-start;
+         cursor:${m.is_read ? 'default' : 'pointer'}" onclick="markOne('${m.id}')">
       <span style="width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;
             justify-content:center;background:#f6efff;color:#a855f7">◔</span>
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px">
           <b style="font-size:13px">${m.title}</b>
           <span class="pill p-gray">${m.type}</span>
-          ${m.unread ? '<span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span>' : ''}
+          ${m.is_read ? '' : '<span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span>'}
         </div>
         <div class="hint" style="margin-top:4px">${m.body}</div>
       </div>
-      <div class="hint" style="white-space:nowrap">${m.time}</div>
+      <div class="hint" style="white-space:nowrap">${Tf.at(m.created_at)}</div>
     </div>`).join('');
 }
-function readAll() {
-  localStorage.setItem(KEY, JSON.stringify(MSGS.map(m => m.id)));
-  render();
+
+async function load() {
+  try {
+    const r = await api('/notifications');
+    ITEMS = r.items || [];
+    render();
+  } catch (e) { toast(e.message, false); }
 }
-render();
+async function markOne(id) {
+  const m = ITEMS.find(x => x.id === id);
+  if (!m || m.is_read) return;
+  try { await api('/notifications/' + id + '/read', { method: 'POST' }); await load(); }
+  catch (e) { toast(e.message, false); }
+}
+async function readAll() {
+  try {
+    const r = await api('/notifications/read-all', { method: 'POST' });
+    toast(r.message, true);
+    await load();
+  } catch (e) { toast(e.message, false); }
+}
+load();
 </script>
 </body>
 </html>

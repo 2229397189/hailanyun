@@ -76,6 +76,7 @@ pre{background:#f7f8fb; border:1px solid var(--line); border-radius:8px; padding
 <p class="lede">逐条对标需求文档 v1.0，明确 POC 做什么、做到什么程度、还差什么</p>
 <div class="meta">
   <span>版本 v1.0</span><span>2026-11-02</span><span>依据：需求文档 v1.0（2026-10-29）</span><span>技术执行：陆强</span>
+  <span>交付状态更新时间：2026-11-04（见第八节）</span>
 </div>
 
 <h2>一 · 三条结论</h2>
@@ -196,11 +197,55 @@ pre{background:#f7f8fb; border:1px solid var(--line); border-radius:8px; padding
 <h2>七 · POC 交付物清单</h2>
 <ol>
   <li>可访问的 POC 环境（地址 + 账号），含真实集群数据</li>
-  <li>演示脚本与讲解词（10 分钟版）</li>
+  <li>演示脚本与讲解词（10 分钟版，见《演示问答手册》）</li>
   <li>需求对标表（本文件，逐条勾选完成度）</li>
   <li>集群部署记录（版本、驱动、组件清单、端口）</li>
+  <li>命令行客户端 <code>ark-cli</code>（登录 / 下单 / 实例生命周期 / 释放结算，Token 本地缓存）</li>
+  <li>51 项三角色自动化实测用例与结果（下单计费口径、生命周期、认证、安全越权、审计均含断言）</li>
   <li>待确认项与后续采购建议（P1 生产化范围与报价）</li>
 </ol>
+
+<h2>八 · POC 完成情况（2026-11-04 更新）</h2>
+<table>
+<thead><tr>
+<th style="width:4%">#</th><th style="width:15%">需求点</th><th style="width:10%">状态</th><th>已完成 / 未完成说明</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>1</td><td>K8s 原生底座</td><td><span class="tag ok">已完成</span></td>
+<td>已接 k3s 真集群（<code>real</code> 模式）：节点 / Pod / Namespace / Label / Taint / ResourceQuota 全部可查可操作，平台侧动作（cordon、删 Pod、配额同步）真下发到集群；另交付 Helm Chart 部署平台自身。多控制面 HA 未做（需 3 台服务器）。</td>
+</tr>
+<tr>
+<td>2</td><td>GPU 算力纳管</td><td><span class="tag half">部分完成</span></td>
+<td>节点接入 / 下线、卡故障标记 / 修复、卡池台账与集群对账已完成；<strong>本机真实 GPU 遥测已接入</strong>（Windows/Linux 标准库采集 agent，每 10 秒上报利用率 / 显存 / 温度 / 功耗，监控页按「本机实采 → Prometheus → 合成」三级真实度取数并标注来源），<strong>驱动版本矩阵</strong>（型号 / 驱动 / CUDA / 说明）已在管理端维护。GPU Operator 安装、DCGM 卡级指标需 NVIDIA 硬件环境，界面已留接入位并如实标注「未接入」。</td>
+</tr>
+<tr>
+<td>3</td><td>GPU 调度</td><td><span class="tag half">部分完成</span></td>
+<td>队列 / 优先级 / 调度策略（Bin-pack、Spread、Gang）界面与台账模型完成，单卡整机落卡按策略走真逻辑。Volcano 组件安装与 gang 实跑需真实 GPU 集群，属采购后落地项。</td>
+</tr>
+<tr>
+<td>4</td><td>GPU 共享切分</td><td><span class="tag no">未接入</span></td>
+<td>5090 无 MIG；HAMi 对新架构支持未验证。数据模型与界面已留切分字段（1/2、1/4 显存上限），实际切分按计划采购后验证再做，不做承诺。</td>
+</tr>
+<tr>
+<td>5</td><td>集群监控</td><td><span class="tag ok">已完成</span></td>
+<td>Prometheus 接入：real 模式读真集群指标（节点 / 组件 / 业务 Gauge），fake 模式用合成曲线并标注来源；Grafana 大屏随部署自动加载。告警规则引擎每 30 秒评估，支持持续窗口 / 静默期 / 去重，webhook 真实 HTTP 投递。</td>
+</tr>
+<tr>
+<td>6</td><td>多租户与租赁运营</td><td><span class="tag ok">已完成（演示级）</span></td>
+<td>6 个命名演示租户（数据标注演示种子）；租户自助下单 → 实例交付 → 重启 / 续费 / 释放 → 按秒结算退款全链路真闭环；API 密钥 + MaaS 网关（OpenAI 兼容 <code>/v1/chat/completions</code>）按 Token 真实计量扣费。2026-11-04 再补齐 C 端整组运营功能：<strong>闲时 5 折 / 无卡调试（CPU-only）两种 SKU、学生认证 9 折、优惠券（发 / 领 / 核销）、实名认证审核、实例开关机 / 克隆 / 重置 / 升降配 / 定时关机（Reconciler 自动执行）、镜像分享 / 安全扫描 / 社区广场、公共数据集库、命令行客户端（ark-cli，登录 / 查询 / 开关机 / 续费 / 释放结算全流程）</strong>，并输出 51 项三角色自动化实测用例（全部断言服务端与集群侧状态变化）。真实支付渠道未接（演示为模拟回调）。</td>
+</tr>
+<tr>
+<td>7</td><td>告警与巡检</td><td><span class="tag ok">已完成（演示级）</span></td>
+<td>阈值告警规则 CRUD + 自动触发 + 分级确认 / 解决；巡检按集群真实状态生成问题项与健康分；巡检项支持 AI 诊断（LLM 未配置时回退内置规则并标注来源）与一键转工单闭环；2026-11-04 增加<strong>反挖矿协议与巡检巡逻</strong>（登录页协议条款、满负荷卡自动生成 P1 巡检项并给出处置建议）。日志审计、自愈动作仍属生产化范围。</td>
+</tr>
+<tr>
+<td>8</td><td>高可用与演进</td><td><span class="tag no">未做</span></td>
+<td>需 3 控制节点硬件；当前以单控制面 k3s 演示，HA 路径与扩容方案见第二节生产化差异列。</td>
+</tr>
+</tbody>
+</table>
+<p class="small">标注口径：本表「已完成」均经真实操作验证（管理端点击 / 租户端点击 / API 调用，并核对服务端与集群侧状态变化）；除第八节外，另有 51 项三角色自动化实测（2026-11-04 全绿）作为交付证据。「部分完成 / 未接入」均为需要 NVIDIA 硬件或多机环境才能落地的项，POC 环境不冒充实测。</p>
 
 <div class="foot">
 本清单依据《海兰云 · K8s 原生 GPU 算力调度管理平台 需求文档 v1.0（2026-10-29）》编制，人天为量级估算，客户侧规模与计费口径确认后需重新校准。

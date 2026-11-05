@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>多人拼团 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/ref.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/ref.css?v17">
 </head>
 <body>
 
 <header class="topnav">
   <div class="inner">
-    <a class="brand" href="/index.html">
+    <a class="brand" href="/index">
       <span class="brand-mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
@@ -25,15 +25,15 @@
       </span>
     </a>
     <nav class="navlinks">
-      <a href="/index.html">首页</a>
-      <a href="/market.html">算力市场</a>
-      <a class="soon">大模型 API</a>
-      <a href="/solutions.html">解决方案</a>
-      <a href="/about.html">关于我们</a>
-      <a href="/index.html#pricing">帮助文档</a>
+      <a href="/index">首页</a>
+      <a href="/market">算力市场</a>
+      <a href="/llm-api">大模型 API</a>
+      <a href="/solutions">解决方案</a>
+      <a href="/about">关于我们</a>
+      <a href="/index#pricing">帮助文档</a>
     </nav>
     <div class="nav-right">
-      <a class="btn-console" href="/portal.html">控制台</a>
+      <a class="btn-console" href="/console">控制台</a>
       <span class="avatar">L</span>
     </div>
   </div>
@@ -59,7 +59,10 @@
     </div>
 
     <div class="rg-bar">
-      <span class="rg-reset" onclick="resetFilter()">↻ 重置筛选</span>
+      <span style="display:flex;align-items:center;gap:18px">
+        <span class="rg-reset" onclick="resetFilter()">↻ 重置筛选</span>
+        <span class="rg-mine" onclick="myJoins()">👥 我的拼团 <b id="mineCount">0</b></span>
+      </span>
       <span class="rg-sort">价格排序
         <select id="sort" onchange="render()">
           <option value="default">默认</option>
@@ -96,9 +99,11 @@
   </div>
 </footer>
 
+<script src="/biz.js?v17"></script>
 <script>
 /* 机型、库存、成团进度全部来自 /api/catalog/group */
 let DATA = [];
+const QTY = {};   /* cardKey -> 已选拼租张数，卡片下拉与拼单弹窗共用 */
 const S = { model: '全部', vram: '全部', zone: '全部' };
 const MODELS = ['全部', 'A100', 'A800', 'H100', 'H20', 'H200', 'RTX3090', 'RTX4090', 'RTX4090D', 'RTX5090'];
 const VRAMS = ['全部', '24G', '32G', '40G', '80G', '141G', '150G'];
@@ -121,26 +126,38 @@ function renderFilters() {
 }
 
 function groupCard(d) {
+  const left = Math.max(0, d.left == null ? d.total - d.done : d.left);
   const pct = Math.round(d.done / d.total * 100);
-  const left = Math.max(0, d.total - d.done);
+  const maxQty = Math.min(8, left);
+  const sel = QTY[d.cardKey] && QTY[d.cardKey] <= maxQty ? QTY[d.cardKey] : 1;
+  const qtyOpts = [];
+  for (let i = 1; i <= maxQty; i++) {
+    qtyOpts.push(`<option value="${i}" ${i === sel ? 'selected' : ''}>${i} 张卡</option>`);
+  }
   return `<div class="rg-card">
     <div class="rg-head">
-      <div class="rg-name">${d.model} <span class="rg-vram">${d.vram}G</span></div>
+      <div class="rg-name">${Biz.esc(d.model)} <span class="rg-vram">${d.vram}G</span></div>
       <div class="rg-price">¥${Number(d.price).toLocaleString('en-US')}</div>
     </div>
     <div class="rg-meta">
-      <span><i class="pin">◉</i> ${d.zone}</span>
-      <span><i>▤</i> <b>${d.cpu}</b></span>
+      <span><i class="pin">◉</i> ${Biz.esc(d.zone)}</span>
+      <span><i>▤</i> <b>${Biz.esc(d.cpu)}</b></span>
     </div>
     <div class="rg-panel">
       <div class="rg-boxes">
-        <div class="rg-box"><label>拼租数量</label><div class="v">1 张卡 <em>⌄</em></div></div>
-        <div class="rg-box"><label>数据盘</label><div class="v">${d.dataDisk}</div></div>
+        <div class="rg-box"><label>拼租数量</label>
+          ${left > 0
+            ? `<select class="v rg-sel" data-key="${Biz.esc(d.cardKey)}" onchange="pickQty(this)">
+                 ${qtyOpts.join('')}
+               </select>`
+            : `<div class="v">已满员</div>`}
+        </div>
+        <div class="rg-box"><label>数据盘</label><div class="v">${Biz.esc(d.dataDisk)}</div></div>
       </div>
       <div class="rg-div"></div>
       <div class="rg-specs">
         <div>⚙ vCPU <b>${d.vcpu}核</b></div>
-        <div>◷ 时长 <b>${d.duration}</b></div>
+        <div>◷ 时长 <b>${Biz.esc(d.duration)}</b></div>
         <div>▤ 内存 <b>${d.ram}GB</b></div>
         <div>▥ 系统盘 <b>${d.disk}GB</b></div>
       </div>
@@ -148,12 +165,15 @@ function groupCard(d) {
     <div class="rg-prog-wrap">
       <div class="rg-prog-txt"><span>值机中</span><span>${d.done}/${d.total}</span></div>
       <div class="rg-prog"><i style="width:${pct}%"></i></div>
-      <div class="rg-note">再拼 ${left} 张卡即可起飞</div>
+      <div class="rg-note">${left > 0 ? `再拼 ${left} 张卡即可起飞` : '已成团，看看别的机型吧'}</div>
     </div>
-    <div class="rg-people">👥 机上有来自 <b>${d.school || d.zone}</b> 的同学</div>
-    <button class="rg-btn" onclick="join('${d.model} ${d.vram}G')">立即拼单</button>
+    <div class="rg-people">👥 机上有来自 <b>${Biz.esc(d.school || d.zone)}</b> 的同学</div>
+    <button class="rg-btn ${left > 0 ? '' : 'dis'}" ${left > 0 ? '' : 'disabled'}
+      onclick="join('${Biz.esc(d.cardKey)}')">${left > 0 ? '立即拼单' : '已满员'}</button>
   </div>`;
 }
+
+function pickQty(el) { QTY[el.dataset.key] = Number(el.value); }
 
 function render() {
   let list = DATA.filter(d =>
@@ -168,8 +188,214 @@ function render() {
     : `<div class="card panel" style="grid-column:1/-1"><div class="empty">没有符合条件的拼团</div></div>`;
 }
 
-function join(name) {
-  alert(`演示环境：已选择「${name}」拼团。\n真实流程需接入支付与成团逻辑，当前仅展示交互。`);
+/* ============================================================
+   立即拼单：版式对齐参考站「加入拼团」弹窗（姓名/手机·微信/单位·学校/备注 0-200）。
+   · 登录租户：跑真实资金流 /api/group/join（预扣拼团价 → 落拼单 → 满员自动成团开实例），
+     并把姓名/手机/单位/张数/备注一并登记为 source「拼团意向」的商务需求，管理端可见（join 接口本身不吃这些字段）。
+   · 未登录：不弹「请登录」死胡同，直接 POST /api/public/leads（source「拼团意向」），提交后回需求编号，由商务回访。
+   ============================================================ */
+function join(cardKey) {
+  const d = DATA.find(x => x.cardKey === cardKey);
+  if (!d) return Biz.toast('机型已下架，请刷新页面', 'err');
+  const logged = !!Biz.token();
+  const left = Math.max(0, d.left == null ? (d.total - d.done) : d.left);
+  const max = Math.min(8, left);
+  if (logged && max < 1) return Biz.toast('该机型已满员，看看别的吧', 'err');
+  const qty = Math.max(1, Math.min(QTY[cardKey] || 1, max || 1));
+  const u = Biz.user() || {};
+  const model = d.model + ' ' + (d.vram || '') + 'G';
+  const subtitle = d.model + ' · ' + qty + '张卡 · ' + d.zone;
+  const prepay = Number(d.price) * qty;
+  const star = '<span style="color:#ef4444">*</span> ';
+
+  Biz.modal({
+    title: '加入拼团',
+    okText: '立即提交',
+    cancelText: '取消',
+    wide: true,
+    okClass: 'pink-btn',
+    footFull: true,
+    html:
+      '<div style="color:#6b7280;font-size:13px;margin:-10px 0 3px">' + Biz.esc(subtitle) + '</div>' +
+      '<div style="color:#9aa1b2;font-size:12px;margin:0 0 14px">填写信息即可加入拼团</div>' +
+      (logged ? '<div class="tip" style="margin:0 0 12px">提交后立即从余额预扣拼团价 <b style="color:#7c3aed">¥' +
+        prepay.toLocaleString('en-US') + '</b>（成团前可在「我的拼团」全额退款）。</div>' : '') +
+      '<div class="field"><label>' + star + '姓名</label>' +
+        '<input id="jpName" maxlength="32" placeholder="请输入您的姓名" value="' +
+        Biz.esc(u.displayName || u.username || '') + '"></div>' +
+      '<div class="field"><label>' + star + '手机号码 / 微信</label>' +
+        '<input id="jpPhone" maxlength="20" placeholder="请输入手机号码或微信号"></div>' +
+      '<div class="field"><label>单位 / 学校</label>' +
+        '<input id="jpOrg" maxlength="64" placeholder="请输入您的单位/学校名称"></div>' +
+      '<div class="field"><label>备注信息（选填）</label>' +
+        '<textarea id="jpNote" rows="3" maxlength="200" placeholder="有什么想说的吗?" style="width:100%;' +
+        'border:1px solid #e6dcfa;border-radius:10px;padding:9px 11px;font-size:12.5px;font-family:inherit;resize:vertical"></textarea>' +
+        '<div style="text-align:right;font-size:11px;color:#9aa1b2;margin-top:4px"><span id="jpCount">0</span> / 200</div></div>',
+    ready: box => {
+      const ta = box.querySelector('#jpNote');
+      const cnt = box.querySelector('#jpCount');
+      const sync = () => { cnt.textContent = ta.value.length; };
+      ta.addEventListener('input', sync);
+      sync();
+    },
+    onOk: async (box, close) => {
+      const name = box.querySelector('#jpName').value.trim();
+      const phone = box.querySelector('#jpPhone').value.trim();
+      const org = box.querySelector('#jpOrg').value.trim();
+      const note = box.querySelector('#jpNote').value.trim();
+      if (!name) return box.showError('请填写姓名');
+      if (!/^[0-9+\-() ]{6,20}$/.test(phone)) return box.showError('请填写正确的手机号（6~20 位数字）');
+      if (note.length > 200) return box.showError('备注请精简到 200 字以内');
+      box.showError('');
+      box.busy(true);
+      const leadNote = '拼租 ' + qty + ' 张卡' + (note ? '；备注：' + note : '');
+
+      if (logged) {
+        // 真实资金流：预扣 → 落拼单 → 满员自动成团
+        let r;
+        try {
+          r = await Biz.api('/api/group/join', { method: 'POST', body: { cardKey, qty } });
+        } catch (e) {
+          box.busy(false);
+          return box.showError(e.message);
+        }
+        // join 接口不接收联系方式，另登记一条商务需求，确保用户输入不丢失
+        let leadErr = '';
+        try {
+          await Biz.api('/api/leads', { method: 'POST', body: {
+            source: '拼团意向', model, contactName: name, contactPhone: phone, org, note: leadNote } });
+        } catch (e) { leadErr = e.message; }
+        close();
+        showJoinResult(r);
+        if (leadErr) Biz.toast('拼单成功，但联系方式未能记录：' + leadErr, 'err');
+        await load();
+        loadMine();
+        return;
+      }
+
+      // 未登录：走公开需求登记，管理端商务跟进队列回访
+      try {
+        const r = await Biz.api('/api/public/leads', { method: 'POST', body: {
+          source: '拼团意向', model, contactName: name, contactPhone: phone, org, note: leadNote } });
+        close();
+        Biz.modal({
+          title: '需求已提交',
+          hideCancel: true,
+          okText: '知道了',
+          html: '<div class="biz-rows">' +
+            '<div class="biz-row"><div class="t"><b>需求编号</b><span class="biz-tag">' + Biz.esc(r.id) + '</span></div>' +
+            '<div class="d">' + Biz.esc(subtitle) + '<br>' + Biz.esc(r.message) + '</div></div>' +
+            '</div>' +
+            '<div class="tip" style="margin:0">拼团顾问会尽快与您联系，确认机型与成团安排。</div>',
+          onOk: (b, c) => c()
+        });
+      } catch (e) {
+        box.busy(false);
+        box.showError(e.message);
+      }
+    }
+  });
+}
+
+function showJoinResult(r) {
+  const card = r.card || {};
+  const formed = r.status === 'formed';
+  const mine = (r.formed || []).find(x => x.tenantId === (Biz.user() || {}).tenantId) || {};
+  Biz.modal({
+    title: formed ? '拼团成功' : '拼单已提交',
+    hideCancel: true,
+    okText: formed ? '去看实例' : '知道了',
+    html:
+      '<div class="biz-rows">' +
+        '<div class="biz-row"><div class="t"><b>拼单编号</b><span class="biz-tag">' + Biz.esc(r.joinId) + '</span></div>' +
+          '<div class="d">' + Biz.esc(card.model || '') + ' ' + (card.vram || '') + 'G（' + Biz.esc(card.zone || '') + '）· ' +
+          '预付款 ¥' + Number(r.prepay).toFixed(2) + ' 已从余额扣除</div></div>' +
+        (formed
+          ? '<div class="biz-row"><div class="t"><b>实例</b><span class="biz-tag">' + Biz.esc(mine.instanceId || '创建中') + '</span></div>' +
+              '<div class="d">8 张卡已满员自动成团，实例按 720 小时开通，SSH 接入信息在实例详情页。</div></div>'
+          : '<div class="biz-row"><div class="t"><b>成团进度</b><span class="biz-tag">' + (card.done || 0) + '/' + (card.total || 8) + '</span></div>' +
+              '<div class="d">还差 ' + (card.left || 0) + ' 张卡起飞；期间可在「我的拼团」取消并全额退款。</div></div>') +
+      '</div>',
+    onOk: (b, c) => { c(); if (formed) location.href = '/instances'; }
+  });
+}
+
+/* ---------------- 我的拼团 ---------------- */
+function myJoins() {
+  if (!Biz.token()) {
+    Biz.modal({
+      title: '需要登录', hideCancel: true, okText: '去登录',
+      html: '<div class="tip" style="margin:0">「我的拼团」展示你的拼单状态、成团进度与取消退款入口，登录后可见。</div>',
+      onOk: (b, c) => { c(); Biz.login('/group'); }
+    });
+    return;
+  }
+  const m = Biz.modal({
+    title: '我的拼团', wide: true, hideOk: true, cancelText: '关闭',
+    html: '<div class="biz-rows" id="mineList"><div class="biz-empty">加载中…</div></div>',
+    ready: box => refreshMine(box)
+  });
+  async function refreshMine(box) {
+    const list = box.querySelector('#mineList');
+    try {
+      const r = await Biz.api('/api/group/joins');
+      const items = r.items || [];
+      list.innerHTML = items.length ? items.map(j => mineRow(j)).join('') :
+        '<div class="biz-empty">还没有拼单，去上面选一个机型「立即拼单」。</div>';
+      list.querySelectorAll('[data-cancel]').forEach(btn => {
+        btn.onclick = () => cancelJoin(btn.dataset.cancel, box);
+      });
+      list.querySelectorAll('[data-goto]').forEach(btn => {
+        btn.onclick = () => { location.href = '/instances'; };
+      });
+    } catch (e) {
+      list.innerHTML = '<div class="biz-empty">加载失败：' + Biz.esc(e.message) + '</div>';
+    }
+  }
+  function mineRow(j) {
+    const st = { forming: ['值机中', '#a855f7'], formed: ['已成团', '#10b981'],
+                 cancelled: ['已取消', '#98a1b3'], failed: ['成团失败', '#ef4444'] }[j.status] || [j.status, '#98a1b3'];
+    return '<div class="biz-row">' +
+      '<div class="t"><b>' + Biz.esc(j.model) + ' ' + j.vram + 'G · ' + Biz.esc(j.zone) + ' × ' + j.qty + ' 张</b>' +
+        '<span class="biz-tag" style="color:' + st[1] + ';border-color:' + st[1] + '33;background:' + st[1] + '12">' + st[0] + '</span></div>' +
+      '<div class="d">拼单 ' + Biz.esc(j.id) + ' · 预付款 ¥' + Number(j.price_yuan).toFixed(2) +
+        ' · 成团进度 ' + (j.done || 0) + '/' + (j.total || 8) + '（还差 ' + (j.left || 0) + ' 张）<br>' +
+        (j.status === 'formed'
+          ? '实例 ' + Biz.esc(j.instance_id || '') + ' · 状态 ' + Biz.esc(j.instanceStatus || '-') +
+            ' · 到期 ' + Biz.esc(fmtTime(j.expire_at))
+          : (j.status === 'failed' ? '失败原因：' + Biz.esc(j.fail_reason || '-') : '提交于 ' + Biz.esc(fmtTime(j.created_at)))) +
+      '</div>' +
+      '<div style="display:flex;gap:7px;margin-top:9px">' +
+        (j.status === 'forming' ? '<button class="ghost sm" data-cancel="' + Biz.esc(j.id) + '">取消并退款</button>' : '') +
+        (j.status === 'formed' ? '<button class="sm" data-goto="1">查看实例</button>' : '') +
+      '</div></div>';
+  }
+  async function cancelJoin(id, box) {
+    if (!confirm('取消后预付款原路全额退回余额，确定取消这个拼单？')) return;
+    try {
+      const r = await Biz.api('/api/group/joins/' + id + '/cancel', { method: 'POST' });
+      Biz.toast(r.message || '拼单已取消', 'ok');
+      await refreshMine(box);
+      await load();
+      loadMine();
+    } catch (e) { Biz.toast(e.message, 'err'); }
+  }
+}
+
+function fmtTime(t) {
+  if (!t) return '-';
+  const d = new Date(String(t).replace(' ', 'T'));
+  return isNaN(d) ? String(t) : d.toLocaleString('zh-CN', { hour12: false });
+}
+
+async function loadMine() {
+  const el = document.getElementById('mineCount');
+  if (!el) return;
+  if (!Biz.token()) { el.textContent = ''; return; }
+  try {
+    const r = await Biz.api('/api/group/joins');
+    el.textContent = (r.items || []).length;
+  } catch (e) { el.textContent = ''; }
 }
 
 async function load() {
@@ -178,9 +404,10 @@ async function load() {
     DATA = await r.json();
   } catch (e) { DATA = []; }
   renderFilters(); render();
+  loadMine();
 }
 load();
 </script>
-<script src="/nav.js?v13"></script>
+<script src="/nav.js?v17"></script>
 </body>
 </html>

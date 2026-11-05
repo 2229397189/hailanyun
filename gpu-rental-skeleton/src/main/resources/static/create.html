@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>创建实例 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/ref.css?v17">
+<style>
+  .ck-page { max-width: 1280px; margin: 0 auto; padding: 18px 24px 140px; }
+  .ck-crumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 14px; }
+  .ck-crumb a { color: #64748b; text-decoration: none; }
+  .ck-crumb a:hover { color: #7c3aed; }
+  .ck-crumb .cur { color: #0f172a; font-weight: 600; }
+  .ck-warn { display: flex; align-items: center; gap: 6px; color: #dc2626; font-size: 12.5px; margin-left: 12px; }
+  .ck-card { background: #fff; border: 1px solid #eee6fb; border-radius: 14px; padding: 20px 24px; margin-bottom: 16px;
+    box-shadow: 0 6px 20px rgba(124,58,237,.04); }
+  .ck-hcard { display: flex; align-items: center; gap: 20px; }
+  .ck-logo { width: 78px; height: 78px; border-radius: 12px; background: #f4f1fb; display: flex; align-items: center;
+    justify-content: center; flex: none; }
+  .ck-logo img { width: 52px; height: 52px; object-fit: contain; }
+  .ck-hmain { flex: 1; min-width: 0; }
+  .ck-hname { font-size: 20px; font-weight: 800; color: #0f172a; }
+  .ck-halloc { font-size: 12px; color: #94a3b8; margin: 4px 0 12px; }
+  .ck-specgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; font-size: 13px; color: #334155; }
+  .ck-specgrid b { color: #0f172a; font-weight: 700; }
+  .ck-specgrid .lbl { color: #64748b; margin-right: 6px; }
+  .ck-hright { text-align: right; flex: none; border-left: 1px dashed #e6dcfa; padding-left: 24px; }
+  .ck-hzone { display: inline-flex; align-items: center; gap: 4px; background: #f6f2fe; color: #7c3aed;
+    border-radius: 999px; padding: 4px 12px; font-size: 12px; margin-bottom: 10px; }
+  .ck-hprice { font-size: 26px; font-weight: 800; color: #a21caf; }
+  .ck-hprice .u { font-size: 12px; color: #94a3b8; font-weight: 500; margin-left: 2px; }
+  .ck-hprice-lbl { font-size: 12px; color: #a21caf; margin-bottom: 2px; }
+  .ck-h3p { display: flex; gap: 10px; margin-top: 12px; }
+  .ck-h3p > div { border: 1px solid #eee6fb; border-radius: 9px; padding: 6px 12px; text-align: center; min-width: 58px; }
+  .ck-h3p em { display: block; font-style: normal; font-size: 11px; color: #94a3b8; }
+  .ck-h3p b { font-size: 13px; color: #0f172a; }
+  .ck-row { display: flex; gap: 18px; padding: 16px 0; border-bottom: 1px solid #f4f0f9; align-items: flex-start; }
+  .ck-row:last-child { border-bottom: none; }
+  .ck-row > .k { width: 84px; flex: none; font-size: 13px; color: #475569; font-weight: 600; padding-top: 6px; }
+  .ck-row > .v { flex: 1; min-width: 0; }
+  .ck-tabs { display: inline-flex; gap: 0; border: 1px solid #e6dcfa; border-radius: 9px; overflow: hidden; }
+  .ck-tabs button { border: none; background: #fff; padding: 7px 16px; font-size: 13px; color: #475569; cursor: pointer;
+    border-right: 1px solid #eee6fb; }
+  .ck-tabs button:last-child { border-right: none; }
+  .ck-tabs button.on { background: #fdf2f8; color: #a21caf; font-weight: 700; box-shadow: inset 0 0 0 1px #f5d0fe; }
+  .ck-tabs button:disabled { color: #cbd5e1; cursor: not-allowed; }
+  .ck-link { color: #a21caf; font-size: 13px; margin-left: 14px; cursor: pointer; text-decoration: none; }
+  .ck-hint { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.6; }
+  .ck-chips { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+  .ck-chips button { border: 1px solid #e6dcfa; background: #fff; border-radius: 8px; padding: 6px 16px; font-size: 13px;
+    color: #475569; cursor: pointer; }
+  .ck-chips button.on { border-color: #f0abfc; background: #fdf2f8; color: #a21caf; font-weight: 700; }
+  .ck-chips button:disabled { color: #cbd5e1; background: #f8fafc; cursor: not-allowed; }
+  .ck-chips button .oos { color: #dc2626; font-size: 11px; margin-left: 4px; }
+  .ck-select { height: 38px; min-width: 320px; max-width: 520px; width: 100%; border: 1px solid #e6dcfa; border-radius: 9px;
+    padding: 0 12px; font-size: 13px; color: #0f172a; background: #fff; }
+  .ck-cap { display: inline-flex; align-items: baseline; gap: 8px; font-size: 13px; color: #475569; }
+  .ck-cap b { color: #a21caf; font-size: 16px; }
+  .ck-cap .free { color: #94a3b8; font-size: 12px; }
+  .ck-check { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: #334155; }
+  .ck-check input { width: 15px; height: 15px; }
+  .ck-num { width: 90px; height: 30px; border: 1px solid #e6dcfa; border-radius: 8px; padding: 0 8px; font-size: 13px;
+    margin-left: 6px; }
+  .ck-num:disabled { background: #f8fafc; color: #cbd5e1; }
+  .ck-price-note { color: #94a3b8; font-size: 12px; margin-left: 8px; }
+  .ck-cap-row { display: flex; flex-direction: column; gap: 8px; }
+  .ck-cap-item { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #475569; }
+  .ck-pill { font-size: 11px; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .ck-pill.yes { background: #ecfdf5; color: #16a34a; }
+  .ck-pill.no { background: #fef2f2; color: #dc2626; }
+  .ck-q { color: #94a3b8; cursor: help; font-size: 11px; }
+  .ck-coupon-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .ck-coupon { display: flex; align-items: center; justify-content: space-between; border: 1px solid #eee6fb;
+    border-radius: 10px; padding: 10px 14px; background: #fbf8ff; }
+  .ck-coupon .amt { color: #a21caf; font-weight: 800; font-size: 16px; }
+  .ck-coupon .ttl { font-size: 13px; color: #0f172a; font-weight: 600; }
+  .ck-coupon .exp { font-size: 11px; color: #94a3b8; }
+  .ck-coupon button { border: 1px solid #f0abfc; background: #fff; color: #a21caf; border-radius: 8px; padding: 5px 14px;
+    font-size: 12px; cursor: pointer; }
+  .ck-coupon button:disabled { border-color: #e2e8f0; color: #cbd5e1; cursor: not-allowed; }
+  .ck-empty { color: #94a3b8; font-size: 13px; padding: 8px 0; }
+  /* 底部粘性栏 */
+  .ck-bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #eee6fb;
+    box-shadow: 0 -6px 24px rgba(15,23,42,.06); z-index: 40; }
+  .ck-bar-in { max-width: 1280px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .ck-sum { display: flex; gap: 0; background: #fdf2f8; border: 1px solid #f5d0fe; border-radius: 10px; overflow: hidden; }
+  .ck-sum > div { padding: 6px 16px; border-right: 1px solid #f5d0fe; }
+  .ck-sum > div:last-child { border-right: none; }
+  .ck-sum .t { font-size: 11px; color: #c084a6; }
+  .ck-sum .b { font-size: 13px; color: #0f172a; font-weight: 700; }
+  .ck-bar-right { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+  .ck-fee { text-align: right; }
+  .ck-fee .l { font-size: 12px; color: #64748b; }
+  .ck-fee .v { font-size: 22px; font-weight: 800; color: #dc2626; }
+  .ck-fee .v .u { font-size: 12px; color: #94a3b8; font-weight: 500; }
+  .ck-bal { font-size: 12px; color: #64748b; }
+  .ck-bal .low { color: #dc2626; }
+  .ck-bal a { color: #a21caf; }
+  .ck-detail-link { font-size: 12px; color: #64748b; cursor: pointer; }
+  .ck-btn { height: 42px; padding: 0 26px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; }
+  .ck-btn.ghost { background: #fff; border: 1px solid #e6dcfa; color: #475569; }
+  .ck-btn.go { background: linear-gradient(90deg,#c026d3,#7c3aed); color: #fff; }
+  .ck-btn.go:disabled { background: #f5d0fe; color: #fff; cursor: not-allowed; }
+  .ck-lead-note { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 10px; padding: 12px 16px;
+    font-size: 13px; margin-top: 8px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <div class="inner">
+    <a class="brand" href="/index">
+      <span class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span>
+        <span class="brand-name">Token<span>Ark</span></span>
+        <span class="brand-sub">创元方舟 · 算力云</span>
+      </span>
+    </a>
+    <nav class="navlinks">
+      <a href="/index">首页</a>
+      <a class="on" href="/portal">算力市场</a>
+      <a href="/llm-api">大模型 API</a>
+      <a href="/solutions">解决方案</a>
+      <a href="/about">关于我们</a>
+      <a href="/index#pricing">帮助文档</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn-console" href="/console">控制台</a>
+      <div class="usermenu">
+        <button class="usermenu-btn" onclick="toggleMenu(event)">
+          <span class="avatar" id="avatar">U</span>
+        </button>
+        <div class="usermenu-pop" id="umPop">
+          <div class="um-head"><b id="umName">–</b><small id="umTenant">–</small></div>
+          <div class="um-item" onclick="location.href='/instances'">我的实例</div>
+          <div class="um-item" onclick="location.href='/portal#billing'">我的账单</div>
+          <div class="um-item danger" onclick="logout()">退出登录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="ck-page">
+  <div class="ck-crumb">
+    <a href="/portal">算力市场</a>
+    <span>/</span>
+    <span class="cur">创建实例</span>
+    <span class="ck-warn">⚠ 严禁使用 WebUI 等算法生成违禁图片、严禁挖矿，一经发现立即封号！</span>
+  </div>
+
+  <!-- 头部机型卡 -->
+  <div class="ck-card">
+    <div class="ck-hcard">
+      <div class="ck-logo"><img id="hLogo" src="/img/nvidia.svg" alt=""></div>
+      <div class="ck-hmain">
+        <div class="ck-hname" id="hName">加载中…</div>
+        <div class="ck-halloc" id="hAlloc"></div>
+        <div class="ck-specgrid" id="hSpec"></div>
+      </div>
+      <div class="ck-hright">
+        <div class="ck-hzone" id="hZone"></div>
+        <div class="ck-hprice-lbl">按量计费</div>
+        <div class="ck-hprice"><span id="hHourly">¥0.0</span><span class="u">/时</span></div>
+        <div class="ck-h3p" id="h3p"></div>
+      </div>
+    </div>
+    <div id="leadNote"></div>
+  </div>
+
+  <!-- 配置卡 1 -->
+  <div class="ck-card">
+    <div class="ck-row">
+      <div class="k">计费方式:</div>
+      <div class="v">
+        <div class="ck-tabs" id="billTabs"></div>
+        <a class="ck-link" onclick="billingRules()">计费规则</a>
+        <div class="ck-hint">创建完主机后仍然可以转换计费方式。如选择按量计费，价格发生变动以实例开机时的价格为准。</div>
+        <div id="couponPanel"></div>
+      </div>
+    </div>
+    <div class="ck-row" id="cardRow">
+      <div class="k">卡数选择:</div>
+      <div class="v"><div class="ck-chips" id="cardChips"></div></div>
+    </div>
+    <div class="ck-row">
+      <div class="k">数据盘:</div>
+      <div class="v">
+        <div class="ck-cap" id="diskCap"></div>
+        <label class="ck-check">
+          <input type="checkbox" id="expandChk" onchange="onExpandToggle()">
+          <span>启用扩容</span>
+          <span class="ck-price-note">（最少 1 GB，上限 <b id="expandMax">0</b> GB，单价 <b id="diskRate">0.02</b> 元 / GB / 日）</span>
+          <input type="number" id="expandGb" class="ck-num" min="1" value="1" disabled oninput="recalc()">
+          <span class="ck-price-note">GB</span>
+        </label>
+      </div>
+    </div>
+    <div class="ck-row">
+      <div class="k">地区能力:</div>
+      <div class="v"><div class="ck-cap-row" id="capRows"></div></div>
+    </div>
+  </div>
+
+  <!-- 配置卡 2：镜像 -->
+  <div class="ck-card">
+    <div class="ck-row" style="border-bottom:none;padding-top:4px">
+      <div class="k">镜像:</div>
+      <div class="v">
+        <div class="ck-tabs" id="imgTabs"></div>
+      </div>
+    </div>
+    <div class="ck-row" id="familyRow">
+      <div class="k">发行版:</div>
+      <div class="v"><div class="ck-chips" id="famChips"></div></div>
+    </div>
+    <div class="ck-row" style="border-bottom:none">
+      <div class="k">版本:</div>
+      <div class="v"><select class="ck-select" id="verSel" onchange="onVerChange()"></select></div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部粘性栏 -->
+<div class="ck-bar">
+  <div class="ck-bar-in">
+    <div class="ck-sum" id="barSum"></div>
+    <div class="ck-bar-right">
+      <div class="ck-fee">
+        <div class="l">配置费用 <a class="ck-detail-link" onclick="costDetail()">费用明细</a></div>
+        <div class="v"><span id="barFee">¥0.0</span><span class="u" id="barFeeU"> / 时</span></div>
+        <div class="ck-bal" id="barBal"></div>
+      </div>
+      <button class="ck-btn ghost" onclick="location.href='/portal'">取消</button>
+      <button class="ck-btn go" id="createBtn" onclick="submitCreate()">立即创建</button>
+    </div>
+  </div>
+</div>
+
+<script src="/biz.js?v17"></script>
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => (Number(n) || 0).toFixed(2);
+const num1 = v => (Math.round(Number(v) * 10) / 10).toLocaleString('en-US');
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) { location.replace('/login'); throw new Error('no-session'); }
+
+$('#umName').textContent = U.username || '用户';
+$('#avatar').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
+
+document.addEventListener('click', () => $('#umPop').classList.remove('on'));
+function toggleMenu(e) { e.stopPropagation(); $('#umPop').classList.toggle('on'); }
+async function logout() {
+  try { await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN } }); } catch (e) {}
+  localStorage.removeItem('gu_token'); localStorage.removeItem('gu_user');
+  location.replace('/login');
+}
+
+// ---- 计费档位：tab -> 下单 hours ----
+const TABS = [
+  { k: 'on', t: '按量计费', hours: 1 },
+  { k: 'day', t: '包日', hours: 24 },
+  { k: 'week', t: '包周', hours: 168 },
+  { k: 'month', t: '包月', hours: 720 },
+  { k: 'coupon', t: '兑换券', hours: 1 }
+];
+// ---- 卡数 -> sku code ----
+const CARD_CODES = [
+  { n: 1, code: '1' }, { n: 2, code: '2' }, { n: 4, code: '4' }, { n: 8, code: 'whole' }
+];
+const BRAND_IMG = { amd: '/img/amd.svg', intel: '/img/intel.svg', nvidia: '/img/nvidia.svg' };
+
+// ---- 全局状态 ----
+const S = {
+  skus: [], plans: [], cards: [], zones: [], families: [], diskRate: 0.02,
+  myImgs: [], communityImgs: [], coupons: [], balance: 0,
+  model: '', skuCode: '1', tab: 'on', cardN: 1,
+  imgTab: 'base', famName: '', ref: '',
+  hasSku: true
+};
+
+function planFor(hours) { return S.plans.find(p => Number(p.hours) === hours) || null; }
+function skuByCode(code) { return S.skus.find(s => s.code === code) || null; }
+function tabHours() { const t = TABS.find(x => x.k === S.tab); return t ? t.hours : 1; }
+
+// 每卡每时的有效单价：服务端按「套餐折扣 + SKU 特价 + 本租户学生认证」算好后放进 priceBoard 下发，
+// 页面只做表查、不再自己拼公式，保证「费用明细」里的合计就是下单实际扣的金额
+function effectivePerCardHour() {
+  const sku = skuByCode(S.skuCode);
+  const h = String(tabHours());
+  if (sku && sku.priceBoard && sku.priceBoard[h] != null) return Number(sku.priceBoard[h]);
+  const pl = planFor(tabHours());
+  if (pl && pl.unitPrice != null) return Number(pl.unitPrice);
+  return sku ? Number(sku.unitPrice) : 0;
+}
+
+async function boot() {
+  const q = new URLSearchParams(location.search);
+  const wantSku = q.get('sku');
+  const wantModel = q.get('model');
+  try {
+    const [skus, plans, cards, zones, families] = await Promise.all([
+      Biz.api('/api/skus'), Biz.api('/api/plans'),
+      Biz.api('/api/catalog/market'), Biz.api('/api/catalog/zones'),
+      Biz.api('/api/catalog/images')
+    ]);
+    S.skus = skus; S.plans = plans; S.cards = cards;
+    // 数据盘费率只有一份：服务端 /api/plans 带的 dataDiskPrice，页面不再写死 0.02
+    S.diskRate = plans && plans.length && Number(plans[0].dataDiskPrice) > 0 ? Number(plans[0].dataDiskPrice) : 0.02;
+    const dr = document.getElementById('diskRate');
+    if (dr) dr.textContent = String(S.diskRate);
+    S.zones = (zones && zones.items) || [];
+    S.families = families;
+    // 鉴权类接口失败不阻断主流程
+    try { S.myImgs = await Biz.api('/api/images'); } catch (e) { S.myImgs = []; }
+    try { S.communityImgs = await Biz.api('/api/images/community'); } catch (e) { S.communityImgs = []; }
+    try { S.coupons = await Biz.api('/api/coupons'); } catch (e) { S.coupons = []; }
+    try {
+      const ts = await Biz.api('/api/tenants');
+      const me = (ts || []).find(t => String(t.id) === String(U.tenantId)) || (ts || [])[0] || {};
+      S.balance = Number(me.balance_yuan) || 0;
+    } catch (e) { S.balance = 0; }
+
+    resolveSelection(wantSku, wantModel);
+    renderAll();
+  } catch (e) {
+    $('#hName').textContent = '加载失败';
+    Biz.toast(e.message, 'err');
+  }
+}
+
+function resolveSelection(wantSku, wantModel) {
+  // 1) 指定 sku code
+  if (wantSku && skuByCode(wantSku)) {
+    S.skuCode = wantSku;
+    const sku = skuByCode(wantSku);
+    S.model = sku.model || wantModel || '';
+    const c = CARD_CODES.find(x => x.code === wantSku);
+    S.cardN = c ? c.n : (Number(sku.gpuCount) || 1);
+    S.hasSku = true;
+    return;
+  }
+  // 2) 指定 model：市场里是否有卡、以及是否有可下单的真实 SKU
+  if (wantModel) {
+    S.model = wantModel;
+    const sku = S.skus.find(s => s.model === wantModel);
+    S.hasSku = !!sku;
+    // 命中的是哪个 SKU 就用哪个，不要写死 '1'（否则价格与卡数会串到 5090 上）
+    if (sku) { S.skuCode = sku.code; S.cardN = Number(sku.gpuCount) || 1; }
+    return;
+  }
+  // 3) 裸打开：默认有库存的 1 卡 SKU
+  const inStock = S.skus.find(s => s.code === '1' && Number(s.stock) > 0) || skuByCode('1') || S.skus[0];
+  if (inStock) { S.skuCode = inStock.code; S.model = inStock.model; S.hasSku = true; }
+  const c = CARD_CODES.find(x => x.code === S.skuCode);
+  S.cardN = c ? c.n : 1;
+}
+
+function currentCard() { return S.cards.find(c => c.model === S.model) || null; }
+
+function renderAll() { renderHeader(); renderBillTabs(); renderCouponPanel(); renderCardChips(); renderDisk(); renderCaps(); renderImg(); recalc(); }
+
+// ---------- 头部机型卡 ----------
+function renderHeader() {
+  const card = currentCard();
+  const sku = skuByCode(S.skuCode);
+  const brand = card ? card.brand : 'nvidia';
+  $('#hLogo').src = BRAND_IMG[brand] || BRAND_IMG.nvidia;
+  $('#hName').textContent = S.model || (sku ? sku.name : '未知机型');
+  $('#hAlloc').textContent = card ? card.alloc : (sku ? (sku.gpuCount + ' × ' + sku.name + ' 分配') : '');
+
+  // 规格优先取可下单 SKU（真实），否则取市场卡展示
+  let vcpu, ram, sysDisk, dataDisk;
+  if (S.hasSku && sku) {
+    vcpu = sku.cores; ram = sku.ram; sysDisk = sku.sysDisk; dataDisk = sku.dataDisk;
+  } else if (card) {
+    vcpu = card.vcpu + ' 核心'; ram = card.ram + ' GB'; sysDisk = card.sysDisk + ' GB';
+    dataDisk = card.dataDisk + (card.dataExpand ? ' · ' + card.dataExpand : '');
+  } else { vcpu = ram = sysDisk = dataDisk = '—'; }
+
+  $('#hSpec').innerHTML =
+    '<div><span class="lbl">vCPU</span><b>' + Biz.esc(vcpu) + '</b></div>' +
+    '<div><span class="lbl">内存</span><b>' + Biz.esc(ram) + '</b></div>' +
+    '<div><span class="lbl">系统盘（SSD）</span><b>' + Biz.esc(sysDisk) + '</b></div>' +
+    '<div><span class="lbl">数据盘（SSD）</span><b>' + Biz.esc(dataDisk) + '</b></div>';
+
+  const zone = card ? card.zone : (sku ? sku.zone : '');
+  $('#hZone').innerHTML = '📍 ' + Biz.esc(zone || '默认区');
+
+  // 头部价格：来自市场卡（展示价）
+  if (card) {
+    $('#hHourly').textContent = '¥' + num1(card.hourly);
+    $('#h3p').innerHTML =
+      '<div><em>包日</em><b>¥' + num1(card.day) + '</b></div>' +
+      '<div><em>包周</em><b>¥' + num1(card.week) + '</b></div>' +
+      '<div><em>包月</em><b>¥' + num1(card.month) + '</b></div>';
+  } else if (sku) {
+    $('#hHourly').textContent = '¥' + num1(Number(sku.unitPrice));
+    $('#h3p').innerHTML = '';
+  }
+
+  // 无真实 SKU 的机型：诚实说明走商务需求
+  if (!S.hasSku) {
+    $('#leadNote').innerHTML = '<div class="ck-lead-note">该机型目前是市场预览配置，卡池里没有可直接下单的真实库存。' +
+      '下方参数仅作展示，点击「提交需求」后由商务按需求上架，再为你开通。</div>';
+    $('#cardRow').style.display = 'none';
+  } else {
+    $('#leadNote').innerHTML = '';
+    $('#cardRow').style.display = '';
+  }
+}
+
+// ---------- 计费方式 tabs ----------
+function renderBillTabs() {
+  $('#billTabs').innerHTML = TABS.map(t =>
+    '<button class="' + (S.tab === t.k ? 'on' : '') + '" onclick="setTab(\'' + t.k + '\')">' + t.t + '</button>'
+  ).join('');
+}
+function setTab(k) { S.tab = k; renderBillTabs(); renderCouponPanel(); recalc(); }
+
+function renderCouponPanel() {
+  const p = $('#couponPanel');
+  if (S.tab !== 'coupon') { p.innerHTML = ''; return; }
+  if (!S.coupons.length) { p.innerHTML = '<div class="ck-empty">暂无可用兑换券。</div>'; return; }
+  p.innerHTML = '<div class="ck-hint" style="margin:10px 0 4px">兑换券需先兑换充入账户余额，再用于下单扣费；下单时不直接抵扣券面金额。</div>' +
+    '<div class="ck-coupon-list">' +
+    S.coupons.map(c => {
+      const usable = !c.status || c.status === 'unused';
+      return '<div class="ck-coupon"><div><div class="ttl">' + Biz.esc(c.title) + '</div>' +
+        '<div class="exp">到期 ' + Biz.esc(c.expire_at || '—') + ' · 状态 ' + Biz.esc(c.status || '未使用') + '</div></div>' +
+        '<div style="display:flex;align-items:center;gap:12px"><span class="amt">¥' + fmt(c.amount_yuan) + '</span>' +
+        (usable ? '<button onclick="redeemCoupon(\'' + Biz.esc(c.id) + '\')">兑换</button>' : '<button disabled>已使用</button>') +
+        '</div></div>';
+    }).join('') + '</div>';
+}
+
+async function redeemCoupon(id) {
+  try {
+    const r = await Biz.api('/api/coupons/' + encodeURIComponent(id) + '/redeem', { method: 'POST' });
+    Biz.toast(r.message, 'ok');
+    const ts = await Biz.api('/api/tenants');
+    const me = (ts || []).find(t => String(t.id) === String(U.tenantId)) || (ts || [])[0] || {};
+    S.balance = Number(me.balance_yuan) || 0;
+    try { S.coupons = await Biz.api('/api/coupons'); } catch (e) {}
+    renderCouponPanel(); recalc();
+  } catch (e) { Biz.toast(e.message, 'err'); }
+}
+
+function billingRules() {
+  const rows = S.plans.map(p => {
+    const disc = p.discounted ? (num1(Number(p.discount) * 10) + ' 折') : '标准价';
+    return '<div class="ck-coupon" style="background:#fff"><div><div class="ttl">' + Biz.esc(p.label) +
+      '</div><div class="exp">时长 ' + p.hours + ' 小时 · ' + disc + '</div></div>' +
+      '<div class="amt">¥' + fmt(p.unitPrice) + '<span style="font-size:11px;color:#94a3b8">/卡·时</span></div></div>';
+  }).join('');
+  Biz.modal({
+    title: '计费规则', wide: true, hideCancel: true, okText: '知道了',
+    html: '<div class="ck-hint" style="margin:0 0 12px">按量计费：开机按小时预扣 1 小时，运行中按实际秒数结算，释放时多退少补。' +
+      '包日 / 包周 / 包月：下单即按整周期预扣，套餐折扣以下单时价格为准。</div>' +
+      '<div class="ck-coupon-list">' + rows + '</div>' +
+      '<div class="ck-hint">数据盘扩容：¥' + S.diskRate + ' / GB / 日，按实例存续天数计费。<br>' +
+      '兑换券：券面金额需先在「兑换券」页兑换充入账户余额，再用于下单扣费，下单时不直接抵扣。</div>',
+    onOk: (b, c) => c()
+  });
+}
+
+// ---------- 卡数选择 ----------
+function renderCardChips() {
+  $('#cardChips').innerHTML = CARD_CODES.map(c => {
+    const sku = skuByCode(c.code);
+    const stock = sku ? Number(sku.stock) : 0;
+    const oos = stock <= 0;
+    return '<button class="' + (S.cardN === c.n ? 'on' : '') + '" ' +
+      (oos ? 'onclick="cardOutOfStock(' + c.n + ')"' : 'onclick="setCard(' + c.n + ')"') + '>' +
+      c.n + (oos ? '<span class="oos">缺货·到货提醒</span>' : '') + '</button>';
+  }).join('');
+}
+function setCard(n) {
+  const c = CARD_CODES.find(x => x.n === n);
+  if (!c || !skuByCode(c.code)) return;
+  S.cardN = n; S.skuCode = c.code;
+  renderHeader(); renderCardChips(); renderDisk(); renderCaps(); recalc();
+}
+function cardOutOfStock(n) {
+  const sku = skuByCode(CARD_CODES.find(x => x.n === n).code);
+  alertStock(S.model || (sku && sku.name), currentCard() ? currentCard().zone : '', n);
+}
+
+// ---------- 数据盘 ----------
+function diskNumbers() {
+  const card = currentCard(); const sku = skuByCode(S.skuCode);
+  let total = 0, free = 0, expandMax = 0;
+  // 能真实下单时以 SKU 为准，否则会出现「上面写 200G NVMe、下面算 50G 市场卡」两张皮
+  if (S.hasSku && sku) {
+    const m = /([\d.]+)\s*(TB|G)/i.exec(sku.dataDisk || '');
+    if (m) { total = Math.round(parseFloat(m[1]) * (/TB/i.test(m[2]) ? 1024 : 1)); free = total; }
+    // 上限来自服务端参数 rental.data_disk_max_gb，之前恒为 0 让扩容框成了摆设
+    expandMax = Number(sku.dataExpandMax) || 0;
+  } else if (card) {
+    total = parseInt(String(card.dataDisk)) || 0;
+    free = total;
+    const m = /可扩容\s*([\d,]+)\s*GB/.exec(card.dataExpand || '');
+    expandMax = m ? parseInt(m[1].replace(/,/g, ''), 10) : 0;
+  }
+  return { total, free, expandMax };
+}
+function renderDisk() {
+  const d = diskNumbers();
+  $('#diskCap').innerHTML = '总容量：<b>' + d.total + ' GB</b><span class="free">（免费 ' + d.free + ' GB）</span>';
+  $('#expandMax').textContent = d.expandMax;
+  const chk = $('#expandChk'), gb = $('#expandGb');
+  if (d.expandMax <= 0) {
+    chk.checked = false; chk.disabled = true; gb.disabled = true;
+  } else {
+    chk.disabled = false;
+    gb.max = d.expandMax;
+    gb.disabled = !chk.checked;
+  }
+}
+function onExpandToggle() {
+  const chk = $('#expandChk'), gb = $('#expandGb');
+  gb.disabled = !chk.checked;
+  if (chk.checked) {
+    const d = diskNumbers();
+    gb.min = 1; gb.max = d.expandMax;
+    if (!Number(gb.value) || Number(gb.value) < 1) gb.value = 1;
+    if (Number(gb.value) > d.expandMax) gb.value = d.expandMax;
+  }
+  recalc();
+}
+
+// ---------- 地区能力 ----------
+function zoneCaps() {
+  const card = currentCard();
+  const zone = card ? card.zone : '';
+  const z = S.zones.find(x => x.zone === zone);
+  return { fileStorage: z ? !!z.fileStorage : false, privateImage: z ? !!z.privateImage : false, zone };
+}
+function renderCaps() {
+  const c = zoneCaps();
+  const pill = ok => '<span class="ck-pill ' + (ok ? 'yes">支持' : 'no">不支持') + '</span>';
+  $('#capRows').innerHTML =
+    '<div class="ck-cap-item">文件存储 <span class="ck-q" title="该可用区是否提供共享文件存储">?</span>：' + pill(c.fileStorage) + '</div>' +
+    '<div class="ck-cap-item">私有镜像 <span class="ck-q" title="该可用区是否支持导入/使用自定义私有镜像">?</span>：' + pill(c.privateImage) + '</div>';
+}
+
+// ---------- 镜像 ----------
+function renderImg() {
+  const c = zoneCaps();
+  const tabs = [
+    { k: 'base', t: '基础镜像', dis: false },
+    { k: 'community', t: '社区镜像', dis: false },
+    { k: 'mine', t: '我的镜像', dis: !c.privateImage }
+  ];
+  if (S.imgTab === 'mine' && !c.privateImage) S.imgTab = 'base';
+  $('#imgTabs').innerHTML = tabs.map(t =>
+    '<button class="' + (S.imgTab === t.k ? 'on' : '') + '" ' +
+    (t.dis ? 'disabled title="当前可用区不支持私有镜像"' : 'onclick="setImgTab(\'' + t.k + '\')"') + '>' + t.t + '</button>'
+  ).join('') +
+    (S.imgTab === 'base' ? '<a class="ck-link" style="align-self:center" onclick="needEnv()">没有我要的环境?</a>' : '');
+
+  const famRow = $('#familyRow'), verSel = $('#verSel');
+  if (S.imgTab === 'base') {
+    famRow.style.display = '';
+    if (!S.famName && S.families.length) S.famName = S.families[0].name;
+    $('#famChips').innerHTML = S.families.map(f =>
+      '<button class="' + (S.famName === f.name ? 'on' : '') + '" onclick="setFam(\'' + Biz.esc(f.name) + '\')">' +
+      Biz.esc(f.name) + '</button>').join('');
+    const fam = S.families.find(f => f.name === S.famName);
+    const vs = fam ? fam.versions : [];
+    verSel.innerHTML = vs.map(v =>
+      '<option value="' + Biz.esc(v.ref) + '" ' + (S.ref === v.ref ? 'selected' : '') + '>' + Biz.esc(v.label) + '</option>').join('');
+    if (vs.length && !vs.find(v => v.ref === S.ref)) { S.ref = vs[0].ref; verSel.value = S.ref; }
+  } else {
+    famRow.style.display = 'none';
+    const rows = S.imgTab === 'mine' ? S.myImgs : S.communityImgs;
+    if (!rows.length) {
+      verSel.innerHTML = '<option value="">（暂无镜像）</option>'; S.ref = '';
+    } else {
+      verSel.innerHTML = rows.map(r =>
+        '<option value="' + Biz.esc(r.name) + '" ' + (S.ref === r.name ? 'selected' : '') + '>' +
+        Biz.esc(r.name) + ' · ' + Biz.esc(r.status || '') + ' · ' + Biz.esc(r.zone || '') + '</option>').join('');
+      if (!rows.find(r => r.name === S.ref)) { S.ref = rows[0].name; }
+      verSel.value = S.ref;
+    }
+  }
+}
+function setImgTab(k) { S.imgTab = k; S.ref = ''; renderImg(); }
+function setFam(name) { S.famName = name; S.ref = ''; renderImg(); }
+function onVerChange() { S.ref = $('#verSel').value; }
+function needEnv() {
+  Biz.lead({
+    source: '镜像环境需求',
+    model: S.model,
+    title: '申请自定义镜像环境',
+    desc: '基础镜像里没有你要的运行环境？留下框架版本 / CUDA / Python 等要求，商务与运维评估后上架。',
+    note: '机型：' + S.model + '\n期望环境（框架/CUDA/Python/OS）：'
+  });
+}
+
+// ---------- 费用计算与底部栏 ----------
+function extraGb() {
+  const chk = $('#expandChk'), gb = $('#expandGb');
+  if (!chk || !chk.checked) return 0;
+  const d = diskNumbers();
+  let v = Math.floor(Number(gb.value) || 0);
+  if (v < 1) v = 0;
+  if (v > d.expandMax) v = d.expandMax;
+  return v;
+}
+function costModel() {
+  const sku = skuByCode(S.skuCode);
+  const hours = tabHours();
+  const days = hours / 24;
+  const perCard = effectivePerCardHour();
+  // 与下单同一口径：无卡调试按 1 个计费单位收，不能算成 0 卡
+  const gpus = Math.max(S.hasSku && sku ? Number(sku.gpuCount) : 1, 1);
+  const hostFee = perCard * gpus * hours;
+  const diskFee = extraGb() * S.diskRate * days;
+  const total = hostFee + diskFee;
+  const pb = sku && sku.priceBoard ? sku.priceBoard : null;
+  const base = sku ? Number(sku.unitPrice) : perCard;
+  return { sku, hours, days, perCard, gpus, hostFee, diskFee, total, base, student: !!(pb && pb.student) };
+}
+function recalc() {
+  const cm = costModel();
+  const card = currentCard();
+  // 底部摘要
+  const vcpu = S.hasSku && cm.sku ? cm.sku.cores : (card ? card.vcpu + ' 核心' : '—');
+  const ram = S.hasSku && cm.sku ? cm.sku.ram : (card ? card.ram + ' GB' : '—');
+  const sys = S.hasSku && cm.sku ? cm.sku.sysDisk : (card ? card.sysDisk + ' GB' : '—');
+  const ex = extraGb();
+  const disk = ex > 0 ? (cm.sku ? '' : '') + (ex) + ' GB 扩容' : '免费额度';
+  $('#barSum').innerHTML =
+    cell('地区', card ? card.zone : (cm.sku ? cm.sku.zone : '—')) +
+    cell('CPU型号', Biz.esc(S.model || (cm.sku ? cm.sku.name : '—'))) +
+    cell('vCPU', Biz.esc(vcpu)) + cell('内存', Biz.esc(ram)) +
+    cell('系统盘', Biz.esc(sys)) + cell('数据盘', Biz.esc(disk));
+
+  // 配置费用：按量显示 /时，其余显示整周期总额
+  if (S.tab === 'on' || S.tab === 'coupon') {
+    $('#barFee').textContent = '¥' + fmt(cm.perCard * cm.gpus);
+    $('#barFeeU').textContent = ' / 时';
+  } else {
+    $('#barFee').textContent = '¥' + fmt(cm.total);
+    $('#barFeeU').textContent = ' / ' + (S.tab === 'day' ? '日' : S.tab === 'week' ? '周' : '月');
+  }
+
+  // 余额门禁
+  const bal = $('#barBal');
+  const btn = $('#createBtn');
+  if (!S.hasSku) {
+    btn.textContent = '提交需求'; btn.disabled = false;
+    bal.innerHTML = '';
+    return;
+  }
+  const need = cm.total;
+  if (S.balance < need) {
+    btn.textContent = '余额不足'; btn.disabled = true;
+    bal.innerHTML = '账户余额：¥' + fmt(S.balance) + ' <span class="low">余额不足，<a href="/recharge">去充值</a></span>';
+  } else {
+    btn.textContent = '立即创建'; btn.disabled = false;
+    bal.innerHTML = '账户余额：¥' + fmt(S.balance);
+  }
+}
+function cell(t, b) { return '<div><div class="t">' + t + '</div><div class="b">' + b + '</div></div>'; }
+
+function costDetail() {
+  const cm = costModel();
+  const disc = cm.base > 0 ? (cm.perCard / cm.base) : 1;
+  const discTxt = disc < 0.999 ? (num1(disc * 10) + ' 折') : '标准价';
+  Biz.modal({
+    title: '费用明细', hideCancel: true, okText: '知道了',
+    html: '<div class="ck-coupon-list">' +
+      line('单价', '¥' + fmt(cm.base) + ' / 卡 · 时（' + discTxt + ' 后 ¥' + fmt(cm.perCard) + '）') +
+      line('数量', cm.gpus + ' 卡') +
+      line('时长', cm.hours + ' 小时') +
+      line('主机费用', '¥' + fmt(cm.hostFee)) +
+      (cm.student ? line('学生认证', '本租户已通过认证，单价已按 9 折计入上方') : '') +
+      (extraGb() > 0 ? line('数据盘扩容', extraGb() + ' GB × ¥' + S.diskRate + '/GB/日 × ' + fmt(cm.days) + ' 日 = ¥' + fmt(cm.diskFee)) : '') +
+      '<div class="ck-coupon" style="background:#fdf2f8;border-color:#f5d0fe"><div class="ttl">合计预付</div>' +
+      '<div class="amt">¥' + fmt(cm.total) + '</div></div>' +
+      '</div>' +
+      '<div class="ck-hint">实际预扣以服务端下单结算为准，释放时按实际秒数多退少补。</div>',
+    onOk: (b, c) => c()
+  });
+}
+function line(k, v) { return '<div class="ck-coupon" style="background:#fff"><div class="ttl" style="font-weight:500;color:#64748b">' + k + '</div><div style="font-size:13px;color:#0f172a">' + v + '</div></div>'; }
+
+// ---------- 到货提醒 modal（与算力市场一致）----------
+function alertStock(model, zone, qty) {
+  const z = zone || (currentCard() ? currentCard().zone : '');
+  Biz.modal({
+    title: 'GPU 到货提醒', okText: '创建提醒',
+    html:
+      '<div class="ck-sum" style="margin-bottom:14px">' +
+        cell('地区', Biz.esc(z || '默认')) +
+        cell('型号', Biz.esc(model)) +
+        '<div><div class="t">数量阈值</div><div class="b"><input type="number" id="alQty" class="ck-num" min="1" max="64" value="' + (qty || 1) + '" style="margin-left:0;width:64px"> 卡</div></div>' +
+      '</div>' +
+      '<div class="ck-lead-note" style="background:#fef2f2;border-color:#fecaca;color:#dc2626">' +
+        '当前未绑定微信服务号，推荐 <a href="/account" style="color:#a21caf;text-decoration:underline">绑定微信</a> 后及时接收消息提醒。</div>',
+    onOk: async (box, close) => {
+      const q = Math.max(1, Math.min(64, Math.floor(Number(box.querySelector('#alQty').value) || 1)));
+      box.busy(true);
+      try {
+        const r = await Biz.api('/api/stock-alerts', { method: 'POST', body: { model, zone: z, qty: q } });
+        close();
+        Biz.toast(r.message, 'ok');
+      } catch (e) { box.busy(false); box.showError(e.message); }
+    }
+  });
+}
+
+// ---------- 提交创建 ----------
+async function submitCreate() {
+  if (!S.hasSku) {
+    const card = currentCard();
+    Biz.lead({
+      source: '演示机型开通', model: S.model, title: '申请开通 ' + S.model,
+      desc: '这台机型目前是市场预览配置，卡池里没有对应库存，需要商务按需求上架后才能开通。',
+      note: '需求机型：' + S.model + (card ? '（' + card.zone + '）' : '') + '\n台数：\n预计使用时长：'
+    });
+    return;
+  }
+  const sku = skuByCode(S.skuCode);
+  if (!sku || Number(sku.stock) <= 0) {
+    alertStock(S.model, currentCard() ? currentCard().zone : '', S.cardN);
+    return;
+  }
+  const cm = costModel();
+  const btn = $('#createBtn');
+  btn.disabled = true; btn.textContent = '创建中…';
+  const orderNo = 'ck' + Date.now() + Math.floor(Math.random() * 10000);
+  try {
+    const r = await Biz.api('/api/orders', {
+      method: 'POST',
+      body: { sku: S.skuCode, hours: cm.hours, orderNo, image: S.ref || '', dataDiskGb: extraGb() }
+    });
+    Biz.toast('创建成功：实例 ' + (r.instanceId || '') + '，预扣 ¥' + fmt(r.prepaid) + '，约 3 秒后就绪', 'ok');
+    setTimeout(() => { location.href = '/instances'; }, 900);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '立即创建';
+    Biz.toast(e.message, 'err');
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

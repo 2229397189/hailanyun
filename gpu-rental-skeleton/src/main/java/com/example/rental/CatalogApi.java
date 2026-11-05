@@ -21,6 +21,7 @@ import java.util.Map;
 public class CatalogApi {
 
     private final Db db;
+    private final GroupCatalog groupCatalog;
 
     /** 显卡型号 → 单卡显存（GB），用于商品卡标题「型号 / 显存」 */
     private static final Map<String, Integer> VRAM = Map.ofEntries(
@@ -31,10 +32,21 @@ public class CatalogApi {
             Map.entry("A100-PCIE-40GB", 40), Map.entry("A100-SXM4-40GB", 40),
             Map.entry("RTX 4090-48G", 48), Map.entry("L40S", 48), Map.entry("L20", 48),
             Map.entry("RTX 6000D", 84), Map.entry("A800-NVLINK-80GB", 80),
-            Map.entry("H800", 80), Map.entry("RTX 4080", 32));
+            Map.entry("H800", 80), Map.entry("RTX 4080", 32),
+            Map.entry("RTX 4060 Laptop", 8));
 
-    public CatalogApi(Db db) {
+    public CatalogApi(Db db, GroupCatalog groupCatalog) {
         this.db = db;
+        this.groupCatalog = groupCatalog;
+    }
+
+    /** 首页展示价与下单价同源：参数改了首页立刻跟着变 */
+    private double liveUnitPrice() {
+        try {
+            return Double.parseDouble(db.setting("rental.unit_price").trim());
+        } catch (Exception e) {
+            return 2.80;
+        }
     }
 
     /**
@@ -66,7 +78,8 @@ public class CatalogApi {
         out.put("mirrors", mirrors);
 
         List<Map<String, Object>> models = new ArrayList<>();
-        models.add(preview("RTX 5090", 32, 2.80, "32 GB GDDR7", "16 核",
+        // 5090 是真实可售机型：首页单价与计费同源（rental.unit_price 参数），其余机型为静态市场预览
+        models.add(preview("RTX 5090", 32, liveUnitPrice(), "32 GB GDDR7", "16 核",
                 "AMD EPYC 7513*2", "64 GB", "50G SSD", "200G NVMe", "可用区 A", 4));
         models.add(preview("RTX 4090", 24, 2.20, "24 GB GDDR6X", "12 核",
                 "Intel Xeon Gold 6530*2", "48 GB", "480G SSD", "1TB NVMe", "可用区 B", 6));
@@ -114,9 +127,106 @@ public class CatalogApi {
     }
 
     /** 容器云商品目录（公开）：字段与页面卡片一一对应 */
+    /**
+     * 创建实例页的地区目录 + 地区能力。
+     * 地区取自算力市场在售机型，能力开关走系统参数（系统管理里可改），
+     * 不在前端写死「不支持」——客户加了一个区就得改代码。
+     */
+    @GetMapping("/zones")
+    public Map<String, Object> zones() {
+        List<Map<String, Object>> items = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+        for (Map<String, Object> c : market()) {
+            String z = String.valueOf(c.getOrDefault("zone", ""));
+            if (!z.isBlank()) {
+                seen.add(z);
+            }
+        }
+        for (String z : seen) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("zone", z);
+            m.put("fileStorage", bool("zone." + z + ".file_storage", true));
+            m.put("privateImage", bool("zone." + z + ".private_image", true));
+            items.add(m);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("items", items);
+        out.put("defaultZone", items.isEmpty() ? "" : items.get(0).get("zone"));
+        return out;
+    }
+
+    private boolean bool(String key, boolean fallback) {
+        try {
+            return Boolean.parseBoolean(db.setting(key).trim());
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    /**
+     * 创建实例页的基础镜像矩阵：发行版 × CUDA × Python × OS。
+     * 社区镜像和我的镜像分别走 /api/images/community 与 /api/images，前端三个 tab 拼一起。
+     */
+    @GetMapping("/images")
+    public List<Map<String, Object>> images() {
+        List<Map<String, Object>> out = new ArrayList<>();
+        out.add(family("PyTorch", "#ee4c2c", new String[][]{
+                {"2.12.1", "13.0", "3.12", "Ubuntu22", "Devel"},
+                {"2.5.1", "12.4", "3.11", "Ubuntu22", "Devel"},
+                {"2.4.0", "12.1", "3.10", "Ubuntu22", "Runtime"},
+                {"2.1.2", "11.8", "3.9", "Ubuntu20", "Runtime"}}));
+        out.add(family("TensorFlow", "#ff6f00", new String[][]{
+                {"2.17.0", "12.3", "3.11", "Ubuntu22", "Devel"},
+                {"2.13.1", "11.8", "3.10", "Ubuntu20", "Runtime"}}));
+        out.add(family("PaddlePaddle", "#06b0e6", new String[][]{
+                {"2.6.1", "12.0", "3.11", "Ubuntu22", "Devel"},
+                {"2.4.2", "11.6", "3.9", "Ubuntu20", "Runtime"}}));
+        out.add(family("ComfyUI", "#d946ef", new String[][]{
+                {"0.3.17", "12.4", "3.11", "Ubuntu22", "Devel"}}));
+        out.add(family("vLLM", "#6366f1", new String[][]{
+                {"0.6.3", "12.4", "3.11", "Ubuntu22", "Devel"},
+                {"0.5.4", "12.1", "3.10", "Ubuntu22", "Runtime"}}));
+        out.add(family("Miniconda", "#44a434", new String[][]{
+                {"24.9", "无", "3.12", "Ubuntu22", "Base"}}));
+        out.add(family("Ubuntu", "#e95420", new String[][]{
+                {"22.04", "无", "3.10", "Ubuntu22", "Base"},
+                {"20.04", "无", "3.8", "Ubuntu20", "Base"}}));
+        out.add(family("GROMACS", "#f97316", new String[][]{
+                {"2023.2", "无", "3.10", "Ubuntu22", "Base"}}));
+        return out;
+    }
+
+    private Map<String, Object> family(String name, String color, String[][] versions) {
+        List<Map<String, Object>> vs = new ArrayList<>();
+        for (String[] v : versions) {
+            String cuda = v[1];
+            boolean gpuless = "无".equals(cuda);
+            String ref = name.toLowerCase() + ":" + v[0]
+                    + (gpuless ? "" : "-cuda" + cuda) + "-py" + v[2] + "-" + v[4].toLowerCase();
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("ref", ref);
+            m.put("label", String.join("-", v[0], gpuless ? "" : "CUDA" + cuda, v[4], "Py" + v[2], v[3]).replaceAll("-{2,}", "-"));
+            m.put("framework", v[0]);
+            m.put("cuda", cuda);
+            m.put("python", v[2]);
+            m.put("os", v[3]);
+            m.put("variant", v[4]);
+            m.put("gpuRequired", !gpuless);
+            vs.add(m);
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("name", name);
+        out.put("color", color);
+        out.put("versions", vs);
+        return out;
+    }
+
     @GetMapping("/market")
     public List<Map<String, Object>> market() {
         List<Map<String, Object>> out = new ArrayList<>();
+        // 本机真实显卡：整机就是这台笔记本，规格取自 agent 实采
+        out.add(card("RTX 4060 Laptop", "nvidia", "本机", "GPU", 16, 16, 299, "—", "",
+                12, 84, 300, 0.50, false));
         out.add(card("CLOUD CPU2", "amd", "山西1区", "CPU", 30, 80, 30, "50 GB", "",
                 11, 70, 300, 0.60, false));
         out.add(card("CLOUD CPU4", "amd", "杭州1区", "CPU", 30, 120, 30, "50 GB", "",
@@ -194,18 +304,24 @@ public class CatalogApi {
         return out;
     }
 
+    /**
+     * 拼团目录：静态市场数据 + 实时成团进度。
+     * done 是「已占坑」总数（演示基数 + 真实拼单），left 是还能拼几张卡，
+     * 前端进度条和「再拼 N 张卡即可起飞」都读这里，不再自己算。
+     */
     @GetMapping("/group")
     public List<Map<String, Object>> group() {
         List<Map<String, Object>> out = new ArrayList<>();
-        out.add(groupItem("RTX3090", 24, 550, "NVIDIA", "AMD 7513", "重庆", 8, 5, 3, 30, 30, "200GB (赠)", "1个月 (固)", "重邮"));
-        out.add(groupItem("RTX4090D", 24, 670, "NVIDIA", "Intel P-8136", "新疆", 8, 2, 7, 60, 30, "200GB (赠)", "1个月 (固)", "复旦"));
-        out.add(groupItem("RTX4090", 24, 800, "NVIDIA", "Intel 6530", "浙江", 8, 6, 7, 60, 30, "800GB (赠)", "1个月 (固)", "浙大"));
-        out.add(groupItem("RTX5090", 32, 1200, "NVIDIA", "Intel 6530", "新疆", 8, 2, 7, 60, 30, "800GB (赠)", "1个月 (固)", "新疆大学"));
-        out.add(groupItem("A100", 40, 1300, "NVIDIA", "Intel 6248R", "浙江", 8, 7, 5, 90, 30, "1500GB (赠)", "1个月 (固)", "浙大"));
-        out.add(groupItem("A100", 80, 3000, "NVIDIA", "Intel 8558P", "成都", 8, 3, 13, 90, 30, "3500GB (赠)", "1个月 (固)", "电子科大"));
-        out.add(groupItem("H20", 141, 3300, "NVIDIA", "Intel 8358P", "广东", 8, 4, 7, 250, 30, "3500GB (赠)", "1个月 (固)", "中山大学"));
-        out.add(groupItem("A800", 80, 2600, "NVIDIA", "Intel 6442Y", "成都", 8, 1, 6, 60, 30, "3500GB (赠)", "1个月 (固)", "电子科大"));
-        out.add(groupItem("H100", 80, 6400, "NVIDIA", "Intel 8468", "浙江", 8, 2, 11, 250, 30, "3500GB (赠)", "1个月 (固)", "浙大"));
+        for (Map<String, Object> c : groupCatalog.cards()) {
+            int total = ((Number) c.get("total")).intValue();
+            int base = ((Number) c.get("done")).intValue();
+            int joined = db.activeJoinsOfCard((String) c.get("cardKey")).stream()
+                    .mapToInt(r -> ((Number) r.get("qty")).intValue()).sum();
+            c.put("joined", joined);
+            c.put("done", Math.min(total, base + joined));
+            c.put("left", Math.max(0, total - base - joined));
+            out.add(c);
+        }
         return out;
     }
 
@@ -247,27 +363,6 @@ public class CatalogApi {
         m.put("month", month);
         m.put("hourly", hourly);
         m.put("soldOut", soldOut);
-        return m;
-    }
-
-    private Map<String, Object> groupItem(String model, int vram, int price, String brand, String cpu,
-                                          String zone, int total, int done, int vcpu, int ram, int disk,
-                                          String dataDisk, String duration, String school) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("model", model);
-        m.put("vram", vram);
-        m.put("price", price);
-        m.put("brand", brand);
-        m.put("cpu", cpu);
-        m.put("zone", zone);
-        m.put("total", total);
-        m.put("done", done);
-        m.put("vcpu", vcpu);
-        m.put("ram", ram);
-        m.put("disk", disk);
-        m.put("dataDisk", dataDisk);
-        m.put("duration", duration);
-        m.put("school", school);
         return m;
     }
 

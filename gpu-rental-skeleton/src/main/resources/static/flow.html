@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>收支明细 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
+<style>
+.flowbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.in{color:#16a34a;font-weight:650}
+.out{color:#dc2626;font-weight:650}
+.src-tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;background:#f4f1fb;color:#6d28d9}
+.note{background:#fffaf0;border:1px solid #f6e7c1;border-radius:10px;padding:10px 13px;font-size:11.5px;
+  color:#8a6d1b;line-height:1.8;margin-bottom:14px}
+</style>
+</head>
+<body data-active="flow">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"></div>
+    <div class="cbody">
+      <div class="msg" id="msg"></div>
+
+      <div class="dtiles" style="margin-bottom:14px">
+        <div class="dtile">
+          <div class="k">收入合计</div>
+          <div class="v" id="kIn" style="color:#16a34a"><i>¥</i>0.00</div>
+          <div class="hint">充值到账 + 券兑换入账</div>
+        </div>
+        <div class="dtile">
+          <div class="k">支出合计</div>
+          <div class="v" id="kOut" style="color:#dc2626"><i>¥</i>0.00</div>
+          <div class="hint">订单预扣 + 按秒结算消费</div>
+        </div>
+        <div class="dtile tint-p">
+          <div class="k">本表净额</div>
+          <div class="v" id="kNet"><i>¥</i>0.00</div>
+          <div class="hint">仅统计下列已接入的来源</div>
+        </div>
+        <div class="dtile">
+          <div class="k">账户当前余额</div>
+          <div class="v" id="kBal"><i>¥</i>0.00</div>
+          <div class="hint">平台账本实时值（/api/tenants）</div>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <h3>收支明细 <span class="s">共 <b id="kCnt">0</b> 笔，按时间倒序合并</span></h3>
+
+        <div class="note">
+          口径说明（请阅读后再核对余额）：<br>
+          1. 「订单预扣」是下单时从余额里预扣的金额，「结算消费」是实例释放/结算时按秒写入的实收金额，
+          两者属于同一笔消费的两个阶段，同时计入会让支出看起来翻倍；平台没有提供预扣回冲/差额退款流水接口
+          （差额退款只在消息通知里出现），所以本表净额不等于账户余额变动。<br>
+          2. 券兑换入账按券的发放时间排序 —— 平台没有单独记录兑换时间，金额与「已兑换」状态是真实落库数据。<br>
+          3. 各来源接口都有条数上限（结算明细最近 100 条、订单最近 20 条、充值最近 100 条），
+          「累计净额」只是当前加载窗口内的累计，不是历史全量。
+        </div>
+
+        <div class="flowbar">
+          <div class="tabbar" id="dirBar" style="margin:0;border:none">
+            <span class="on" data-f="all">全部</span>
+            <span data-f="in">收入</span>
+            <span data-f="out">支出</span>
+          </div>
+          <select id="srcBar" style="height:30px;border:1px solid #ece7f6;border-radius:8px;padding:0 8px;font-size:12px">
+            <option value="all">全部来源</option>
+            <option value="recharge">充值到账</option>
+            <option value="coupon">券兑换入账</option>
+            <option value="order">订单预扣</option>
+            <option value="billing">结算消费</option>
+          </select>
+          <button class="ghost sm" onclick="load()">刷新</button>
+          <button class="ghost sm" onclick="exportCsv()">导出 CSV</button>
+        </div>
+
+        <div id="table"><div class="empty">加载中…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login');
+const TENANT = U.tenantId || 't1';
+const fmt = n => (Number(n) || 0).toFixed(2);
+const SRC = { recharge: '充值到账', coupon: '券兑换入账', order: '订单预扣', billing: '结算消费' };
+let ROWS = [], DIR = 'all', SRCF = 'all', FAILED = [];
+
+async function api(p) {
+  const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function time(v) { return Tf.sec(v); }
+function ts(v) { const d = new Date(v); return isNaN(d) ? 0 : d.getTime(); }
+
+/* 四类来源分别拉取；任何一个失败只标注该来源，不影响其它行 */
+async function load() {
+  FAILED = [];
+  const jobs = [
+    ['/recharges', '充值流水', j => (Array.isArray(j) ? j : []).map(r => ({
+      t: ts(r.created_at), time: r.created_at, src: 'recharge', sign: 1,
+      amount: Number(r.amount || 0), obj: r.order_no,
+      memo: r.channel + (r.status === 'paid' ? ' · 已到账' : ' · ' + r.status)
+    }))],
+    ['/coupons', '券兑换入账', j => (Array.isArray(j) ? j : []).filter(c => c.status === 'redeemed').map(c => ({
+      t: ts(c.created_at), time: c.created_at, src: 'coupon', sign: 1,
+      amount: Number(c.amount_yuan || 0), obj: c.id,
+      memo: c.title + ' · 兑换入余额'
+    }))],
+    ['/orders?tenantId=' + encodeURIComponent(TENANT), '订单预扣', j => (Array.isArray(j) ? j : []).map(o => ({
+      t: ts(o.created_at), time: o.created_at, src: 'order', sign: -1,
+      amount: Number(o.amount || 0), obj: o.order_no,
+      memo: (Number(o.gpu_count) === 8 ? '整机 8 卡' : o.gpu_count + ' 卡') + ' × ' + o.hours + ' 小时'
+    }))],
+    ['/billing?tenantId=' + encodeURIComponent(TENANT), '结算消费', j => (j && j.records || []).map(r => ({
+      t: ts(r.settled_at), time: r.settled_at, src: 'billing', sign: -1,
+      amount: Number(r.amount || 0), obj: r.instance_id,
+      memo: (Number(r.gpu_count) === 8 ? '整机 8 卡' : r.gpu_count + ' 卡') + ' · ' +
+        (Number(r.seconds || 0) / 3600).toFixed(2) + ' 小时 · 单价 ¥' + Number(r.unit_price || 0).toFixed(4)
+    }))]
+  ];
+  const got = await Promise.all(jobs.map(async ([path, name, map]) => {
+    try { return map(await api(path)); }
+    catch (e) { FAILED.push(name + '（' + e.message + '）'); return []; }
+  }));
+  ROWS = [];
+  got.forEach(g => ROWS.push.apply(ROWS, g));
+  render();
+  loadBalance();
+}
+
+async function loadBalance() {
+  try {
+    const ts2 = await api('/tenants');
+    const arr = Array.isArray(ts2) ? ts2 : (ts2.items || []);
+    const me = arr.find(t => t.id === TENANT || t.tenantId === TENANT) || {};
+    $('#kBal').innerHTML = '<i>¥</i>' + fmt(me.balance_yuan);
+  } catch (e) { $('#kBal').textContent = '—'; }
+}
+
+function render() {
+  const list = ROWS
+    .filter(r => DIR === 'all' || (DIR === 'in' ? r.sign > 0 : r.sign < 0))
+    .filter(r => SRCF === 'all' || r.src === SRCF)
+    .slice().sort((a, b) => a.t - b.t);
+  let run = 0;
+  list.forEach(r => { run += r.sign * r.amount; r.run = run; });
+  const asc = list.slice();
+  list.reverse();
+
+  const inSum = ROWS.filter(r => r.sign > 0).reduce((a, r) => a + r.amount, 0);
+  const outSum = ROWS.filter(r => r.sign < 0).reduce((a, r) => a + r.amount, 0);
+  $('#kIn').innerHTML = '<i>¥</i>' + fmt(inSum);
+  $('#kOut').innerHTML = '<i>¥</i>' + fmt(outSum);
+  $('#kNet').innerHTML = '<i>¥</i>' + (inSum - outSum < 0 ? '-' : '') + fmt(Math.abs(inSum - outSum));
+  $('#kCnt').textContent = list.length;
+
+  if (FAILED.length) {
+    Biz.toast('部分来源没取到：' + FAILED.join('、'), 'err');
+  }
+  if (!list.length) {
+    $('#table').innerHTML = '<div class="empty-state"><div class="ic">💰</div><b>这个筛选条件下没有流水</b>' +
+      '<span>' + (FAILED.length ? '有来源加载失败：' + Biz.esc(FAILED.join('、'))
+        : '充值、下单、结算、兑券后会自动出现在这里') + '</span></div>';
+    return;
+  }
+  $('#table').innerHTML = '<table><thead><tr><th>时间</th><th>类型</th><th>关联单号 / 对象</th>' +
+    '<th>说明</th><th class="num">金额</th><th class="num">累计净额</th></tr></thead><tbody>' +
+    list.map(r => '<tr><td class="hint">' + time(r.time) + '</td>' +
+      '<td><span class="src-tag">' + SRC[r.src] + '</span></td>' +
+      '<td class="mono">' + Biz.esc(r.obj) + '</td>' +
+      '<td class="hint">' + Biz.esc(r.memo) + '</td>' +
+      '<td class="num mono ' + (r.sign > 0 ? 'in' : 'out') + '">' + (r.sign > 0 ? '+' : '-') + '¥' + fmt(r.amount) + '</td>' +
+      '<td class="num mono hint">' + (r.run >= 0 ? '' : '-') + '¥' + fmt(Math.abs(r.run)) + '</td></tr>').join('') +
+    '</tbody></table>' +
+    '<div class="hint" style="margin-top:8px">累计净额按「' + time(asc[0] && asc[0].time) + ' → ' +
+    time(asc[asc.length - 1] && asc[asc.length - 1].time) + '」顺序累加，仅含本表已加载的来源。</div>';
+}
+
+function exportCsv() {
+  if (!ROWS.length) { Biz.toast('当前没有可导出的流水', 'err'); return; }
+  const rows = [['时间', '方向', '类型', '关联单号/对象', '说明', '金额(元)', '累计净额(元)']];
+  const list = ROWS.slice().sort((a, b) => a.t - b.t);
+  let run = 0;
+  list.forEach(r => {
+    run += r.sign * r.amount;
+    rows.push([time(r.time), r.sign > 0 ? '收入' : '支出', SRC[r.src], r.obj, r.memo,
+      (r.sign > 0 ? '+' : '-') + fmt(r.amount), fmt(run)]);
+  });
+  const blob = new Blob(['\ufeff' + rows.map(l => l.map(c => {
+    const s = String(c == null ? '' : c);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '收支明细_' + TENANT + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  Biz.toast('已导出 ' + list.length + ' 行流水', 'ok');
+}
+
+document.querySelectorAll('#dirBar span').forEach(s => {
+  s.onclick = () => {
+    document.querySelectorAll('#dirBar span').forEach(x => x.classList.toggle('on', x === s));
+    DIR = s.dataset.f; render();
+  };
+});
+$('#srcBar').onchange = e => { SRCF = e.target.value; render(); };
+
+load();
+</script>
+</body>
+</html>

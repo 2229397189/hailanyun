@@ -40,6 +40,74 @@ public class Reconciler {
         chargeRunning();
         retryReleasing();
         db.promoteWorkloads();
+        runSchedules();
+        forcePowerOffArrears();
+        expireStopped();
+        finishResetting();
+    }
+
+    /** 定时关机：到点的 pending 计划，对运行中实例执行关机并完结计划 */
+    private void runSchedules() {
+        for (Map<String, Object> s : db.pendingSchedules("shutdown")) {
+            String scheduleId = (String) s.get("id");
+            String instanceId = (String) s.get("instance_id");
+            Map<String, Object> inst = db.instance(instanceId);
+            if (inst == null || !"running".equals(String.valueOf(inst.get("status")))) {
+                // 实例已被用户自己关掉或释放，计划无需执行，直接完结
+                db.finishSchedule(scheduleId);
+                continue;
+            }
+            // 先完结再关机：powerOff 会取消该实例剩余的待执行计划，顺序反了这条会显示成「已取消」
+            db.finishSchedule(scheduleId);
+            try {
+                rental.powerOff(instanceId);
+                log.info("实例 {} 定时关机已执行", instanceId);
+            } catch (Exception e) {
+                log.warn("实例 {} 定时关机失败：{}", instanceId, e.getMessage());
+                db.notifyInstance((String) inst.get("tenant_id"), instanceId, "实例", "定时关机未成功",
+                        "实例 " + instanceId + " 的定时关机执行失败（" + e.getMessage() + "），仍在运行计费，请手动关机。");
+            }
+        }
+    }
+
+    /** 欠费强制关机：余额为负的租户，运行中实例全部关机停计费（数据保留，充值后开机） */
+    private void forcePowerOffArrears() {
+        for (Map<String, Object> t : db.tenantsWithNegativeBalance()) {
+            String tenantId = (String) t.get("id");
+            for (Map<String, Object> inst : db.runningInstancesOfTenant(tenantId)) {
+                String id = (String) inst.get("id");
+                try {
+                    rental.powerOff(id);
+                    log.info("租户 {} 欠费，实例 {} 已强制关机", tenantId, id);
+                } catch (Exception e) {
+                    log.warn("欠费关机未完成 {}：{}", id, e.getMessage());
+                }
+            }
+        }
+    }
+
+    /** 关机保留期：到期后 7 天内可开机，超过 7 天自动释放（A-25 关机保留期与自动释放规则） */
+    private void expireStopped() {
+        long now = System.currentTimeMillis();
+        for (Map<String, Object> inst : db.instancesByStatus("stopped")) {
+            Timestamp expire = (Timestamp) inst.get("expire_at");
+            if (expire != null && now > expire.getTime() + 7L * 24 * 3600_000L) {
+                String id = (String) inst.get("id");
+                log.info("实例 {} 关机超 7 天保留期，自动释放", id);
+                try {
+                    rental.release(id);
+                } catch (Exception e) {
+                    log.warn("实例 {} 保留期释放未完成：{}", id, e.getMessage());
+                }
+            }
+        }
+    }
+
+    /** 重置系统：重置动作秒级完成，恢复到运行（真实集群为镜像快照回滚，此处按生命周期模拟） */
+    private void finishResetting() {
+        for (Map<String, Object> inst : db.instancesByStatus("resetting")) {
+            db.markRunning((String) inst.get("id"));
+        }
     }
 
     private void promoteProvisioning() {
@@ -78,6 +146,7 @@ public class Reconciler {
             String pod = (String) inst.get("pod_name");
             String ns = "tenant-" + inst.get("tenant_id");
             if (k8s.delete(ns, pod)) {
+                k8s.deleteData(ns, pod);
                 Map<String, Object> fresh = db.instance(id);
                 if (fresh != null) {
                     rental.settleAndRelease(fresh);

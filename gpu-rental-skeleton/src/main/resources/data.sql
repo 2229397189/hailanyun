@@ -1,3 +1,8 @@
+-- ============================================================
+-- 演示种子数据（仅空库首次启动时写入，见 DbBootstrap；老库由 ensureUpgrades 幂等补齐）
+-- 演示账号统一初始密码：Hly@2026（SeedUsers 启动时写入 BCrypt 哈希，不含明文密码）
+-- ============================================================
+
 INSERT INTO pools (id, name, policy, description) VALUES
   ('p1', '通用租赁池', 'binpack', '对外售卖的显卡，优先填满单节点，保留整机可售'),
   ('p2', '备用资源池', 'spread', '备用节点池，当前无节点，扩容时接入');
@@ -34,13 +39,19 @@ INSERT INTO users (id, username, display_name, role, tenant_id, status) VALUES
   ('u1', 'admin', '平台管理员', 'admin', NULL, 'active'),
   ('u2', 'ops', '值班运维', 'ops', NULL, 'active'),
   ('u3', 'tenant_a', '星辰智能科技 · 管理员', 'tenant', 't1', 'active'),
-  ('u4', 'tenant_b', '演示租户 B · 管理员', 'tenant', 't2', 'active'),
+  ('u4', 'tenant_b', '凌云机器人 · 管理员', 'tenant', 't2', 'active'),
+  ('u6', 'tenant_c', '幻核互动娱乐 · 管理员', 'tenant', 't4', 'active'),
+  ('u7', 'tenant_d', '极光量化科技 · 管理员', 'tenant', 't5', 'active'),
+  ('u8', 'tenant_e', '蓝湾医疗影像 · 管理员', 'tenant', 't6', 'active'),
   ('u5', 'guest', '已停用示例账号', 'tenant', 't3', 'disabled');
 
 INSERT INTO tenants (id, name, quota_gpus, balance_yuan, status, owner, created_at) VALUES
   ('t1', '星辰智能科技', 8, 5000.00, 'active', 'tenant_a', '2026-10-20 09:00:00'),
-  ('t2', '演示租户 B', 4, 500.00, 'active', 'tenant_b', '2026-10-22 14:20:00'),
-  ('t3', '海蓝云自营', 2, 0.00, 'frozen', 'ops', '2026-10-25 10:00:00');
+  ('t2', '凌云机器人', 4, 500.00, 'active', 'tenant_b', '2026-10-22 14:20:00'),
+  ('t3', '海蓝云自营', 2, 0.00, 'frozen', 'ops', '2026-10-25 10:00:00'),
+  ('t4', '幻核互动娱乐', 4, 2000.00, 'active', 'tenant_c', '2026-10-26 11:00:00'),
+  ('t5', '极光量化科技', 2, 1200.00, 'active', 'tenant_d', '2026-10-28 15:30:00'),
+  ('t6', '蓝湾医疗影像', 2, 800.00, 'active', 'tenant_e', '2026-10-30 09:40:00');
 
 INSERT INTO alerts (id, level, title, source, target, status, detail, created_at) VALUES
   ('a1', 'P1', '显卡温度持续偏高', 'gpu', 'g1-3', 'active', '温度 82°C，已持续 12 分钟，建议检查风道或降频', '2026-11-02 18:40:00'),
@@ -94,7 +105,28 @@ INSERT INTO settings (k, v, note) VALUES
   ('cluster.name', 'prod-cluster', '当前纳管集群'),
   ('cluster.k8s_version', 'v1.34.1+k3s1', '集群版本'),
   ('scheduler.name', 'volcano', '调度器'),
-  ('scheduler.preempt_tenant', 'false', '是否允许抢占租户实例（对外租赁必须为 false）');
+  ('scheduler.preempt_tenant', 'false', '是否允许抢占租户实例（对外租赁必须为 false）'),
+  ('plan.discount.h24', '0.95', '日付套餐折扣（24 小时）'),
+  ('plan.discount.h168', '0.90', '周付套餐折扣（168 小时）'),
+  ('plan.discount.h720', '0.85', '月付套餐折扣（720 小时）'),
+  ('brand.name', 'TokenArk 创元方舟', '白标：平台名称'),
+  ('brand.slogan', 'GPU 算力即服务', '白标：Slogan'),
+  ('brand.logo_text', 'TokenArk', '白标：Logo 文案'),
+  ('brand.primary_color', '#7c3aed', '白标：品牌主色'),
+  ('brand.copyright', '© 2026 TokenArk 创元方舟 · 保留所有权利', '白标：页脚版权'),
+  ('brand.icp', '', '白标：ICP 备案号（可为空）');
+
+INSERT INTO dict_items (id, category, code, label, sort, enabled) VALUES
+  ('d-alert-p0', 'alert_level', 'P0', '严重（P0）', 1, TRUE),
+  ('d-alert-p1', 'alert_level', 'P1', '警告（P1）', 2, TRUE),
+  ('d-alert-p2', 'alert_level', 'P2', '提示（P2）', 3, TRUE),
+  ('d-inst-provisioning', 'instance_status', 'provisioning', '创建中', 1, TRUE),
+  ('d-inst-running', 'instance_status', 'running', '运行中', 2, TRUE),
+  ('d-inst-releasing', 'instance_status', 'releasing', '回收中', 3, TRUE),
+  ('d-inst-released', 'instance_status', 'released', '已释放', 4, TRUE),
+  ('d-inst-failed', 'instance_status', 'failed', '失败', 5, TRUE),
+  ('d-node-master', 'node_role', 'master', '控制节点', 1, TRUE),
+  ('d-node-agent', 'node_role', 'agent', '计算节点', 2, TRUE);
 
 INSERT INTO audit_logs (actor, action, target, detail, created_at) VALUES
   ('admin', 'NODE_CORDON', 'gpu-node-2', '维护窗口前手动封禁调度', '2026-11-02 16:20:00'),

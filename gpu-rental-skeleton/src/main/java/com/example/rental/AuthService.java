@@ -6,6 +6,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -119,6 +120,65 @@ public class AuthService {
         return out;
     }
 
+    // ------------------------------------------------------------ 注册（自助开通租户）
+
+    /** 密码策略校验（注册 / 子账号 / 改密共用）：至少 8 位，含大写、小写、数字、符号 */
+    public static void requireStrongPassword(String pwd) {
+        if (pwd == null || pwd.length() < 8
+                || !PWD_UPPER.matcher(pwd).find()
+                || !PWD_LOWER.matcher(pwd).find()
+                || !PWD_DIGIT.matcher(pwd).find()
+                || !PWD_SYMBOL.matcher(pwd).find()) {
+            throw new AuthException(400, "密码至少 8 位，且需包含大写字母、小写字母、数字和符号");
+        }
+    }
+
+    /**
+     * 自助注册：开通租户（默认 2 卡配额）+ 租户管理员账号，成功后直接返回登录态。
+     * 带邀请码时记下邀请关系，被邀请人首次充值达标后由充值流程发券（见 TenantExtApi.recharge）。
+     */
+    public Map<String, Object> register(String username, String password, String tenantName, String inviteCode) {
+        String name = username == null ? "" : username.trim();
+        if (!name.matches("[A-Za-z0-9_]{4,16}")) {
+            throw new AuthException(400, "账号需为 4-16 位字母、数字或下划线");
+        }
+        requireStrongPassword(password);
+        if (db.userByUsername(name) != null) {
+            throw new AuthException(409, "账号已存在");
+        }
+        Map<String, Object> inviter = null;
+        if (inviteCode != null && !inviteCode.isBlank()) {
+            inviter = db.tenantByInviteCode(inviteCode.trim());
+            if (inviter == null) {
+                throw new AuthException(400, "邀请码不存在：" + inviteCode.trim());
+            }
+        }
+        String tenantId = "t" + UUID.randomUUID().toString().replace("-", "").substring(0, 6);
+        String company = tenantName == null || tenantName.isBlank() ? name + " 的企业" : tenantName.trim();
+        db.insertTenant(tenantId, company, 2, BigDecimal.ZERO, name);
+        db.setInviteCode(tenantId, db.newInviteCode());
+        String uid = "u" + UUID.randomUUID().toString().replace("-", "").substring(0, 6);
+        db.insertUser(uid, name, name, "tenant", tenantId);
+        db.setPasswordHash(uid, encoder.encode(password));
+        if (inviter != null) {
+            db.setInvitedBy(uid, (String) inviter.get("id"));
+            db.insertNotification("n" + UUID.randomUUID().toString().replace("-", "").substring(0, 10),
+                    (String) inviter.get("id"), "邀请", "有人通过你的邀请码注册",
+                    name + " 已注册（企业：" + company + "）。对方首次充值满 "
+                            + setting("invite.min_recharge", "1") + " 元后，你会收到 "
+                            + setting("invite.reward_inviter", "3") + " 元代金券。");
+        }
+        db.insertAudit(name, "REGISTER", tenantId, "自助注册，配额 2 卡，余额 0"
+                + (inviter == null ? "" : "，邀请码 " + inviteCode.trim() + "（" + inviter.get("id") + "）"));
+        log.info("自助注册：{} 开通租户 {}{}", name, tenantId, inviter == null ? "" : "，邀请人 " + inviter.get("id"));
+        return login(name, password, false, "register", null);
+    }
+
+    private String setting(String key, String fallback) {
+        String v = db.setting(key);
+        return v == null || v.isBlank() ? fallback : v;
+    }
+
     // ------------------------------------------------------------ 会话
 
     /** 校验 token，返回会话信息；无效返回 null */
@@ -154,6 +214,26 @@ public class AuthService {
         }
     }
 
+    /** 退出该用户的其它全部会话（当前会话保留），返回踢出的数量 */
+    public int logoutOthers(String token) {
+        Map<String, Object> s = validate(token);
+        if (s == null) {
+            throw new AuthException(401, "登录已失效，请重新登录");
+        }
+        int kicked = 0;
+        for (Map<String, Object> other : db.activeSessions()) {
+            if (s.get("user_id").equals(other.get("user_id")) && !token.equals(other.get("id"))) {
+                db.deleteSession((String) other.get("id"));
+                kicked++;
+            }
+        }
+        if (kicked > 0) {
+            db.insertAudit(String.valueOf(s.get("username")), "LOGOUT_ALL",
+                    String.valueOf(s.get("username")), "退出其它设备 " + kicked + " 个");
+        }
+        return kicked;
+    }
+
     // ------------------------------------------------------------ 改密
 
     public void changePassword(String token, String oldPwd, String newPwd) {
@@ -161,13 +241,7 @@ public class AuthService {
         if (s == null) {
             throw new AuthException(401, "登录已失效，请重新登录");
         }
-        if (newPwd == null || newPwd.length() < 8
-                || !PWD_UPPER.matcher(newPwd).find()
-                || !PWD_LOWER.matcher(newPwd).find()
-                || !PWD_DIGIT.matcher(newPwd).find()
-                || !PWD_SYMBOL.matcher(newPwd).find()) {
-            throw new AuthException(400, "新密码至少 8 位，且需包含大写字母、小写字母、数字和符号");
-        }
+        requireStrongPassword(newPwd);
         if (newPwd.equals(oldPwd)) {
             throw new AuthException(400, "新密码不能与原密码相同");
         }

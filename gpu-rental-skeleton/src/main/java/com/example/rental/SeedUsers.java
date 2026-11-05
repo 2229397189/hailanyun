@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import java.util.Map;
  * 2. 真实项目里初始密码由运维在交付时下发，不该出现在 SQL 里。
  */
 @Component
+@Order(2) // 在 DbBootstrap 补齐演示账号之后再填密码
 public class SeedUsers implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(SeedUsers.class);

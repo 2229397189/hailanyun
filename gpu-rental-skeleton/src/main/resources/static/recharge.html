@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>在线充值 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 <style>
 .recharge{max-width:720px;margin:0 auto}
 .amt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -31,7 +31,7 @@
 <div class="console">
   <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="ctopbar"></div>
     <div class="cbody">
       <div class="recharge">
         <div class="msg" id="msg"></div>
@@ -59,21 +59,26 @@
 
           <button class="pay-btn" style="margin-top:18px" onclick="pay()">立即支付</button>
           <div class="hint" style="text-align:center;margin-top:10px">
-            演示环境：点击后模拟到账，不产生真实扣款。
+            演示环境：点击后模拟支付渠道回调到账，不产生真实扣款。
           </div>
+        </div>
+
+        <div class="card panel" style="margin-top:14px">
+          <h3>充值记录</h3>
+          <div id="hist"><div class="empty">加载中…</div></div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<script src="/console-nav.js?v13"></script>
+<script src="/console-nav.js?v17"></script>
 <script>
 const $ = s => document.querySelector(s);
 const fmt = n => (Number(n) || 0).toFixed(2);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if (!TOKEN || !U) location.replace('/login.html');
+if (!TOKEN || !U) location.replace('/login');
 const TENANT = U.tenantId || 't1';
 let BALANCE = 0, AMOUNT = 50;
 
@@ -101,13 +106,39 @@ function toast(t, ok) {
   const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
   clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
 }
-function pay() {
+async function pay() {
   if (AMOUNT <= 0) { toast('请输入充值金额', false); return; }
   const way = document.querySelector('.pay.on').dataset.pay;
-  BALANCE += AMOUNT;
-  $('#bal').textContent = '¥' + fmt(BALANCE);
-  refresh();
-  toast('模拟支付成功：' + way + ' ¥' + fmt(AMOUNT) + ' 已到账（演示环境未真实扣款）', true);
+  try {
+    const r = await fetch('/api/recharges', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: AMOUNT, channel: way })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.message || r.status);
+    BALANCE = Number(j.balance) || 0;
+    $('#bal').textContent = '¥' + fmt(BALANCE);
+    refresh();
+    toast(r && j.message ? j.message : ('模拟支付成功：' + way + ' ¥' + fmt(AMOUNT)), true);
+    loadHist();
+  } catch (e) { toast(e.message, false); }
+}
+
+async function loadHist() {
+  try {
+    const r = await fetch('/api/recharges', { headers: { Authorization: 'Bearer ' + TOKEN } });
+    const list = await r.json();
+    $('#hist').innerHTML = list.length ? `<table>
+      <thead><tr><th>订单号</th><th class="num">金额</th><th>渠道</th><th>状态</th><th>时间</th></tr></thead>
+      <tbody>${list.map(x => `<tr>
+        <td class="mono">${x.order_no}</td>
+        <td class="num" style="color:#16a34a">+¥${fmt(x.amount)}</td>
+        <td>${x.channel}</td>
+        <td><span class="pill p-green">${x.status === 'paid' ? '已到账' : x.status}</span></td>
+        <td class="hint">${Tf.at(x.created_at)}</td>
+      </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无充值记录</div>';
+  } catch (e) { $('#hist').innerHTML = '<div class="empty">' + e.message + '</div>'; }
 }
 
 (async function () {
@@ -119,6 +150,7 @@ function pay() {
     $('#bal').textContent = '¥' + fmt(BALANCE);
     refresh();
   } catch (e) { refresh(); }
+  loadHist();
 })();
 </script>
 </body>

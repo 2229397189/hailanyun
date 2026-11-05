@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>算力市场 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
 </head>
 <body>
 
 <header class="topnav">
   <div class="inner">
-    <a class="brand" href="/index.html">
+    <a class="brand" href="/index">
       <span class="brand-mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
@@ -24,15 +24,15 @@
       </span>
     </a>
     <nav class="navlinks">
-      <a href="/index.html">首页</a>
-      <a class="on" href="/market.html">算力市场</a>
-      <a class="soon">大模型 API</a>
-      <a href="/solutions.html">解决方案</a>
-      <a href="/about.html">关于我们</a>
-      <a href="/index.html#pricing">帮助文档</a>
+      <a href="/index">首页</a>
+      <a class="on" href="/market">算力市场</a>
+      <a href="/llm-api">大模型 API</a>
+      <a href="/solutions">解决方案</a>
+      <a href="/about">关于我们</a>
+      <a href="/index#pricing">帮助文档</a>
     </nav>
     <div class="nav-right">
-      <a class="btn-console" href="/portal.html">控制台</a>
+      <a class="btn-console" href="/console">控制台</a>
       <span class="avatar">L</span>
     </div>
   </div>
@@ -45,7 +45,7 @@
         <div class="blk-title" style="font-size:30px">算力市场</div>
         <div class="blk-sub">灵活多样的算力选择，打破硬件门槛</div>
       </div>
-      <a class="pill-link" href="/portal.html">查看所有实例 →</a>
+      <a class="pill-link" href="/portal">查看所有实例 →</a>
     </div>
 
     <div class="type-grid">
@@ -63,7 +63,40 @@
           <span class="k">RTX5090-32G</span>
           <span class="p">¥2.80<small> / 卡 · 时</small></span>
         </div>
-        <a class="type-btn line" href="/portal.html" style="text-decoration:none">立即创建</a>
+        <a class="type-btn line" href="/portal" style="text-decoration:none">立即创建</a>
+      </div>
+
+      <div class="type-card">
+        <span class="badge-hot" style="background:linear-gradient(135deg,#059669,#10b981)">闲时 5 折</span>
+        <div class="type-icon" style="color:#059669;background:linear-gradient(135deg,#e8f9f1,#f5edff)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>
+          </svg>
+        </div>
+        <div class="type-title">闲时算力卡</div>
+        <div class="type-desc">平台空闲时段自动调度，同等 RTX 5090 算力，价格低至 5 折，适合离线训练与批处理。</div>
+        <div class="spec-box">
+          <span class="k">RTX5090-32G · 闲时</span>
+          <span class="p">¥1.40<small> / 卡 · 时</small></span>
+        </div>
+        <a class="type-btn line" href="/portal" style="text-decoration:none">立即创建</a>
+      </div>
+
+      <div class="type-card">
+        <div class="type-icon" style="color:#7c3aed;background:linear-gradient(135deg,#f3ecff,#f5edff)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 9l-4 4 4 4"/><path d="M16 9l4 4-4 4"/><path d="M13 7l-2 10"/>
+          </svg>
+        </div>
+        <div class="type-title">无卡调试</div>
+        <div class="type-desc">CPU-only 开发容器（4C8G），调试代码与流程，按需挂卡升级，每小时仅 1 毛钱。</div>
+        <div class="spec-box">
+          <span class="k">CPU · 4C8G</span>
+          <span class="p">¥0.10<small> / 时</small></span>
+        </div>
+        <a class="type-btn line" href="/portal" style="text-decoration:none">立即创建</a>
       </div>
 
       <div class="type-card">
@@ -82,7 +115,7 @@
           <span class="k">RTX5090-32G</span>
           <span class="p">¥1,280<small> / 月 · 卡</small></span>
         </div>
-        <a class="type-btn btn-primary" href="/group.html" style="text-decoration:none">去拼团</a>
+        <a class="type-btn btn-primary" href="/group" style="text-decoration:none">去拼团</a>
       </div>
 
       <div class="type-card">
@@ -100,7 +133,7 @@
           <span class="k">RTX5090 × 8 整机</span>
           <span class="p">¥5,500<small> / 月</small></span>
         </div>
-        <a class="type-btn line" href="/baremetal.html" style="text-decoration:none">查看配置</a>
+        <a class="type-btn line" href="/baremetal" style="text-decoration:none">查看配置</a>
       </div>
 
     </div>
@@ -138,13 +171,13 @@
       <div style="margin-top:6px">GPU 算力运营平台 · 私有化交付</div>
     </div>
     <div style="display:flex;gap:26px">
-      <a href="/market.html">算力市场</a><a href="/group.html">拼团</a>
-      <a href="/baremetal.html">裸金属</a><a href="/about.html">关于我们</a>
+      <a href="/market">算力市场</a><a href="/group">拼团</a>
+      <a href="/baremetal">裸金属</a><a href="/about">关于我们</a>
     </div>
     <div>© 2026 TokenArk · 演示环境</div>
   </div>
 </footer>
 
-<script src="/nav.js?v13"></script>
+<script src="/nav.js?v17"></script>
 </body>
 </html>

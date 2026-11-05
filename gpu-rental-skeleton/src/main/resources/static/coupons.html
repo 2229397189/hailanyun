@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的券包 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
+<style>
+.cp{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #f0e5ff;border-radius:12px;
+  background:linear-gradient(100deg,#fbf9ff,#fff);margin-bottom:10px}
+.cp.used{opacity:.62;background:#fbfbfd;border-color:#eeeef0}
+.cp .amt{width:96px;flex:0 0 auto;text-align:center;border-right:1px dashed #e6dcfa}
+.cp .amt b{font-size:24px;font-weight:800;color:#7c3aed;line-height:1.1;display:block}
+.cp .amt b i{font-style:normal;font-size:13px;font-weight:700;margin-right:2px}
+.cp .amt span{font-size:10.5px;color:#9aa2b1}
+.cp .info{flex:1;min-width:0}
+.cp .info b{font-size:13px;display:block;margin-bottom:3px}
+.cp-sec{margin-bottom:20px}
+.cp-sec>h4{font-size:12.5px;font-weight:650;color:#374151;margin:0 0 10px;display:flex;align-items:center;gap:7px}
+.cp-sec>h4 em{font-style:normal;font-size:11px;color:#9aa2b1;font-weight:400}
+</style>
+</head>
+<body data-active="coupons">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"></div>
+    <div class="cbody">
+      <div class="msg" id="msg"></div>
+
+      <div class="dtiles mb10" style="margin-bottom:14px">
+        <div class="dtile tint-p">
+          <div class="k">账户余额</div>
+          <div class="v" id="kBal"><i>¥</i>0.00</div>
+          <div class="hint">兑换后的券面金额直接充入这里</div>
+        </div>
+        <div class="dtile">
+          <div class="k">未使用券</div>
+          <div class="v" id="kCnt">0<small> 张</small></div>
+          <div class="hint">合计可兑换 <b id="kSum">¥0.00</b></div>
+        </div>
+        <div class="dtile">
+          <div class="k">已兑换券</div>
+          <div class="v" id="kRedeemed">0<small> 张</small></div>
+          <div class="hint">累计入账 <b id="kRedSum">¥0.00</b></div>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <h3>我的券包 <span class="s">共 <b id="kAll">0</b> 张 · 兑换即到账，不可撤销</span>
+          <button class="ghost sm" style="margin-left:auto" onclick="load()">刷新</button>
+        </h3>
+        <div id="wrap"><div class="empty">加载中…</div></div>
+        <div class="hint" style="margin-top:6px">
+          说明：券的来源包括新人注册赠送、邀请好友返券与运营发放；有效期以券面标注为准。
+          平台接口不再返回已被标记过期的券，因此「已过期」分组按券面有效期在前端判定，可能不含历史过期券。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login');
+const TENANT = U.tenantId || 't1';
+const fmt = n => (Number(n) || 0).toFixed(2);
+let ALL = [];
+
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opt.headers || {});
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
+}
+function isExpired(c) {
+  if (c.status === 'expired') return true;
+  if (c.status !== 'unused' || !c.expire_at) return false;
+  return new Date(c.expire_at).getTime() < Date.now();
+}
+function bucket(c) {
+  if (c.status === 'redeemed') return 'redeemed';
+  return isExpired(c) ? 'expired' : 'unused';
+}
+function day(v) { return v ? new Date(v).toLocaleDateString('zh-CN') : '长期有效'; }
+
+function card(c) {
+  const b = bucket(c);
+  const right = b === 'unused'
+    ? '<button class="sm" style="background:#7c3aed;color:#fff;border:none" onclick="redeem(\'' +
+        Biz.esc(c.id) + '\')">兑换</button>'
+    : '<span class="pill ' + (b === 'redeemed' ? 'p-green' : 'p-gray') + '">' +
+        (b === 'redeemed' ? '已兑换' : '已过期') + '</span>';
+  return '<div class="cp ' + (b === 'unused' ? '' : 'used') + '">' +
+    '<div class="amt"><b><i>¥</i>' + fmt(c.amount_yuan) + '</b><span>代金券</span></div>' +
+    '<div class="info"><b>' + Biz.esc(c.title) + '</b>' +
+      '<div class="hint">有效期至 ' + day(c.expire_at) + ' · 发放于 ' + day(c.created_at) +
+      (b === 'expired' && c.status === 'unused' ? '（券面有效期已过）' : '') + '</div></div>' +
+    right + '</div>';
+}
+
+function render() {
+  const groups = { unused: [], redeemed: [], expired: [] };
+  ALL.forEach(c => groups[bucket(c)].push(c));
+  $('#kAll').textContent = ALL.length;
+  $('#kCnt').innerHTML = groups.unused.length + '<small> 张</small>';
+  $('#kSum').textContent = '¥' + fmt(groups.unused.reduce((a, c) => a + Number(c.amount_yuan || 0), 0));
+  $('#kRedeemed').innerHTML = groups.redeemed.length + '<small> 张</small>';
+  $('#kRedSum').textContent = '¥' + fmt(groups.redeemed.reduce((a, c) => a + Number(c.amount_yuan || 0), 0));
+
+  if (!ALL.length) {
+    $('#wrap').innerHTML = '<div class="empty-state"><div class="ic">🎟️</div><b>券包是空的</b>' +
+      '<span>新人注册、邀请好友首充、平台运营活动都会往这里发券</span>' +
+      '<a href="/account" style="display:inline-flex;align-items:center;margin-top:14px;height:32px;' +
+      'padding:0 18px;border-radius:7px;font-size:12px;color:#fff;' +
+      'background:linear-gradient(100deg,#7c3aed,#a855f7)">去邀请好友</a></div>';
+    return;
+  }
+  const TITLES = [
+    ['unused', '未使用', '点右侧「兑换」即可把券面金额充入余额'],
+    ['redeemed', '已兑换', '金额已计入账户余额'],
+    ['expired', '已过期', '超出券面有效期，无法再使用']
+  ];
+  $('#wrap').innerHTML = TITLES.map(([k, t, s]) =>
+    '<div class="cp-sec"><h4>' + t + '<em>' + s + ' · ' + groups[k].length + ' 张</em></h4>' +
+    (groups[k].length ? groups[k].map(card).join('')
+      : '<div class="hint" style="padding:6px 0">这一组暂时没有券。</div>') + '</div>').join('');
+}
+
+async function load() {
+  try {
+    ALL = await api('/coupons');
+    render();
+  } catch (e) {
+    ALL = [];
+    $('#wrap').innerHTML = '<div class="empty">券包加载失败：' + Biz.esc(e.message) + '</div>';
+  }
+  try {
+    const ts = await api('/tenants');
+    const arr = Array.isArray(ts) ? ts : (ts.items || []);
+    const me = arr.find(t => t.id === TENANT || t.tenantId === TENANT) || {};
+    $('#kBal').innerHTML = '<i>¥</i>' + fmt(me.balance_yuan);
+  } catch (e) { /* 余额取不到不影响券包展示 */ }
+}
+
+function redeem(id) {
+  const c = ALL.find(x => x.id === id) || {};
+  Biz.modal({
+    title: '确认兑换代金券',
+    okText: '确认兑换',
+    html: '<div class="biz-sum"><span class="hint">券名</span><b style="font-size:13.5px">' +
+      Biz.esc(c.title || id) + '</b></div>' +
+      '<div class="biz-sum" style="margin-top:8px"><span class="hint">券面金额</span>' +
+      '<b style="font-size:18px;color:#7c3aed">¥' + fmt(c.amount_yuan) + '</b></div>' +
+      '<div class="tip" style="margin:12px 0 0">兑换后金额直接充入账户余额，不可撤销、不找零。</div>',
+    onOk: async (box, close) => {
+      box.busy(true);
+      try {
+        const r = await api('/coupons/' + id + '/redeem', { method: 'POST' });
+        close();
+        Biz.toast(r.message || '兑换成功', 'ok');
+        await load();
+      } catch (e) {
+        box.busy(false);
+        box.showError(e.message);
+      }
+    }
+  });
+}
+load();
+</script>
+</body>
+</html>

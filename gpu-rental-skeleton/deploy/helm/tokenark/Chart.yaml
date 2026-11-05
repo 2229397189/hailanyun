@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tokenark
+description: TokenArk 创元方舟 GPU 算力平台（应用 + PostgreSQL + RBAC，可选接真实 K8s 集群）
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

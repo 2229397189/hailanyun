@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>实例列表 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 </head>
 <body data-active="inst">
 
@@ -18,11 +18,11 @@
 
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <button class="pink-btn" style="height:32px;padding:0 16px;font-size:12px;border-radius:7px"
-                onclick="location.href='/portal.html'">＋ 创建实例</button>
+                onclick="location.href='/portal'">＋ 创建实例</button>
         <button class="ghost" style="height:32px;padding:0 14px;font-size:12px;border-radius:7px"
-                onclick="tip('SSH 公钥')">SSH 公钥</button>
+                onclick="sshKeys()">SSH 公钥</button>
         <button class="ghost" style="height:32px;padding:0 14px;font-size:12px;border-radius:7px"
-                onclick="tip('订阅推送')">订阅推送</button>
+                onclick="subscribePanel()">订阅推送</button>
         <input id="kw" placeholder="搜索实例名称/ID" style="width:260px;height:32px;font-size:12px;margin-left:6px">
       </div>
 
@@ -31,6 +31,7 @@
         <select id="fStatus">
           <option value="all">全部</option>
           <option value="running">运行中</option>
+          <option value="stopped">已关机</option>
           <option value="released">已释放</option>
         </select>
         <label>地域时间</label>
@@ -43,9 +44,9 @@
         <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid #f4f0f9;
              font-size:11px;color:#98a1b3">
           <span style="width:16px">□</span><span style="flex:1">实例名称 / ID</span>
-          <span style="width:110px">状态</span><span style="width:120px">规格</span>
-          <span style="width:90px">可用区</span><span style="width:150px">创建时间</span>
-          <span style="width:100px;text-align:right">操作</span>
+          <span style="width:110px">状态</span><span style="width:130px">规格</span>
+          <span style="width:90px">可用区</span><span style="width:190px">镜像 / 数据盘</span><span style="width:150px">创建时间</span>
+          <span style="width:480px;text-align:right">操作</span>
         </div>
         <div id="list"><div class="empty">加载中…</div></div>
       </div>
@@ -53,28 +54,191 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v13"></script>
+<div id="renewModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:60;
+     align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:20px;width:340px;box-shadow:0 18px 50px rgba(15,23,42,.28)">
+    <h3 style="margin:0 0 12px;font-size:15px">续费实例</h3>
+    <div id="renewAlert" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px"></div>
+    <div id="renewSpec" style="font-size:12px;color:#64748b;margin-bottom:12px"></div>
+    <label style="font-size:12px;color:#475569">续费时长</label>
+    <select id="renewHours" onchange="calcRenew()" style="width:100%;margin:6px 0 14px;height:34px;
+      border:1px solid #e2e8f0;border-radius:8px;padding:0 10px;font-size:13px"></select>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#fbf8ff;
+      border:1px solid #f1e8ff;border-radius:10px;padding:10px 14px;margin-bottom:12px">
+      <span style="font-size:12px;color:#64748b">续费预扣 <span id="renewTag" style="color:#16a34a;font-size:11px"></span></span>
+      <b style="font-size:18px;color:#7c3aed" id="renewTotal">¥0.00</b>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="sm ghost" onclick="closeRenew()">取消</button>
+      <button class="sm" id="renewBtn" style="background:#7c3aed;color:#fff;border:none" onclick="confirmRenew()">确认续费</button>
+    </div>
+  </div>
+</div>
+
+<div id="accModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:60;
+     align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:20px;width:440px;max-height:80vh;overflow:auto;
+       box-shadow:0 18px 50px rgba(15,23,42,.28)">
+    <h3 style="margin:0 0 12px;font-size:15px">远程桌面 · 开发接入</h3>
+    <div id="accBody">加载中…</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px">
+      <button class="sm ghost" onclick="closeAcc()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if (!TOKEN || !U) location.replace('/login.html');
+if (!TOKEN || !U) location.replace('/login');
 const TENANT = U.tenantId || 't1';
 const IST = {
   provisioning: ['创建中', 'p-amber'], running: ['运行中', 'p-green'],
-  releasing: ['回收中', 'p-purple'], released: ['已释放', 'p-gray'], failed: ['失败', 'p-red']
+  releasing: ['回收中', 'p-purple'], released: ['已释放', 'p-gray'], failed: ['失败', 'p-red'],
+  stopped: ['已关机', 'p-gray'], resetting: ['重置中', 'p-amber']
 };
 let ALL = [];
 
 async function api(p) {
   const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
-  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
   const t = await r.text();
   let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
   if (!r.ok) throw new Error(j.message || r.status);
   return j;
 }
-function tip(n) { alert('演示环境：' + n + ' 需要后端接口支持。'); }
+async function post(p, body) {
+  const r = await fetch('/api' + p, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : '{}'
+  });
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+/* ---------------- SSH 公钥 ----------------
+ * 真接口：GET/POST/DELETE /api/ssh-keys，公钥落库后在实例「开发接入」里给出 authorized_keys */
+function sshKeys() {
+  let refresh = () => {};
+  Biz.modal({
+    title: 'SSH 公钥', wide: true, okText: '保存公钥', cancelText: '关闭',
+    html: '<div class="biz-rows" id="keyList"><div class="biz-empty">加载中…</div></div>' +
+          '<div class="field" style="margin-top:12px"><label>名称</label>' +
+            '<input id="kName" maxlength="64" placeholder="例如：我的工作笔记本"></div>' +
+          '<div class="field"><label>公钥内容</label>' +
+            '<textarea id="kPub" rows="3" placeholder="ssh-ed25519 AAAA… 或 ssh-rsa AAAA…（整行粘贴，不要粘私钥）"></textarea></div>',
+    tip: '公钥保存在你的租户下，最多 10 条。实例「远程桌面 · 开发接入」页会给出可直接写入 /root/.ssh/authorized_keys 的内容；' +
+         '演示镜像内没有运行 sshd，接入真实镜像后由初始化脚本写入。',
+    onOk: async (box, close) => {
+      const name = box.querySelector('#kName').value.trim();
+      const pub = box.querySelector('#kPub').value.trim();
+      if (!name) return box.showError('请填写公钥名称');
+      if (!pub) return box.showError('请粘贴公钥内容（ssh-rsa / ssh-ed25519 开头的整行）');
+      box.showError('');
+      box.busy(true);
+      try {
+        const r = await fetch('/api/ssh-keys', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json', 'X-User': U.username },
+          body: JSON.stringify({ name, pubkey: pub })
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.message || r.status);
+        box.querySelector('#kName').value = '';
+        box.querySelector('#kPub').value = '';
+        Biz.toast(j.message || '公钥已保存', 'ok');
+        refresh();
+      } catch (e) { box.showError(e.message); }
+      finally { box.busy(false); }
+    },
+    ready: box => {
+      const list = box.querySelector('#keyList');
+      refresh = async () => {
+        try {
+          const keys = await api('/ssh-keys');
+          list.innerHTML = keys.length ? keys.map(k =>
+            '<div class="biz-row"><div class="t"><b>' + Biz.esc(k.name) + '</b>' +
+              '<button class="ghost sm" data-del="' + Biz.esc(k.id) + '">删除</button></div>' +
+              '<div class="d mono">' + Biz.esc(shortKey(k.pubkey)) + '</div>' +
+              '<div class="d">添加于 ' + Biz.esc(fmtT(k.created_at)) + '</div></div>').join('')
+            : '<div class="biz-empty">还没有保存公钥，添加后实例可免密登录。</div>';
+          list.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+            if (!confirm('删除这条公钥？已开实例里的旧授权不会自动回收。')) return;
+            try {
+              const r = await fetch('/api/ssh-keys/' + b.dataset.del, { method: 'DELETE', headers: { Authorization: 'Bearer ' + TOKEN } });
+              const j = await r.json().catch(() => ({}));
+              if (!r.ok) throw new Error(j.message || r.status);
+              Biz.toast(j.message || '已删除', 'ok');
+              refresh();
+            } catch (e) { Biz.toast(e.message, 'err'); }
+          });
+        } catch (e) { list.innerHTML = '<div class="biz-empty">加载失败：' + Biz.esc(e.message) + '</div>'; }
+      };
+      refresh();
+    }
+  });
+}
+function shortKey(k) {
+  k = String(k || '');
+  return k.length > 46 ? k.slice(0, 26) + ' … ' + k.slice(-16) : k;
+}
+function fmtT(t) {
+  if (!t) return '-';
+  const d = new Date(String(t).replace(' ', 'T'));
+  return isNaN(d) ? String(t) : d.toLocaleString('zh-CN', { hour12: false });
+}
+
+/* ---------------- 订阅推送 ----------------
+ * 逐实例开关：关掉后该实例的开关机 / 续费 / 释放通知不再进消息中心，计费与操作不受影响 */
+function subscribePanel() {
+  const live = ALL.filter(i => i.status !== 'released');
+  Biz.modal({
+    title: '消息订阅推送', wide: true, hideOk: true, cancelText: '关闭',
+    html: live.length
+      ? '<div class="biz-rows">' + live.map(i =>
+          '<div class="biz-row"><div class="t"><b>' + Biz.esc(i.pod_name || i.id) + '</b>' +
+            '<label class="biz-sw"><input type="checkbox" data-sub="' + Biz.esc(i.id) + '" ' +
+            (i.notify_push === false ? '' : 'checked') + '><i></i></label></div>' +
+            '<div class="d mono">' + Biz.esc(i.id) + ' · ' + ((IST[i.status] || [i.status])[0]) + '</div></div>').join('') +
+        '</div>'
+      : '<div class="biz-empty">还没有实例，创建后可以在这里控制每个实例的通知推送。</div>',
+    tip: '关闭只影响消息推送，不影响计费、开关机与释放。重新打开会立刻收到一条确认消息。',
+    ready: box => {
+      box.querySelectorAll('[data-sub]').forEach(cb => {
+        cb.onchange = async () => {
+          cb.disabled = true;
+          try {
+            const j = await post('/instances/' + cb.dataset.sub + '/subscribe', { on: cb.checked });
+            Biz.toast(j.message, 'ok');
+            const it = ALL.find(x => x.id === cb.dataset.sub);
+            if (it) it.notify_push = j.notifyPush;
+          } catch (e) {
+            cb.checked = !cb.checked;
+            Biz.toast(e.message, 'err');
+          } finally { cb.disabled = false; }
+        };
+      });
+    }
+  });
+}
+function specOf(i) {
+  const n = Number(i.gpu_count);
+  if (n === 0) return '无卡调试 · 4C8G';
+  if (n === 8) return '整机 8 × RTX 5090';
+  return n + ' × RTX 5090';
+}
+
+function imgOf(i) {
+  const ref = String(i.image_ref || '');
+  const tag = ref.indexOf(':') > 0 ? ref.slice(0, ref.indexOf(':')) + ':' + ref.slice(ref.indexOf(':') + 1, ref.indexOf(':') + 12) : (ref || '默认运行时');
+  const gb = Number(i.data_disk_gb) || 0;
+  return Biz.esc(tag) + (gb > 0 ? ' · +' + gb + 'G 盘' : '');
+}
 
 function render() {
   const st = $('#fStatus').value;
@@ -87,15 +251,25 @@ function render() {
       <div class="ic">▤</div>
       <b>暂无实例</b>
       <span>创建您的第一个 GPU 实例，开启算力之旅</span>
-      <div><button class="btn-pink" onclick="location.href='/portal.html'">创建第一个实例</button></div>
+      <div><button class="btn-pink" onclick="location.href='/portal'">创建第一个实例</button></div>
     </div>`;
     return;
   }
 
   $('#list').innerHTML = list.map(i => {
     const s = IST[i.status] || [i.status, 'p-gray'];
-    const spec = Number(i.gpu_count) === 8 ? '8 × RTX 5090' : '1 × RTX 5090';
     const created = i.created_at ? new Date(i.created_at).toLocaleString('zh-CN', { hour12: false }) : '–';
+    const b = (label, fn, cls) => `<button class="sm ${cls || 'ghost'}" style="margin-left:4px" onclick="${fn}('${i.id}')">${label}</button>`;
+    let act = '<span class="hint">—</span>';
+    if (i.status === 'running') {
+      act = b('关机', 'poweroff') + b('重启', 'restart') + b('续费', 'openRenew') + b('克隆', 'cloneInst')
+        + b('重置', 'resetInst') + b('升降配', 'resizeInst') + b('定时关机', 'schedInst') + b('远程桌面', 'accessInst')
+        + b('存镜像', 'saveImage') + b('数据集', 'datasetInst') + b('释放', 'rel', 'danger');
+    } else if (i.status === 'stopped') {
+      act = b('开机', 'poweron') + b('释放', 'rel', 'danger');
+    } else if (i.status !== 'released') {
+      act = b('释放', 'rel', 'danger');
+    }
     return `<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;
          border-bottom:1px solid #f8f5fc;font-size:12px">
       <span style="width:16px;color:#c3c8d4">□</span>
@@ -104,14 +278,11 @@ function render() {
         <div class="hint mono" style="font-size:10.5px">${i.id}</div>
       </div>
       <span style="width:110px"><span class="pill ${s[1]}">${s[0]}</span></span>
-      <span style="width:120px">${spec}</span>
+      <span style="width:130px">${specOf(i)}</span>
       <span style="width:90px">${i.node_id === 'n2' ? '可用区 B' : '可用区 A'}</span>
+      <span style="width:190px" class="hint mono" title="${Biz.esc(i.image_ref || '')}">${imgOf(i)}</span>
       <span style="width:150px" class="hint">${created}</span>
-      <span style="width:100px;text-align:right">
-        ${i.status === 'released'
-          ? '<span class="hint">—</span>'
-          : `<button class="sm ghost" onclick="rel('${i.id}')">释放</button>`}
-      </span>
+      <span style="width:480px;text-align:right;white-space:nowrap">${act}</span>
     </div>`;
   }).join('');
 }
@@ -119,14 +290,275 @@ function render() {
 async function rel(id) {
   if (!confirm('确认释放该实例？按实际使用秒数结算，差额退回余额。')) return;
   try {
-    const r = await fetch('/api/instances/' + id + '/release', {
+    const r = await post('/instances/' + id + '/release');
+    Biz.toast(r.message || '已释放', 'ok');
+    load();
+  } catch (e) { Biz.toast('释放失败：' + e.message, 'err'); }
+}
+
+async function restart(id) {
+  if (!confirm('确认重启该实例？重启期间服务会短暂中断，就绪后自动恢复。')) return;
+  try {
+    const j = await post('/instances/' + id + '/restart');
+    Biz.toast(j.message || '已提交重启', 'ok');
+    load();
+  } catch (e) { Biz.toast('重启失败：' + e.message, 'err'); }
+}
+
+async function poweroff(id) {
+  if (!confirm('确认关机？关机后停止计费、数据保留（7 天保留期内可开机）。')) return;
+  try {
+    const j = await post('/instances/' + id + '/poweroff');
+    Biz.toast(j.message || '已关机', 'ok');
+    load();
+  } catch (e) { Biz.toast('关机失败：' + e.message, 'err'); }
+}
+
+async function poweron(id) {
+  try {
+    const j = await post('/instances/' + id + '/poweron');
+    Biz.toast(j.message || '已提交开机', 'ok');
+    load();
+  } catch (e) { Biz.toast('开机失败：' + e.message, 'err'); }
+}
+
+async function resetInst(id) {
+  if (!confirm('确认重置系统？系统盘还原为初始状态，数据盘不受影响。')) return;
+  try {
+    const j = await post('/instances/' + id + '/reset');
+    Biz.toast(j.message || '已提交重置', 'ok');
+    load();
+  } catch (e) { Biz.toast('重置失败：' + e.message, 'err'); }
+}
+
+async function cloneInst(id) {
+  if (!confirm('确认克隆？将按当前规格与剩余时长开通一台新实例（需余额充足）。')) return;
+  try {
+    const j = await post('/instances/' + id + '/clone');
+    Biz.toast(j.message + '（新实例 ' + j.instanceId + '）', 'ok');
+    load();
+  } catch (e) { Biz.toast('克隆失败：' + e.message, 'err'); }
+}
+
+function resizeInst(id) {
+  const i = ALL.find(x => x.id === id);
+  if (!i) return;
+  const cur = Number(i.gpu_count) || 1;
+  const opts = [1, 2, 4, 8].map(n =>
+    '<option value="' + n + '"' + (n === cur ? ' selected' : '') + '>' + n + ' 卡' +
+    (n === cur ? '（当前）' : (n > cur ? ' · 升配' : ' · 降配')) + '</option>').join('');
+  Biz.modal({
+    title: '调整规格（升降配）',
+    okText: '确认调整',
+    html: '<div class="biz-sum"><span class="hint">当前实例</span><b>' +
+            Biz.esc(i.model || '') + ' × ' + cur + ' 卡 · ' + Biz.esc(i.pod_name || id) + '</b></div>' +
+          '<div class="field"><label>调整后的卡数</label><select id="rzCount">' + opts + '</select></div>',
+    tip: '升配按剩余时长新开一台实例并结算旧实例，数据盘口径不变；降配同理，差价退回余额。',
+    onOk: async (box, close) => {
+      const n = Number(box.querySelector('#rzCount').value);
+      if (n === cur) return box.showError('卡数和当前一样，不用调整');
+      box.busy(true);
+      try {
+        const j = await post('/instances/' + id + '/resize', { gpuCount: n });
+        close();
+        Biz.toast(j.message || '升降配完成', 'ok');
+        load();
+      } catch (e) { box.showError(e.message); box.busy(false); }
+    }
+  });
+}
+
+function schedInst(id) {
+  const i = ALL.find(x => x.id === id) || {};
+  const opts = [10, 30, 60, 180, 480].map(m =>
+    '<option value="' + m + '">' + (m < 60 ? m + ' 分钟后' : (m / 60) + ' 小时后') + '</option>').join('');
+  Biz.modal({
+    title: '定时关机',
+    okText: '设置',
+    html: '<div class="biz-sum"><span class="hint">目标实例</span><b>' +
+            Biz.esc(i.pod_name || id) + '</b></div>' +
+          '<div class="field"><label>多久之后关机</label><select id="sdMin">' + opts + '</select>' +
+          '<div class="hint" id="sdAt" style="margin-top:6px"></div></div>',
+    tip: '到点自动关机、停止计费，数据盘保留。忘记关机会一直按小时扣费，跑完训练建议顺手设一个。',
+    ready: box => {
+      const sel = box.querySelector('#sdMin'), at = box.querySelector('#sdAt');
+      const paint = () => at.textContent = '预计关机时间：' +
+        new Date(Date.now() + Number(sel.value) * 60000).toLocaleString('zh-CN');
+      sel.addEventListener('change', paint);
+      paint();
+    },
+    onOk: async (box, close) => {
+      box.busy(true);
+      try {
+        const j = await post('/instances/' + id + '/schedule-shutdown',
+          { at: Date.now() + Number(box.querySelector('#sdMin').value) * 60000 });
+        close();
+        Biz.toast(j.message || '定时关机已设置', 'ok');
+      } catch (e) { box.showError(e.message); box.busy(false); }
+    }
+  });
+}
+
+function saveImage(id) {
+  const inst = ALL.find(i => i.id === id) || {};
+  Biz.modal({
+    title: '保存为私有镜像',
+    okText: '开始保存',
+    html: '<div class="biz-sum"><span class="hint">来源实例</span><b>' +
+            Biz.esc(inst.pod_name || id) + '</b></div>' +
+          '<div class="field"><label>镜像名称</label>' +
+            '<input id="siName" maxlength="64" placeholder="例如：我的训练环境-v1"></div>',
+    tip: '把当前实例的系统盘打成快照存进「我的镜像」，下次创建实例可以直接选它。' +
+         '演示环境为秒级完成的台账记录，真实集群走镜像仓库 push。',
+    onOk: async (box, close) => {
+      const name = box.querySelector('#siName').value.trim();
+      if (!name) return box.showError('请填写镜像名称');
+      box.showError('');
+      box.busy(true);
+      try {
+        const j = await post('/instances/' + id + '/save-image', { name });
+        close();
+        Biz.toast(j.message || '镜像已保存', 'ok');
+        load();
+      } catch (e) { box.showError(e.message); box.busy(false); }
+    }
+  });
+}
+
+async function datasetInst(id) {
+  let ds;
+  try { ds = await api('/datasets'); } catch (e) { Biz.toast('数据集加载失败：' + e.message, 'err'); return; }
+  const mounted = await api('/instances/' + id + '/mounts').catch(() => []);
+  const mountedIds = (mounted || []).map(m => m.dataset_id || m.id);
+  if (!ds.length) return Biz.toast('平台还没有登记数据集', 'err');
+  Biz.modal({
+    title: '挂载数据集',
+    okText: '挂载',
+    html: '<div class="field"><label>选择数据集</label>' +
+            '<select id="dsPick">' + ds.map(d =>
+              '<option value="' + Biz.esc(d.id) + '"' + (mountedIds.indexOf(d.id) >= 0 ? ' disabled' : '') + '>' +
+              Biz.esc(d.name) + ' · ' + Biz.esc(String(d.size_gb)) + ' GB' +
+              (mountedIds.indexOf(d.id) >= 0 ? '（已挂载）' : '') + '</option>').join('') +
+            '</select></div>',
+    tip: '真实集群里这一步是把 PVC 挂进 Pod 的 /root/datasets；演示环境按台账记录挂载关系，' +
+         '实例详情里能看到已挂载列表，卸载同样落库。',
+    onOk: async (box, close) => {
+      const pick = box.querySelector('#dsPick').value;
+      if (!pick) return box.showError('请选择一个数据集');
+      box.busy(true);
+      try {
+        const j = await post('/instances/' + id + '/mount-dataset', { datasetId: pick });
+        close();
+        Biz.toast(j.message || '已挂载', 'ok');
+      } catch (e) { box.showError(e.message); box.busy(false); }
+    }
+  });
+}
+
+/* ---------------- 远程桌面 / 接入矩阵 ---------------- */
+async function accessInst(id) {
+  let a;
+  try { a = await api('/instances/' + id + '/access'); } catch (e) { Biz.toast('接入信息加载失败：' + e.message, 'err'); return; }
+  $('#accBody').innerHTML = `
+    <div style="font-size:12px;color:#64748b;line-height:1.9">
+      <b style="color:#1f2937">SSH 连接</b><br><code class="mono">${a.ssh}</code><br><br>
+      <b style="color:#1f2937">JupyterLab</b><br><code class="mono">${a.jupyter}</code><br><br>
+      <b style="color:#1f2937">VSCode Web / TensorBoard</b><br>
+      <code class="mono">${a.vscode}</code> · <code class="mono">${a.tensorboard}</code><br><br>
+      <b style="color:#1f2937">远程桌面（GUI）</b><br>
+      ${a.novnc ? '<code class="mono">' + a.novnc + '</code>' : '<span style="color:#d97706">' + a.novncNote + '</span>'}<br><br>
+      <b style="color:#1f2937">守护进程（SSH 断开任务继续跑）</b><br><code class="mono">${a.daemonGuide}</code><br><br>
+      <b style="color:#1f2937">学术加速</b><br>${a.acceleratorNote}<br><br>
+      <b style="color:#1f2937">SSH 公钥</b><br>${Biz.esc(a.sshKeyNote)}<br>
+      ${a.authorizedKeys
+        ? '<div style="margin-top:6px;padding:8px 10px;background:#fbfaff;border:1px solid #f1e8ff;border-radius:8px">' +
+          '<div style="font-size:10.5px;color:#98a1b3;margin-bottom:4px">authorized_keys（' + a.sshKeys.length + ' 条）</div>' +
+          '<code class="mono" style="font-size:10.5px;word-break:break-all;display:block">' + Biz.esc(a.authorizedKeys) + '</code>' +
+          '<button class="ghost sm" style="margin-top:6px" onclick="copyText(this.nextElementSibling.textContent)">复制</button>' +
+          '<span style="display:none">' + Biz.esc(a.authorizedKeys) + '</span></div>'
+        : '<button class="ghost sm" style="margin-top:6px" onclick="closeAcc();sshKeys()">去添加公钥</button>'}<br><br>
+      <b style="color:#1f2937">消息推送</b><br>
+      <label class="biz-sw" style="vertical-align:middle"><input type="checkbox" id="accSub"
+        ${a.notifyPush === false ? '' : 'checked'}><i></i></label>
+      <span style="font-size:11.5px;color:#94a3b8;margin-left:8px">关闭后该实例的开关机 / 续费 / 释放通知不再推送</span><br><br>
+      <span style="color:#94a3b8">${a.note}</span>
+    </div>`;
+  $('#accModal').style.display = 'flex';
+  const sub = $('#accSub');
+  if (sub) sub.onchange = async () => {
+    sub.disabled = true;
+    try {
+      const j = await post('/instances/' + id + '/subscribe', { on: sub.checked });
+      Biz.toast(j.message, 'ok');
+      const it = ALL.find(x => x.id === id);
+      if (it) it.notify_push = j.notifyPush;
+    } catch (e) { sub.checked = !sub.checked; Biz.toast(e.message, 'err'); }
+    finally { sub.disabled = false; }
+  };
+}
+function copyText(t) {
+  navigator.clipboard.writeText(t).then(() => Biz.toast('已复制到剪贴板', 'ok'))
+    .catch(() => Biz.toast('复制失败，请手动选中复制', 'err'));
+}
+function closeAcc() { $('#accModal').style.display = 'none'; }
+
+/* ---------------- 续费 ---------------- */
+let renewing = null;
+let PLANS = [];
+let SKUS = [];
+function openRenew(id) {
+  const i = ALL.find(x => x.id === id);
+  if (!i) return;
+  renewing = i;
+  $('#renewAlert').style.display = 'none';
+  $('#renewSpec').textContent = '实例 ' + i.id + ' · ' + (Number(i.gpu_count) === 8 ? '整机 8 卡' : '单卡')
+    + ' · 到期 ' + (i.expire_at ? new Date(i.expire_at).toLocaleString('zh-CN', { hour12: false }) : '–');
+  $('#renewHours').innerHTML = PLANS.map(pl =>
+    `<option value="${pl.hours}" ${pl.hours === 2 ? 'selected' : ''}>${pl.label}</option>`).join('');
+  calcRenew();
+  $('#renewModal').style.display = 'flex';
+}
+function closeRenew() { $('#renewModal').style.display = 'none'; }
+function calcRenew() {
+  if (!renewing) return;
+  const h = Number($('#renewHours').value) || 1;
+  const pl = PLANS.find(x => x.hours === h);
+  // 单价取实例自己那个 SKU 的租户实付价（含套餐折扣 / 闲时 / 本机 / 学生认证），
+  // 与 /renew 服务端结算同一份口径；数据盘也要跟着续，否则续费漏收盘钱
+  const sku = SKUS.find(x => x.code === renewing.sku) || SKUS.find(x => x.code === '1');
+  const pb = sku && sku.priceBoard ? sku.priceBoard : null;
+  const price = pb && pb[String(h)] != null ? Number(pb[String(h)])
+    : (pl ? Number(pl.unitPrice) : (sku ? Number(sku.unitPrice) : 2.80));
+  const gpus = Math.max(Number(renewing.gpu_count) || 0, 1);
+  const diskRate = PLANS[0] && PLANS[0].dataDiskPrice ? Number(PLANS[0].dataDiskPrice) : 0.02;
+  const diskFee = (Number(renewing.data_disk_gb) || 0) * diskRate * h / 24;
+  const total = price * gpus * h + diskFee;
+  $('#renewTotal').textContent = '¥' + (Math.round(total * 100) / 100).toFixed(2);
+  const tag = pl && pl.discounted ? ' · ' + pl.label.split('·')[1].trim() + ' ' + (Math.round(Number(pl.discount) * 100) / 10) + ' 折' : '';
+  $('#renewTag').textContent = tag + (pb && pb.student ? ' · 学生价' : ((Number(renewing.data_disk_gb) || 0) > 0 ? ' · 含数据盘' : ''));
+}
+async function confirmRenew() {
+  if (!renewing) return;
+  const hours = Number($('#renewHours').value) || 1;
+  $('#renewBtn').disabled = true;
+  try {
+    const r = await fetch('/api/instances/' + renewing.id + '/renew', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + TOKEN, 'X-User': U.username }
+      headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json', 'X-User': U.username },
+      body: JSON.stringify({ hours })
     });
     const j = await r.json();
-    alert(j.message || '已释放');
+    if (!r.ok) throw new Error(j.message || r.status);
+    closeRenew();
+    Biz.toast(j.message || '续费成功', 'ok');
     load();
-  } catch (e) { alert('释放失败：' + e.message); }
+  } catch (e) {
+    $('#renewAlert').textContent = e.message; $('#renewAlert').style.display = 'block';
+  } finally { $('#renewBtn').disabled = false; }
+}
+
+async function loadMeta() {
+  try { [PLANS, SKUS] = await Promise.all([api('/plans'), api('/skus')]); } catch (e) {}
 }
 
 async function load() {
@@ -135,6 +567,7 @@ async function load() {
 }
 $('#fStatus').onchange = render;
 $('#kw').oninput = render;
+loadMeta();
 load();
 </script>
 </body>

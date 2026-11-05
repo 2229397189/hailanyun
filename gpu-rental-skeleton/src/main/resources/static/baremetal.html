@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>B端裸金属 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/ref.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/ref.css?v17">
 </head>
 <body>
 
 <header class="topnav">
   <div class="inner">
-    <a class="brand" href="/index.html">
+    <a class="brand" href="/index">
       <span class="brand-mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
@@ -25,15 +25,15 @@
       </span>
     </a>
     <nav class="navlinks">
-      <a href="/index.html">首页</a>
-      <a href="/market.html">算力市场</a>
-      <a class="soon">大模型 API</a>
-      <a href="/solutions.html">解决方案</a>
-      <a href="/about.html">关于我们</a>
-      <a href="/index.html#pricing">帮助文档</a>
+      <a href="/index">首页</a>
+      <a href="/market">算力市场</a>
+      <a href="/llm-api">大模型 API</a>
+      <a href="/solutions">解决方案</a>
+      <a href="/about">关于我们</a>
+      <a href="/index#pricing">帮助文档</a>
     </nav>
     <div class="nav-right">
-      <a class="btn-console" href="/portal.html">控制台</a>
+      <a class="btn-console" href="/console">控制台</a>
       <span class="avatar">L</span>
     </div>
   </div>
@@ -90,6 +90,7 @@
   </div>
 </footer>
 
+<script src="/biz.js?v17"></script>
 <script>
 /* 机型与价格全部来自 /api/catalog/baremetal，页面不存业务数据 */
 let ROWS = [];
@@ -130,7 +131,7 @@ function metalCard(r) {
     <div class="xc-buy">
       <div class="lb">月租 / 台</div>
       <div class="xc-price">¥${Number(r.price).toLocaleString('en-US')}</div>
-      <button class="xc-btn" onclick="apply('${r.model}')">需求提交</button>
+      <button class="xc-btn" onclick="apply('${Biz.esc(r.model)}','${Biz.esc(r.zone)}')">需求提交</button>
     </div>
   </div>`;
 }
@@ -164,10 +165,36 @@ async function loadRows() {
 }
 loadRows();
 
-function apply(model) {
-  alert(`演示环境：已记录需求${model ? '（' + model + '）' : ''}。\n真实流程会创建工单并通知商务，当前仅展示交互。`);
+function apply(model, zone) {
+  // 行内「需求提交」：机型 + 地区定位到真实行，取显存/地区拼副标题，走参考站版式
+  const row = model ? (ROWS.find(r => r.model === model && (!zone || r.zone === zone))
+                            || ROWS.find(r => r.model === model))
+                   : null;
+  if (row) {
+    Biz.lead({
+      ref: true,
+      source: '裸金属需求',
+      model: row.model + ' ' + row.vram,
+      title: '裸金属需求提交',
+      subtitle: row.model + ' · ' + row.vram + ' 显存 · ' + row.zone,
+      hint: '填写联系方式后，我们的顾问会尽快与您沟通具体需求',
+      nameLabel: '姓名', namePh: '请输入您的姓名',
+      phoneLabel: '手机号码 / 微信', phonePh: '请输入手机号码或微信号',
+      orgLabel: '单位 / 学校', orgPh: '请输入您的单位/学校名称',
+      noteLabel: '需求描述', notePh: '例如：计划训练/推理的模型规模、算力预期使用时长等',
+      noteMax: 300
+    });
+    return;
+  }
+  // 首屏「申请免费测试」按钮：无机型上下文，走通用需求登记
+  Biz.lead({
+    source: '裸金属免费测试',
+    title: '申请免费测试',
+    desc: '免费测试面向高校实验室与企业客户，商务会安排一台测试机与接入方式。',
+    note: '业务场景：\n期望测试的机型：\n预计使用时长：'
+  });
 }
 </script>
-<script src="/nav.js?v13"></script>
+<script src="/nav.js?v17"></script>
 </body>
 </html>

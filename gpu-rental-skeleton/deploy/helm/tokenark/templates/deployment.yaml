@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tokenark-app
+  namespace: {{ .Values.namespace.name }}
+  labels: { app: tokenark-app }
+spec:
+  replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels: { app: tokenark-app }
+  template:
+    metadata:
+      labels: { app: tokenark-app }
+    spec:
+      serviceAccountName: tokenark-app
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: RENTAL_K8S_MODE
+              value: {{ .Values.app.k8sMode | quote }}
+            - name: RENTAL_K8S_IMAGE
+              value: {{ .Values.app.k8sImage | quote }}
+            - name: RENTAL_PROMETHEUS_URL
+              value: {{ .Values.app.prometheusUrl | quote }}
+            - name: TZ
+              value: Asia/Shanghai
+          ports:
+            - containerPort: 8099
+          {{- if .Values.app.kubeconfigSecret }}
+          volumeMounts:
+            - name: kubeconfig
+              mountPath: /kubeconfig
+          {{- end }}
+          readinessProbe:
+            httpGet: { path: /api/health, port: 8099 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: 8099 }
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.app.resources | nindent 12 }}
+      {{- if .Values.app.kubeconfigSecret }}
+      volumes:
+        - name: kubeconfig
+          secret:
+            secretName: {{ .Values.app.kubeconfigSecret }}
+      {{- end }}

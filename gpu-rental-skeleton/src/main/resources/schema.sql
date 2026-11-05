@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS users (
   fail_count   INT DEFAULT 0,
   locked_until TIMESTAMP,
   last_login_at TIMESTAMP,
+  created_at  TIMESTAMP,
   CONSTRAINT uk_username UNIQUE (username)
 );
 
@@ -61,7 +62,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   id           VARCHAR(32) PRIMARY KEY,
   name         VARCHAR(64)   NOT NULL,
   quota_gpus   INT           NOT NULL,
-  balance_yuan DECIMAL(12,2) NOT NULL,
+  balance_yuan DECIMAL(14,4) NOT NULL,
   status       VARCHAR(16)   NOT NULL,  -- active / frozen
   owner        VARCHAR(64),
   created_at   TIMESTAMP     NOT NULL
@@ -74,7 +75,7 @@ CREATE TABLE IF NOT EXISTS orders (
   sku             VARCHAR(32) NOT NULL,
   gpu_count       INT         NOT NULL,
   hours           INT         NOT NULL,
-  unit_price      DECIMAL(10,2) NOT NULL,
+  unit_price      DECIMAL(14,4) NOT NULL,
   amount          DECIMAL(12,2) NOT NULL,
   status          VARCHAR(16) NOT NULL,
   created_at      TIMESTAMP   NOT NULL,
@@ -103,7 +104,7 @@ CREATE TABLE IF NOT EXISTS billing_records (
   tenant_id   VARCHAR(32) NOT NULL,
   gpu_count   INT          NOT NULL,
   seconds     BIGINT       NOT NULL,
-  unit_price  DECIMAL(10,2) NOT NULL,
+  unit_price  DECIMAL(14,4) NOT NULL,
   amount      DECIMAL(12,2) NOT NULL,
   settled_at  TIMESTAMP    NOT NULL
 );
@@ -132,6 +133,7 @@ CREATE TABLE IF NOT EXISTS alerts (
   target     VARCHAR(64) NOT NULL,
   status     VARCHAR(16) NOT NULL,   -- active / acked / resolved
   detail     VARCHAR(256),
+  diagnosis  VARCHAR(512),
   created_at TIMESTAMP   NOT NULL
 );
 
@@ -150,6 +152,8 @@ CREATE TABLE IF NOT EXISTS inspection_items (
   item          VARCHAR(128) NOT NULL,
   target        VARCHAR(64) NOT NULL,
   suggestion    VARCHAR(256) NOT NULL,
+  diagnosis     VARCHAR(512),
+  ticket_id     VARCHAR(32),
   fixed         BOOLEAN     NOT NULL
 );
 
@@ -194,6 +198,119 @@ CREATE TABLE IF NOT EXISTS settings (
   note VARCHAR(128)
 );
 
+CREATE TABLE IF NOT EXISTS dict_items (
+  id       VARCHAR(32) PRIMARY KEY,
+  category VARCHAR(32) NOT NULL,
+  code     VARCHAR(64) NOT NULL,
+  label    VARCHAR(128) NOT NULL,
+  sort     INT          NOT NULL DEFAULT 0,
+  enabled  BOOLEAN      NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+  id           VARCHAR(32) PRIMARY KEY,
+  tenant_id    VARCHAR(32) NOT NULL,
+  name         VARCHAR(64) NOT NULL,
+  prefix       VARCHAR(12) NOT NULL,
+  key_hash     VARCHAR(64) NOT NULL,
+  status       VARCHAR(8)  NOT NULL DEFAULT 'on',
+  created_at   TIMESTAMP   NOT NULL,
+  last_used_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS maas_usage (
+  id                VARCHAR(32) PRIMARY KEY,
+  tenant_id         VARCHAR(32) NOT NULL,
+  api_key_id        VARCHAR(32) NOT NULL,
+  model             VARCHAR(64) NOT NULL,
+  prompt_tokens     INT          NOT NULL,
+  completion_tokens INT          NOT NULL,
+  amount_yuan       DECIMAL(12,4) NOT NULL,
+  created_at        TIMESTAMP    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         VARCHAR(32) PRIMARY KEY,
+  tenant_id  VARCHAR(32),
+  type       VARCHAR(16)  NOT NULL,
+  title      VARCHAR(128) NOT NULL,
+  body       VARCHAR(512),
+  is_read    BOOLEAN      NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS images (
+  id         VARCHAR(32) PRIMARY KEY,
+  tenant_id  VARCHAR(32) NOT NULL,
+  name       VARCHAR(128) NOT NULL,
+  base       VARCHAR(64),
+  size_gb    DECIMAL(8,2) NOT NULL DEFAULT 0,
+  zone       VARCHAR(16),
+  uuid       VARCHAR(16),
+  status     VARCHAR(16) NOT NULL DEFAULT 'available',
+  created_at TIMESTAMP   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS storage_items (
+  id         VARCHAR(32) PRIMARY KEY,
+  tenant_id  VARCHAR(32) NOT NULL,
+  zone       VARCHAR(16) NOT NULL,
+  name       VARCHAR(128) NOT NULL,
+  is_dir     BOOLEAN     NOT NULL DEFAULT FALSE,
+  size_gb    DECIMAL(8,2) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS recharges (
+  id         VARCHAR(32) PRIMARY KEY,
+  tenant_id  VARCHAR(32) NOT NULL,
+  order_no   VARCHAR(64) NOT NULL,
+  amount     DECIMAL(12,2) NOT NULL,
+  channel    VARCHAR(16) NOT NULL,
+  status     VARCHAR(16) NOT NULL DEFAULT 'paid',
+  created_at TIMESTAMP   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id         VARCHAR(32) PRIMARY KEY,
+  tenant_id  VARCHAR(32) NOT NULL,
+  period     VARCHAR(7)  NOT NULL,
+  amount     DECIMAL(12,2) NOT NULL,
+  status     VARCHAR(16) NOT NULL DEFAULT 'draft',
+  issued_at  TIMESTAMP,
+  created_at TIMESTAMP   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tickets (
+  id         VARCHAR(32) PRIMARY KEY,
+  tenant_id  VARCHAR(32) NOT NULL,
+  subject    VARCHAR(128) NOT NULL,
+  content    VARCHAR(1024),
+  status     VARCHAR(16) NOT NULL DEFAULT 'open',
+  reply      VARCHAR(1024),
+  created_at TIMESTAMP   NOT NULL,
+  updated_at TIMESTAMP   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS alert_silences (
+  id         VARCHAR(32) PRIMARY KEY,
+  target     VARCHAR(64) NOT NULL,
+  reason     VARCHAR(256),
+  starts_at  TIMESTAMP   NOT NULL,
+  ends_at    TIMESTAMP   NOT NULL,
+  created_by VARCHAR(32),
+  created_at TIMESTAMP   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS stock_alerts (
+  id           VARCHAR(32) PRIMARY KEY,
+  tenant_id    VARCHAR(32) NOT NULL,
+  model        VARCHAR(64) NOT NULL,
+  status       VARCHAR(16) NOT NULL DEFAULT 'open',   -- open / fulfilled
+  created_at   TIMESTAMP   NOT NULL,
+  fulfilled_at TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS audit_logs (
   id         BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   actor      VARCHAR(32)  NOT NULL,
@@ -207,3 +324,161 @@ CREATE INDEX IF NOT EXISTS idx_gpus_status ON gpus(status);
 CREATE INDEX IF NOT EXISTS idx_inst_status ON instances(status);
 CREATE INDEX IF NOT EXISTS idx_bill_tenant ON billing_records(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_alert_status ON alerts(status);
+
+-- 本机 GPU 采集 agent（nvidia-smi 轮询上报，无真卡集群时的真实数据源）
+CREATE TABLE IF NOT EXISTS agent_snapshots (
+  id           VARCHAR(32) PRIMARY KEY,
+  hostname     VARCHAR(128) NOT NULL,
+  os           VARCHAR(64),
+  cpu_percent  DOUBLE PRECISION,
+  mem_total_gb DOUBLE PRECISION,
+  mem_used_gb  DOUBLE PRECISION,
+  collected_at TIMESTAMP    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS agent_gpus (
+  snapshot_id  VARCHAR(32)  NOT NULL,
+  idx          INT          NOT NULL,
+  name         VARCHAR(128),
+  uuid         VARCHAR(128),
+  util         DOUBLE PRECISION,
+  mem_total_mb DOUBLE PRECISION,
+  mem_used_mb  DOUBLE PRECISION,
+  temp_c       DOUBLE PRECISION,
+  power_w      DOUBLE PRECISION
+);
+CREATE INDEX IF NOT EXISTS idx_agent_snap_host ON agent_snapshots(hostname, collected_at);
+CREATE INDEX IF NOT EXISTS idx_agent_gpus_snap ON agent_gpus(snapshot_id);
+
+-- ============ 需求补齐批次：实例进阶动作 / 券 / 实名 / 学生 / 数据集 / 驱动矩阵 ============
+
+CREATE TABLE IF NOT EXISTS instance_schedules (
+  id          VARCHAR(32) PRIMARY KEY,
+  instance_id VARCHAR(32) NOT NULL,
+  tenant_id   VARCHAR(32) NOT NULL,
+  action      VARCHAR(16) NOT NULL,        -- shutdown
+  at          TIMESTAMP   NOT NULL,
+  status      VARCHAR(16) NOT NULL DEFAULT 'pending'  -- pending / done / cancelled
+);
+CREATE INDEX IF NOT EXISTS idx_sched_instance ON instance_schedules(instance_id, status);
+
+CREATE TABLE IF NOT EXISTS coupons (
+  id          VARCHAR(32) PRIMARY KEY,
+  tenant_id   VARCHAR(32) NOT NULL,
+  title       VARCHAR(128) NOT NULL,
+  amount_yuan DECIMAL(12,2) NOT NULL,
+  status      VARCHAR(16) NOT NULL DEFAULT 'unused',  -- unused / redeemed / expired
+  expire_at   TIMESTAMP,
+  created_at  TIMESTAMP   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS realnames (
+  id           VARCHAR(32) PRIMARY KEY,
+  tenant_id    VARCHAR(32) NOT NULL,
+  real_name    VARCHAR(64) NOT NULL,
+  id_no_masked VARCHAR(32) NOT NULL,
+  phone        VARCHAR(20),
+  status       VARCHAR(16) NOT NULL DEFAULT 'pending',  -- pending / approved / rejected
+  submitted_at TIMESTAMP   NOT NULL,
+  reviewed_at  TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS student_certs (
+  id           VARCHAR(32) PRIMARY KEY,
+  tenant_id    VARCHAR(32) NOT NULL,
+  school       VARCHAR(128) NOT NULL,
+  student_no   VARCHAR(64) NOT NULL,
+  status       VARCHAR(16) NOT NULL DEFAULT 'pending',  -- pending / approved / rejected
+  submitted_at TIMESTAMP   NOT NULL,
+  reviewed_at  TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS datasets (
+  id          VARCHAR(32) PRIMARY KEY,
+  name        VARCHAR(128) NOT NULL,
+  description VARCHAR(512),
+  size_gb     DECIMAL(10,1) NOT NULL DEFAULT 0,
+  path        VARCHAR(256) NOT NULL,
+  category    VARCHAR(32) NOT NULL DEFAULT '公共'
+);
+
+CREATE TABLE IF NOT EXISTS instance_mounts (
+  instance_id VARCHAR(32) NOT NULL,
+  dataset_id  VARCHAR(32) NOT NULL,
+  mounted_at  TIMESTAMP   NOT NULL,
+  CONSTRAINT uk_mount UNIQUE (instance_id, dataset_id)
+);
+
+CREATE TABLE IF NOT EXISTS driver_matrix (
+  id             VARCHAR(32) PRIMARY KEY,
+  model          VARCHAR(64) NOT NULL,
+  driver_version VARCHAR(64) NOT NULL,
+  cuda_version   VARCHAR(64) NOT NULL,
+  note           VARCHAR(256)
+);
+
+ALTER TABLE images ADD COLUMN IF NOT EXISTS shared          BOOLEAN DEFAULT FALSE;
+ALTER TABLE images ADD COLUMN IF NOT EXISTS scan_status     VARCHAR(16) DEFAULT '未扫描';
+ALTER TABLE images ADD COLUMN IF NOT EXISTS source_instance VARCHAR(32);
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS student_verified BOOLEAN DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS group_joins (
+  id          VARCHAR(32) PRIMARY KEY,
+  card_key    VARCHAR(128) NOT NULL,
+  model       VARCHAR(64)  NOT NULL,
+  vram        INT          NOT NULL DEFAULT 0,
+  zone        VARCHAR(32),
+  tenant_id   VARCHAR(32)  NOT NULL,
+  qty         INT          NOT NULL DEFAULT 1,
+  price_yuan  DECIMAL(14,4) NOT NULL,
+  status      VARCHAR(16)  NOT NULL DEFAULT 'forming',
+  instance_id VARCHAR(32),
+  fail_reason VARCHAR(256),
+  created_at  TIMESTAMP    NOT NULL,
+  updated_at  TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_gj_card ON group_joins(card_key, status);
+CREATE INDEX IF NOT EXISTS idx_gj_tenant ON group_joins(tenant_id, status);
+
+CREATE TABLE IF NOT EXISTS biz_leads (
+  id            VARCHAR(32) PRIMARY KEY,
+  tenant_id     VARCHAR(32),
+  source        VARCHAR(32)  NOT NULL,
+  model         VARCHAR(64),
+  contact_name  VARCHAR(64),
+  contact_phone VARCHAR(32),
+  note          VARCHAR(512),
+  status        VARCHAR(16)  NOT NULL DEFAULT 'new',
+  reply         VARCHAR(512),
+  created_at    TIMESTAMP    NOT NULL,
+  updated_at    TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_lead_status ON biz_leads(status);
+
+ALTER TABLE instances ADD COLUMN IF NOT EXISTS notify_push BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- SSH 公钥：租户上传后写进实例 authorized_keys，实例接入信息里回显
+CREATE TABLE IF NOT EXISTS ssh_keys (
+  id         VARCHAR(32) PRIMARY KEY,
+  tenant_id  VARCHAR(32)  NOT NULL,
+  name       VARCHAR(64)  NOT NULL,
+  pubkey     VARCHAR(2048) NOT NULL,
+  created_at TIMESTAMP    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ssh_tenant ON ssh_keys(tenant_id);
+
+-- 邀请返券：邀请码挂在租户上，被邀请关系与首充奖励发放标记挂在用户上
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS invite_code VARCHAR(16);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_by VARCHAR(32);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_rewarded BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- 到货提醒带上地区与阈值：客户要的是「山西1区 CLLOUD CPU4 到 1 卡就喊我」，只记机型等于没记
+ALTER TABLE stock_alerts ADD COLUMN IF NOT EXISTS zone VARCHAR(32);
+ALTER TABLE stock_alerts ADD COLUMN IF NOT EXISTS qty INT NOT NULL DEFAULT 1;
+
+-- 需求登记补单位/学校：裸金属与拼团场景商务回访第一句就问这个
+ALTER TABLE biz_leads ADD COLUMN IF NOT EXISTS org VARCHAR(64);
+
+-- 创建实例页选的镜像与数据盘要落到实例上，否则「选了镜像」只是前端动画
+ALTER TABLE instances ADD COLUMN IF NOT EXISTS image_ref VARCHAR(128);
+ALTER TABLE instances ADD COLUMN IF NOT EXISTS data_disk_gb INT NOT NULL DEFAULT 0;

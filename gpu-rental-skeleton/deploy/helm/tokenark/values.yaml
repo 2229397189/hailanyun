@@ -1,0 +1,46 @@
+# TokenArk GPU 算力平台 Helm Chart 配置
+
+namespace:
+  create: true
+  name: tokenark
+
+image:
+  repository: gpu-rental-skeleton-app
+  tag: latest
+  pullPolicy: IfNotPresent
+
+app:
+  replicas: 1
+  # fake = 模拟 Pod 生命周期（无需真实 GPU 集群）；real = 真连集群 apiserver（需要 rbac.enabled）
+  k8sMode: real
+  k8sImage: busybox:1.36
+  prometheusUrl: "http://gpu-rental-prom:9090"
+  # 平台自身不在集群内时（如本机调试连外部集群），挂载一个含 kubeconfig 的 Secret 名；集群内留空即可
+  kubeconfigSecret: ""
+  resources:
+    requests: { cpu: 200m, memory: 512Mi }
+    limits: { memory: 1Gi }
+
+postgres:
+  enabled: true
+  image: postgres:16-alpine
+  password: rental_pwd
+  storageClassName: local-path
+  storage: 2Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+service:
+  type: NodePort
+  port: 8099
+  nodePort: 30080
+
+ingress:
+  enabled: false
+  className: ""
+  host: tokenark.example.com
+
+# real 模式下平台管理租户命名空间 / Pod / ResourceQuota 所需 RBAC
+rbac:
+  enabled: true

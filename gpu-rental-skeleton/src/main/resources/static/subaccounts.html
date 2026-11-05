@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>子账号管理 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 </head>
 <body data-active="sub">
 
@@ -15,13 +15,18 @@
   <div class="cmain">
     <div class="ctopbar"></div>
     <div class="cbody">
+      <div class="msg" id="msg"></div>
       <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px">子账号管理</h2>
-      <div class="hint" style="margin-bottom:12px">为团队成员分配子账号，可限制其可访问的实例与操作权限。</div>
+      <div class="hint" style="margin-bottom:12px">为团队成员分配子账号，共享租户资源与额度（上限 20 个）。</div>
 
       <div class="card" style="overflow:hidden">
-        <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f4f0f9">
-          <span class="hint">共 <b id="cnt">0</b> 个子账号</span>
-          <button class="sm pink-btn" style="margin-left:auto" onclick="add()">新建子账号</button>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f4f0f9">
+          <input id="newName" placeholder="用户名（4-16 位字母/数字/下划线）"
+                 style="flex:1;height:32px;border:1px solid #eee9f8;border-radius:8px;padding:0 12px;font-size:12px">
+          <input id="newPwd" type="password" placeholder="初始密码（含大小写/数字/符号）"
+                 style="flex:1;height:32px;border:1px solid #eee9f8;border-radius:8px;padding:0 12px;font-size:12px">
+          <button class="sm pink-btn" onclick="add()">新建子账号</button>
+          <span class="hint" style="margin-left:auto">共 <b id="cnt">0</b> 个</span>
         </div>
         <div style="display:flex;align-items:center;gap:16px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
              font-size:11px;color:#98a1b3">
@@ -35,45 +40,77 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v13"></script>
+<script src="/console-nav.js?v17"></script>
 <script>
-const KEY = 'gu_subaccounts';
-let list = JSON.parse(localStorage.getItem(KEY) || '[]');
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+if (!TOKEN || !localStorage.getItem('gu_user')) location.replace('/login');
+let LIST = [];
+
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opt.headers || {});
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
+}
 
 function render() {
-  document.getElementById('cnt').textContent = list.length;
+  document.getElementById('cnt').textContent = LIST.length;
   const box = document.getElementById('list');
-  if (!list.length) {
+  if (!LIST.length) {
     box.innerHTML = '<div class="empty-state"><div class="ic">⚙</div><b>暂无子账号</b>' +
       '<span>创建子账号后，成员可独立登录并共享租户资源</span>' +
       '<div><button class="btn-pink" onclick="add()">新建子账号</button></div></div>';
     return;
   }
-  box.innerHTML = list.map(function (s, i) {
+  box.innerHTML = LIST.map(function (s) {
     return '<div style="display:flex;align-items:center;gap:16px;padding:12px 16px;' +
       'border-bottom:1px solid #f8f5fc;font-size:12px">' +
-      '<span style="flex:1"><b>' + s.name + '</b></span>' +
-      '<span style="width:110px">' + s.role + '</span>' +
-      '<span style="width:110px"><span class="pill p-green">正常</span></span>' +
-      '<span style="width:150px" class="hint">' + s.time + '</span>' +
+      '<span style="flex:1"><b>' + s.username + '</b>' +
+      ' <span class="hint">' + s.display_name + '</span></span>' +
+      '<span style="width:110px">子账号</span>' +
+      '<span style="width:110px"><span class="pill ' + (s.status === 'active' ? 'p-green' : 'p-gray') + '">' +
+      (s.status === 'active' ? '正常' : s.status) + '</span></span>' +
+      '<span style="width:150px" class="hint">' + Tf.at(s.created_at) + '</span>' +
       '<span style="width:70px;text-align:right">' +
-      '<button class="sm ghost" onclick="del(' + i + ')">删除</button></span></div>';
+      '<button class="sm ghost" onclick="del(\'' + s.id + '\')">删除</button></span></div>';
   }).join('');
 }
-function add() {
-  const name = prompt('子账号用户名（字母/数字，4-16 位）');
-  if (!name) return;
-  list.push({
-    name: name, role: '运维只读',
-    time: new Date().toLocaleString('zh-CN', { hour12: false }).slice(5)
-  });
-  localStorage.setItem(KEY, JSON.stringify(list)); render();
+
+async function load() {
+  try { LIST = await api('/subaccounts'); render(); }
+  catch (e) { toast(e.message, false); }
 }
-function del(i) {
-  if (!confirm('确认删除该子账号？')) return;
-  list.splice(i, 1); localStorage.setItem(KEY, JSON.stringify(list)); render();
+
+async function add() {
+  const name = $('#newName').value.trim();
+  const pwd = $('#newPwd').value;
+  if (!name) { toast('请填写子账号用户名', false); return; }
+  if (!pwd) { toast('请设置初始密码', false); return; }
+  try {
+    const r = await api('/subaccounts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, password: pwd })
+    });
+    $('#newName').value = ''; $('#newPwd').value = '';
+    toast(r.message, true);
+    await load();
+  } catch (e) { toast(e.message, false); }
 }
-render();
+async function del(id) {
+  if (!confirm('确认删除该子账号？删除后其会话将立即失效。')) return;
+  try { await api('/subaccounts/' + id, { method: 'DELETE' }); await load(); }
+  catch (e) { toast(e.message, false); }
+}
+load();
 </script>
 </body>
 </html>

@@ -3,72 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>主控制台 · TokenArk 创元方舟</title>
+<title>主页看板 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 <style>
-/* 主页概览专属样式；外壳样式统一在 console.css */
-.cbody{padding-top:2px}
-.welcome2{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #f0eff3;
-  border-radius:10px;padding:15px 17px;margin-bottom:12px}
-.welcome2 .ava{width:44px;height:44px;border-radius:50%;flex:0 0 44px;overflow:hidden;
-  background:linear-gradient(135deg,#fde7f3,#f3e8ff);display:flex;align-items:center;justify-content:center;
-  font-size:21px;box-shadow:inset 0 0 0 1px #f6e6f5}
-.welcome2 b{font-size:13px;font-weight:650;color:#1f2937;line-height:1.6}
-.welcome2 b em{font-style:normal;background:linear-gradient(90deg,#e0459a,#c026d3);
-  -webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
-.welcome2 .sub{font-size:10.5px;color:#9aa2b1;margin-top:3px}
-.welcome2 .luck{margin-left:auto;text-align:right;font-size:10px;color:#9aa2b1;white-space:nowrap}
-.welcome2 .luck b{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:#4b5563;
-  background:#fbfbfd;border:1px solid #f1f1f5;border-radius:7px;padding:4px 9px;margin-top:4px;font-weight:400}
-.welcome2 .luck i{font-style:normal;color:#10b981;font-weight:600}
-.grid-c{display:grid;grid-template-columns:1.06fr .94fr;gap:12px;align-items:start}
-.grid-b{display:grid;grid-template-columns:1.06fr .94fr;gap:12px;align-items:start;margin-top:12px}
-.grid.g2{gap:8px}
-.ck2 .k i{width:15px;height:15px;border-radius:4px;display:flex;align-items:center;
-  justify-content:center;font-size:8px;font-style:normal}
-.ck2 .v{font-size:22px}
-.ck2.total{background:#fffafd;border-color:#fbe7f3}
-.ck2.total .v{color:#d6358f}
-.ck2.pink{background:#fffafd;border-color:#fbe7f3}
-.ck2.pink .v{color:#d6358f}
-.ck2.warm{background:#fffbf4;border-color:#f9ecd9}
-.ck2.warm .v{color:#d97706}
-.help-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f6f5f9;align-items:center}
-.help-row:last-child{border-bottom:none;padding-bottom:0}
-.help-row .ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
-  font-size:10px;flex:0 0 auto}
-.help-row b{font-size:11px;display:block;font-weight:600;color:#374151}
-.help-row span{font-size:9.5px;color:#9aa2b1}
-.inv-card{background:linear-gradient(120deg,#fffaf6,#fdf6ff);border:1px solid #f8e9da;border-radius:9px;
-  padding:13px 14px}
-.inv-title{font-size:12px;font-weight:600;line-height:1.7;color:#374151}
-.inv-title em{font-style:normal;color:#d6358f;font-weight:700}
-.inv-rule{font-size:9.5px;color:#9aa2b1;line-height:1.9;margin-top:6px}
-.code-box{margin-top:10px;border:1px dashed #f3cf9b;border-radius:7px;background:#fffdf8;
-  padding:8px 10px;font-size:10px;color:#b45309;display:flex;align-items:center;gap:6px}
-.code-box b{font-size:12.5px;letter-spacing:.06em;color:#d97706}
-.code-box button{margin-left:auto;border:1px solid #f3cf9b;background:#fff;color:#c2410c;
-  font-size:10px;border-radius:5px;padding:3px 8px;cursor:pointer;font-family:inherit}
-.tag-mini{display:inline-flex;align-items:center;height:16px;padding:0 6px;border-radius:4px;
-  font-size:9px;font-weight:600;margin-left:2px}
-.tag-mini.pink{background:linear-gradient(90deg,#fde7f3,#f3e8ff);color:#c026d3}
-.tag-mini.green{background:#e9f9f1;color:#0f9d6e}
-.float2{position:fixed;right:18px;bottom:22px;display:flex;flex-direction:column;gap:9px;z-index:50}
-.float2 a{width:34px;height:34px;border-radius:50%;background:#fff;border:1px solid #ececf2;
-  box-shadow:0 6px 16px -8px rgba(17,24,39,.25);display:flex;align-items:center;justify-content:center;
-  color:#6b7280;font-size:13px;text-decoration:none}
-.float2 a.main{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border-color:transparent}
-.qh{font-style:normal;width:12px;height:12px;border-radius:50%;border:1px solid #d8dbe4;color:#b6bcc9;
-  font-size:8px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px}
-.kmini{margin-left:auto;font-size:9px;font-weight:600;border-radius:4px;padding:1px 5px}
-.kmini.pink{color:#db2777;background:#fdf2f8}
-.kmini.warm{color:#d97706;background:#fff7ed}
-.hdr-tags{display:flex;align-items:center;gap:6px}
-.tag-mini.blue{background:#eaf2fe;color:#2563eb}
-.tag-mini{cursor:pointer}
-@media(max-width:1100px){.grid-c,.grid-b{grid-template-columns:1fr}}
+/* 主页看板专属：外壳样式统一在 console.css */
+.cbody{padding-top:22px}
 </style>
 </head>
 <body data-active="main">
@@ -77,134 +18,270 @@
   <aside class="cs" id="cside"></aside>
 
   <div class="cmain">
-    <div class="ctopbar">
-      <div class="ctabs" id="ctabs"></div>
-    </div>
+    <div class="ctopbar"></div>
+    <div class="ctabrow"></div>
 
     <div class="cbody">
-      <div class="welcome2">
-        <span class="ava">🐰</span>
-        <div>
-          <b><span id="greet">早安</span>，<em>TokenArk <span id="wName">9469</span>同学</em>！新鲜算力已到站，今天从一个小目标开始 🚀</b>
-          <div class="sub">学术之火燃起时，显卡与你一直在场 🔥</div>
+
+      <!-- 欢迎卡 -->
+      <div class="dwelcome">
+        <div class="ava">🐶<span class="dot"></span></div>
+        <div class="wtxt">
+          <h1><span id="greet">早安</span>，<em>TokenArk <span id="wName">9469</span>同学</em>！ 开启一天的学术冲刺吧💪！</h1>
+          <div class="sub">今天也给自己的科研电量留一点余地 🔋。</div>
         </div>
-        <div class="luck">
-          今日 AI 追踪
-          <b>🪄 宜：<i>整理环境</i>　—— 收敛干净，少遇意外</b>
+        <div class="fortune">
+          <div class="t">今日 AI 运势</div>
+          <div class="b"><span class="ball">🔮</span>
+            <i>宜：检查环境</i><span class="dash">——</span>依赖齐全，运行顺滑</div>
         </div>
       </div>
 
-      <div class="grid-c">
-        <div class="card panel">
-          <h3>实例信息 <span class="link-sm" onclick="go('instances')">▤ 管理实例</span></h3>
-          <div class="grid g2">
-            <div class="ck2"><div class="k"><i style="background:#fdeef7;color:#e0459a">▦</i>实例总数<em class="qh">?</em></div>
-              <div class="v" id="kTotal">0</div></div>
-            <div class="ck2"><div class="k"><i style="background:#e8f9f1;color:#10b981">◉</i>运行中<em class="qh">?</em></div>
-              <div class="v" id="kRun">0</div></div>
-            <div class="ck2"><div class="k"><i style="background:#fef4e8;color:#f59e0b">◔</i>即将到期<em class="qh">?</em></div>
-              <div class="v" id="kSoon">0</div></div>
-            <div class="ck2"><div class="k"><i style="background:#fdeced;color:#ef4444">◈</i>即将释放<em class="qh">?</em></div>
-              <div class="v" id="kRel">0</div></div>
-          </div>
-        </div>
-
-        <div class="card panel">
-          <h3>账户概况 <span class="link-sm" onclick="location.href='/recharge.html'">▤ 充值</span></h3>
-          <div class="grid g2">
-            <div class="ck2 total"><div class="k">账户总余额</div>
-              <div class="v" id="balTotal">¥0<small> 元</small></div></div>
-            <div class="ck2"><div class="k">现金余额<em class="qh">?</em></div>
-              <div class="v" id="balCash">¥0<small> 元</small></div></div>
-            <div class="ck2 pink"><div class="k">模型余额 <span class="kmini pink">余额明细</span></div>
-              <div class="v">¥0<small> 元</small></div></div>
-            <div class="ck2 warm"><div class="k">代金券余额 <span class="kmini warm">券包</span></div>
-              <div class="v">¥0<small> 元</small></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid-b">
-        <div class="card panel">
-          <h3>帮助文档 <span class="link-sm" onclick="tip('AI 问答')">AI 问答</span></h3>
-          <div class="help-row">
-            <span class="ic" style="background:#eaf2fe;color:#3b82f6">◈</span>
-            <div><b>快速开始</b><span>创建第一个实例</span></div>
-          </div>
-          <div class="help-row">
-            <span class="ic" style="background:#e8f9f1;color:#10b981">▦</span>
-            <div><b>GPU 选型</b><span>选择适合您的 GPU</span></div>
-          </div>
-          <div class="help-row">
-            <span class="ic" style="background:#fef4e8;color:#f59e0b">✦</span>
-            <div><b>功能导览</b><span>查看平台功能总览</span></div>
-          </div>
-        </div>
-
-        <div class="card panel">
-          <h3 style="margin-bottom:0">
-            <span>邀请赠送</span>
-            <span class="hdr-tags">
-              <span class="tag-mini green" onclick="tip('联系客服')">联系客服</span>
-              <span class="tag-mini blue" onclick="tip('技术交流群')">技术交流群</span>
-              <span class="link-sm" onclick="tip('邀请记录')">邀请记录</span>
-            </span>
+      <div class="crow">
+        <!-- 实例信息 -->
+        <div class="ccard">
+          <h3>实例信息
+            <span class="link-sm" onclick="location.href='/instances'">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>
+              管理实例</span>
           </h3>
-          <div class="inv-card" style="margin-top:12px">
-            <div class="inv-title">新人首次充值满 1 元 <em>送 5 元</em> 代金券，邀请好友再赚 <em>3 元</em>！</div>
-            <div class="inv-rule" style="margin-top:8px">
-              注意事项：<br>
-              1. 目前活动赠送金额自动发放，满足条件请登录后查收。<br>
-              2. 被邀请人需完成首次充值，邀请人可获得 3 元代金券。<br>
-              3. 所有赠送金额有效期三个月，请及时使用。<br>
-              4. 如存在异常套现行为，平台有权回收已发放的代金券。
+          <div class="dtiles">
+            <div class="dtile">
+              <div class="k"><span class="dti p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg></span>实例总数<span class="q" title="当前账号下全部实例数量">i</span></div>
+              <div class="v" id="kTotal">0</div>
             </div>
-            <div class="code-box">我的邀请码：<b id="invCode">AHH2QJ9G</b>
-              <button onclick="copyCode()">复制邀请码</button></div>
+            <div class="dtile">
+              <div class="k"><span class="dti g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/></svg></span>运行中<span class="q" title="状态为运行中的实例数量">i</span></div>
+              <div class="v" id="kRun">0</div>
+            </div>
+            <div class="dtile">
+              <div class="k"><span class="dti a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>即将到期<span class="q" title="24 小时内到期的实例数量">i</span></div>
+              <div class="v" id="kSoon">0</div>
+            </div>
+            <div class="dtile">
+              <div class="k"><span class="dti r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>即将释放<span class="q" title="到期后待释放的实例数量">i</span></div>
+              <div class="v" id="kRel">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 账户概览 -->
+        <div class="ccard">
+          <h3>账户概览
+            <span class="link-sm" onclick="location.href='/recharge'">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+              充值</span>
+          </h3>
+          <div class="dtiles">
+            <div class="dtile tint-p">
+              <div class="k">账户总余额<span class="q" title="现金余额 + 未使用代金券合计">i</span></div>
+              <div class="v" id="balTotal"><i>¥</i>0</div>
+            </div>
+            <div class="dtile">
+              <div class="k">现金余额<span class="q" title="可提现、可退款的充值余额">i</span></div>
+              <div class="v" id="balCash"><i>¥</i>0</div>
+            </div>
+            <div class="dtile">
+              <div class="k">模型调用消费<span class="q" title="大模型 API 按 Token 计量，直接从现金余额扣，没有独立模型钱包">i</span>
+                <span class="act" onclick="maasUsage()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                  调用明细</span></div>
+              <div class="v" id="balMaas"><i>¥</i>0</div>
+            </div>
+            <div class="dtile tint-a">
+              <div class="k">代金券余额<span class="q" title="活动与邀请赠送的代金券合计">i</span>
+                <span class="act" style="color:#d97706" onclick="location.href='/account'">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                  券包</span></div>
+              <div class="v" id="balCoupon"><i>¥</i>0</div>
+            </div>
           </div>
         </div>
       </div>
+
+      <div class="crow">
+        <!-- 帮助文档 -->
+        <div class="ccard">
+          <h3>帮助文档
+            <span class="link-sm" onclick="Biz.assistant()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+              AI问答</span>
+          </h3>
+          <a class="hrow" href="/instances">
+            <span class="hi b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span>
+            <span><b>快速开始</b><span>创建第一个实例</span></span>
+          </a>
+          <a class="hrow" href="/market">
+            <span class="hi g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg></span>
+            <span><b>GPU选型</b><span>选择适合您的GPU</span></span>
+          </a>
+          <a class="hrow" href="/index#docs">
+            <span class="hi c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span>
+            <span><b>功能导览</b><span>查看平台功能</span></span>
+          </a>
+        </div>
+
+        <!-- 邀请赠送 -->
+        <div class="ccard">
+          <h3>
+            <span class="hd"><span class="em">🎁</span>邀请赠送
+              <button class="dpill orange" onclick="Biz.ticket({title:'联系客服',subject:'邀请活动咨询',extra:'客服会以工单形式回复，进度在「工单」页可查。'})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h9a4 4 0 0 1 4 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 11V5a4 4 0 0 1 8 0"/><path d="M21 15h-2a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1"/></svg>
+                联系客服</button>
+              <button class="dpill green" onclick="Biz.ticket({title:'技术交流群',subject:'申请加入技术交流群',content:'希望加入技术交流群，接收镜像更新与活动通知。',extra:'提交后管理员会在工单里回复群二维码或邀请链接。'})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                技术交流群</button>
+            </span>
+            <span class="link-sm" onclick="inviteRecords()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              邀请记录</span>
+          </h3>
+          <div class="inv-hero" id="invHero">🎉 邀请好友注册并首充，双方都能拿到代金券</div>
+          <div class="notes" id="invNotes">
+            注意事项：<br>
+            1. 好友通过你的邀请码注册后，<span class="r">首次充值达标即自动发券</span>，无需人工领取。<br>
+            2. 被邀请人得 <span class="r" id="noteInvitee">5元</span>代金券，你得 <span class="r" id="noteInviter">3元</span>返券。<br>
+            3. 赠送代金券 <span class="r" id="noteDays">有效期三个月</span>，请及时使用。<br>
+            4. 如存在异常邀请行为，平台有权追回已发放的代金券。
+          </div>
+          <div class="codebox">
+            <div class="cw">
+              <div class="lbl">我的邀请码</div>
+              <div class="cd" id="invCode">————</div>
+            </div>
+            <button onclick="copyInvite()">复制邀请链接</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<div class="float2">
-  <a href="#" onclick="tip('帮助中心');return false" title="帮助">?</a>
-  <a class="main" href="#" onclick="tip('在线客服');return false" title="在线客服">💬</a>
-</div>
+<button class="float2" title="在线客服" onclick="Biz.ticket({title:'在线客服',subject:'咨询：',extra:'提交后进入平台工单队列，客服回复会推送到「消息中心」。'})">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+</button>
 
-<script src="/console-nav.js?v13"></script>
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if (!TOKEN || !U) location.replace('/login.html');
+if (!TOKEN || !U) location.replace('/login');
 const TENANT = U.tenantId || 't1';
 const h = new Date().getHours();
-$('#greet').textContent = h < 6 ? '凌晨好' : h < 12 ? '上午好' : h < 18 ? '下午好' : '晚上好';
-$('#wName').textContent = U.username;
-$('#invCode').textContent = 'AHH' + (U.username || 'USER').slice(0, 3).toUpperCase() + '9G';
+$('#greet').textContent = h < 6 ? '凌晨好' : h < 12 ? '早安' : h < 18 ? '下午好' : '晚上好';
+$('#wName').textContent = U.displayName || U.username;
 
 async function api(p) {
   const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
-  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
   const t = await r.text();
   let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
   if (!r.ok) throw new Error(j.message || r.status);
   return j;
 }
-function tip(n) { alert('演示环境：「' + n + '」页面尚未实现。'); return false; }
-function go(v) { location.href = '/portal.html#' + v; return false; }
-function copyCode() {
-  const c = document.getElementById('invCode').textContent.trim();
-  navigator.clipboard.writeText(c).then(() => alert('邀请码已复制：' + c))
-    .catch(() => alert('邀请码：' + c));
+const fmtT = t => {
+  if (!t) return '-';
+  const d = new Date(String(t).replace(' ', 'T'));
+  return isNaN(d) ? String(t) : d.toLocaleString('zh-CN', { hour12: false });
+};
+function copyText(text, what) {
+  const done = () => Biz.toast((what || '内容') + '已复制', 'ok');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => prompt('手动复制：', text));
+  } else { prompt('手动复制：', text); }
+}
+
+/* ---------------- 邀请赠送 ----------------
+ * 邀请码、已邀请人数、返券记录全部来自 GET /api/invite（真库），注册链接直达 /login?tab=register&invite= */
+let INV = null;
+async function loadInvite() {
+  try {
+    INV = await api('/invite');
+    $('#invCode').textContent = INV.code || '————';
+    const r = INV.rule || {};
+    $('#invHero').innerHTML = '🎉 新人首次充值满 <span class="em">' + Biz.esc(r.minRecharge || '1')
+      + '元</span> 送 <span class="em">' + Biz.esc(r.rewardInvitee || '5') + '元</span> 代金券，邀请好友再赚 <span class="em">'
+      + Biz.esc(r.rewardInviter || '3') + '元</span>！';
+    $('#noteInvitee').textContent = (r.rewardInvitee || '5') + '元';
+    $('#noteInviter').textContent = (r.rewardInviter || '3') + '元';
+    $('#noteDays').textContent = '有效期 ' + (r.couponDays || 90) + ' 天';
+  } catch (e) {
+    $('#invCode').textContent = '加载失败';
+    console.error(e);
+  }
+}
+function inviteUrl() {
+  return location.origin + (INV && INV.registerUrl ? INV.registerUrl : '/login?tab=register');
+}
+function copyInvite() {
+  if (!INV || !INV.code) return Biz.toast('邀请码还没加载出来，请稍后再试', 'err');
+  copyText(inviteUrl(), '邀请链接');
+}
+/** 邀请记录：谁通过我的码注册了、返券到账没有，一条一条列出来 */
+function inviteRecords() {
+  Biz.modal({
+    title: '邀请记录', wide: true, hideOk: true, cancelText: '关闭',
+    html: '<div class="biz-sum"><span class="hint">我的邀请码</span>' +
+            '<b class="mono" style="font-size:14px">' + Biz.esc((INV && INV.code) || '—') + '</b></div>' +
+          '<div class="biz-rows" id="ivList"><div class="biz-empty">加载中…</div></div>',
+    tip: '好友用你的邀请码注册后会出现在这里；对方首次充值满门槛，双方代金券由系统自动发放，不用找人领。',
+    ready: async box => {
+      const list = box.querySelector('#ivList');
+      try {
+        const d = await api('/invite');
+        INV = d;
+        const rows = (d.invited || []).map(u =>
+          '<div class="biz-row"><div class="t"><b>' + Biz.esc(u.display_name || u.username) + '</b>' +
+            '<span class="biz-tag ' + (u.invite_rewarded ? 'ok' : '') + '">' +
+            (u.invite_rewarded ? '已返券' : '待首充') + '</span></div>' +
+            '<div class="d mono">@' + Biz.esc(u.username) + ' · 注册于 ' + Biz.esc(fmtT(u.created_at)) + '</div></div>').join('');
+        const rewards = (d.rewards || []).map(c =>
+          '<div class="biz-row"><div class="t"><b>' + Biz.esc(c.title) + '</b>' +
+            '<span class="biz-tag ' + (c.status === 'unused' ? 'ok' : '') + '">' + Biz.esc(c.status === 'unused' ? '未使用' : c.status) + '</span></div>' +
+            '<div class="d">¥' + Number(c.amount_yuan || 0).toFixed(2) + ' · ' + Biz.esc(fmtT(c.expire_at)) + ' 到期</div></div>').join('');
+        list.innerHTML =
+          '<div class="biz-empty" style="padding-bottom:6px">已邀请 ' + (d.invitedCount || 0) +
+            ' 人，其中 ' + (d.rewardedCount || 0) + ' 人完成首充</div>' +
+          (rows || '<div class="biz-empty">还没有人通过你的邀请码注册，把下面的链接发出去试试。</div>') +
+          (rewards ? '<div class="biz-empty" style="padding:10px 0 6px">返券明细</div>' + rewards : '');
+      } catch (e) { list.innerHTML = '<div class="biz-empty">加载失败：' + Biz.esc(e.message) + '</div>'; }
+    }
+  });
+}
+
+/* ---------------- 模型调用消费 ----------------
+ * 大模型 API 按 Token 计量后直接扣现金余额，这里展示真实账单而不是虚构的「模型钱包」 */
+function maasUsage() {
+  Biz.modal({
+    title: '模型调用明细', wide: true, hideOk: true, cancelText: '关闭',
+    html: '<div class="biz-rows" id="muList"><div class="biz-empty">加载中…</div></div>',
+    tip: '数据来自 MaaS 网关的真实计量记录（最近 100 条）。消费直接从现金余额扣除，平台没有独立的模型钱包，因此也没有「余额划转」这一步。',
+    ready: async box => {
+      const list = box.querySelector('#muList');
+      try {
+        const d = await api('/maas/usage');
+        const items = d.items || [];
+        list.innerHTML = items.length
+          ? '<div class="biz-empty" style="padding-bottom:6px">累计消费 ¥' + Number(d.total || 0).toFixed(4) + '</div>' +
+            items.map(r =>
+              '<div class="biz-row"><div class="t"><b>' + Biz.esc(r.model) + '</b>' +
+                '<span class="biz-tag">¥' + Number(r.amount_yuan || 0).toFixed(4) + '</span></div>' +
+                '<div class="d mono">输入 ' + r.prompt_tokens + ' tok · 输出 ' + r.completion_tokens +
+                ' tok · ' + Biz.esc(fmtT(r.created_at)) + '</div></div>').join('')
+          : '<div class="biz-empty">还没有模型调用记录。到「大模型 API」页创建密钥并调用一次，这里就会出现账单。</div>';
+      } catch (e) { list.innerHTML = '<div class="biz-empty">加载失败：' + Biz.esc(e.message) + '</div>'; }
+    }
+  });
 }
 
 (async function () {
+  loadInvite();
   try {
-    const [list, tenants] = await Promise.all([
-      api('/instances?tenantId=' + TENANT), api('/tenants')
+    const [list, tenants, coupons, usage] = await Promise.all([
+      api('/instances?tenantId=' + TENANT), api('/tenants'), api('/coupons'), api('/maas/usage')
     ]);
     const running = list.filter(i => i.status === 'running');
     const soon = list.filter(i => i.expire_at && (new Date(i.expire_at) - Date.now()) < 86400000 && i.status !== 'released');
@@ -215,8 +292,12 @@ function copyCode() {
 
     const me = tenants.find(t => t.id === TENANT) || {};
     const bal = Number(me.balance_yuan) || 0;
-    $('#balTotal').innerHTML = '¥' + bal.toFixed(2) + '<small> 元</small>';
-    $('#balCash').innerHTML = '¥' + bal.toFixed(2) + '<small> 元</small>';
+    const couponBal = (coupons || []).filter(c => c.status === 'unused')
+      .reduce((a, c) => a + (Number(c.amount_yuan) || 0), 0);
+    $('#balTotal').innerHTML = '<i>¥</i>' + (bal + couponBal).toFixed(2);
+    $('#balCash').innerHTML = '<i>¥</i>' + bal.toFixed(2);
+    $('#balCoupon').innerHTML = '<i>¥</i>' + couponBal.toFixed(2);
+    $('#balMaas').innerHTML = '<i>¥</i>' + Number(usage.total || 0).toFixed(4);
   } catch (e) { console.error(e); }
 })();
 </script>

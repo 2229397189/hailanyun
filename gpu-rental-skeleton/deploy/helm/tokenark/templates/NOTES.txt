@@ -1,0 +1,22 @@
+TokenArk 创元方舟 已部署：
+
+{{- if .Values.ingress.enabled }}
+  访问入口：http://{{ .Values.ingress.host }}
+{{- else }}
+  访问入口：NodePort {{ .Values.service.nodePort }}（service type={{ .Values.service.type }}）
+{{- end }}
+
+  演示账号（初始密码 Hly@2026）：
+    admin / ops / tenant_a ~ tenant_e
+
+  模式：RENTAL_K8S_MODE={{ .Values.app.k8sMode }}
+{{- if eq .Values.app.k8sMode "real" }}
+  real 模式已启用 RBAC（ServiceAccount tokenark-app）。
+{{- else }}
+  fake 模式无需真实 GPU 集群；改 values.yaml 里 app.k8sMode=real 即接真实集群。
+{{- end }}
+{{- if .Values.app.kubeconfigSecret }}
+  已挂载 kubeconfig Secret：{{ .Values.app.kubeconfigSecret }}
+{{- end }}
+
+  升级：helm upgrade tokenark . -n {{ .Values.namespace.name }} --values values.yaml

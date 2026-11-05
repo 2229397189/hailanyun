@@ -27,7 +27,7 @@ public class FakeK8s implements K8sClient {
     private final Set<String> stuck = ConcurrentHashMap.newKeySet();
 
     @Override
-    public String create(String namespace, String podName, int gpuCount) {
+    public String create(String namespace, String podName, int gpuCount, String imageRef, int dataDiskGb) {
         createdAt.put(podName, System.currentTimeMillis());
         running.add(podName);
         return namespace + "/" + podName;
@@ -47,6 +47,11 @@ public class FakeK8s implements K8sClient {
         running.remove(podName);
         createdAt.remove(podName);
         return true;
+    }
+
+    @Override
+    public void deleteData(String namespace, String podName) {
+        // 模拟运行时没有真实卷，删除即成功
     }
 
     @Override

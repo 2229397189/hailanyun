@@ -657,16 +657,6 @@ label{display:block;font-size:11.5px;color:var(--ink2);margin-bottom:5px}
 .c-topnav .inner{max-width:100%;height:56px;display:flex;align-items:center;gap:34px;padding:0 20px}
 .c-topnav .navlinks{gap:26px;font-size:13px}
 .c-topnav .btn-console{height:30px;font-size:12px;border-radius:7px;padding:0 12px}
-.c-breadcrumb{padding:10px 20px 0;font-size:11px;color:#98a1b3;display:flex;align-items:center;gap:6px}
-.c-breadcrumb b{color:#5b6478;font-weight:500}
-.c-tabsbar{background:#fff;border-bottom:1px solid #f1eef9;padding:6px 14px 0;position:sticky;top:56px;z-index:60}
-.c-tabsbar .ctabs{height:40px;gap:2px}
-.c-tabsbar .ctab2{padding:5px 9px;border-radius:7px;font-size:12px}
-.c-tabsbar .ctab2.on{background:#fdf2fb;color:#c026d3}
-.cs .grp2{font-size:10px;color:#b3b9c6;padding:12px 10px 4px;letter-spacing:.06em}
-.cs a .ic{color:#c084fc}
-.cs a.on .ic{color:#c026d3}
-.cs a.on{background:#fdf2fb;color:#c026d3}
 .empty-state{text-align:center;padding:56px 0 60px;color:#b3b9c6}
 .empty-state .ic{width:64px;height:64px;border-radius:16px;background:#faf7fd;border:1px solid #f3eef9;
   display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:#d8c7e8}
@@ -774,3 +764,80 @@ label{display:block;font-size:11.5px;color:var(--ink2);margin-bottom:5px}
   overflow:hidden;text-overflow:ellipsis}
 .mirror span{display:block;font-size:9px;color:#98a1b3;margin-top:3px;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
+
+/* ============================================================
+   业务动作共用组件（biz.js）：宽弹窗 / 轻提示 / 助手对话 / 列表
+   ============================================================ */
+.modal .box.wide{width:560px}
+.biz-body .field:last-child{margin-bottom:0}
+.biz-body textarea{width:100%;border:1px solid #e6dcfa;border-radius:10px;padding:9px 11px;
+  font-size:12.5px;font-family:inherit;resize:vertical;background:#fff;color:var(--ink)}
+.biz-body textarea:focus{outline:none;border-color:#c9a8f7;box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.biz-body input:focus{outline:none;border-color:#c9a8f7;box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+
+.biz-toast{position:fixed;left:50%;bottom:44px;z-index:200;transform:translate(-50%,14px);
+  opacity:0;pointer-events:none;transition:.22s;max-width:80vw;
+  background:rgba(24,16,48,.92);color:#fff;font-size:12.5px;padding:10px 16px;border-radius:10px;
+  box-shadow:0 14px 34px -14px rgba(24,16,48,.6)}
+.biz-toast.on{opacity:1;transform:translate(-50%,0)}
+.biz-toast.ok{background:#0f766e}
+.biz-toast.err{background:#b91c1c}
+
+/* 概要条：需求类型 / 拼单机型这种「你正在操作什么」 */
+.biz-sum{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 13px;background:var(--brand-bg2);border:1px solid var(--brand-line);
+  border-radius:11px;margin-bottom:13px}
+.biz-sum .hint{font-size:11px;color:var(--ink3)}
+
+/* 结果条：需求编号、实例 ID 这类提交后的凭据 */
+.biz-rows{display:flex;flex-direction:column;gap:9px}
+.biz-row{padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.biz-row .t{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.biz-row .t b{font-size:12.5px;font-weight:650}
+.biz-row .d{font-size:11.5px;color:var(--ink2);line-height:1.7}
+.biz-tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#6d28d9;
+  background:#f3edff;border:1px solid #e4d6ff;border-radius:6px;padding:1px 7px}
+.biz-tag.ok{color:#15803d;background:#f0fdf4;border-color:#bbf7d0}
+.biz-tag.warn{color:#b45309;background:#fffbeb;border-color:#fde68a}
+.biz-tag.err{color:#b91c1c;background:#fef2f2;border-color:#fecaca}
+.biz-empty{padding:22px 10px;text-align:center;font-size:12px;color:var(--ink3)}
+
+/* 数量步进器（拼租张数） */
+.biz-stepper{display:flex;align-items:center;gap:0;border:1px solid #e6dcfa;border-radius:9px;overflow:hidden;width:110px}
+.biz-stepper button{width:30px;height:32px;border:none;background:#faf7ff;color:#6d28d9;
+  font-size:15px;cursor:pointer;font-family:inherit;line-height:1}
+.biz-stepper button:hover{background:#f1e8ff}
+.biz-stepper button:disabled{color:#c9ccd6;cursor:not-allowed;background:#fafafa}
+.biz-stepper span{flex:1;text-align:center;font-size:13px;font-weight:650}
+
+/* 智能助手对话 */
+.biz-chat{height:270px;overflow-y:auto;padding:12px;background:#fbfaff;border:1px solid var(--line);
+  border-radius:11px;display:flex;flex-direction:column;gap:9px;margin-bottom:10px}
+.biz-msg{max-width:86%;padding:9px 12px;border-radius:11px;font-size:12.5px;line-height:1.75;white-space:pre-wrap}
+.biz-msg.ai{align-self:flex-start;background:#fff;border:1px solid var(--line);color:var(--ink)}
+.biz-msg.me{align-self:flex-end;background:linear-gradient(100deg,#7c3aed,#a855f7);color:#fff}
+.biz-msg .src{display:block;margin-top:6px;font-size:10px;opacity:.72;line-height:1.5}
+.biz-quick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.biz-quick button{padding:4px 10px;border-radius:14px;border:1px solid #e6dcfa;background:#fff;
+  font-size:11.5px;color:#6d28d9;cursor:pointer;font-family:inherit;transition:.14s}
+.biz-quick button:hover{background:#f6f0ff;border-color:#d3bcf7}
+
+/* 拼团页：卡片上的真实数量下拉、我的拼团入口、满员按钮 */
+.rg-box select.v{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:8px;height:36px;
+  padding:0 8px;font-size:12px;font-weight:700;color:#334155;font-family:inherit;cursor:pointer}
+.rg-box select.v:focus{outline:none;border-color:#c9a8f7}
+.rg-btn.dis{background:#f1f2f6;color:#a8b0bf;box-shadow:none;cursor:not-allowed}
+.rg-btn.dis:hover{filter:none}
+.rg-mine{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:#7c3aed;font-weight:600}
+.rg-mine b{min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#f3edff;
+  color:#6d28d9;font-size:10.5px;display:inline-flex;align-items:center;justify-content:center}
+
+/* 开关（订阅推送这类布尔设置） */
+.biz-sw{position:relative;display:inline-block;width:38px;height:21px;flex:0 0 auto}
+.biz-sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.biz-sw i{position:absolute;inset:0;border-radius:11px;background:#e2e5ee;transition:.18s;pointer-events:none}
+.biz-sw i::after{content:"";position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.18s}
+.biz-sw input:checked + i{background:linear-gradient(100deg,#7c3aed,#a855f7)}
+.biz-sw input:checked + i::after{transform:translateX(17px)}
+.biz-sw input:disabled{cursor:not-allowed}

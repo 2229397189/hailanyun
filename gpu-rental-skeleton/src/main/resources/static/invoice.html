@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发票管理 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
+<style>
+.invbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.inv-sum{background:#fbf9ff;border:1px dashed #e6dcfa;border-radius:10px;padding:11px 14px;font-size:12.5px;
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.inv-sum b{font-size:17px;color:#7c3aed}
+.off{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;font-size:10.5px;
+  background:#f4f4f7;color:#9aa2b1;border:1px dashed #e2e2ea}
+</style>
+</head>
+<body data-active="invoice">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"></div>
+    <div class="cbody">
+      <div class="msg" id="msg"></div>
+
+      <div class="dtiles" style="margin-bottom:14px">
+        <div class="dtile tint-p">
+          <div class="k">开票主体</div>
+          <div class="v" id="kName" style="font-size:18px">–</div>
+          <div class="hint">即租户名称，平台暂不支持自定义抬头</div>
+        </div>
+        <div class="dtile">
+          <div class="k">已开具</div>
+          <div class="v" id="kIssued">0<small> 张</small></div>
+          <div class="hint">累计金额 <b id="kIssuedSum">¥0.00</b></div>
+        </div>
+        <div class="dtile">
+          <div class="k">待开具</div>
+          <div class="v" id="kDraft">0<small> 张</small></div>
+          <div class="hint">草稿状态，点「开具」即生效</div>
+        </div>
+        <div class="dtile">
+          <div class="k">可开票消费</div>
+          <div class="v" id="kAvail"><i>¥</i>0.00</div>
+          <div class="hint">账户已结算消费合计</div>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <h3>发票管理 <span class="s">按月开具，金额 = 该自然月已结算账单合计（服务端计算）</span></h3>
+        <div class="invbar">
+          <button onclick="applyInvoice()">申请开票</button>
+          <button class="ghost sm" onclick="load()">刷新</button>
+          <button class="ghost sm" onclick="exportCsv()">导出开票信息 CSV</button>
+          <span class="off" title="平台未对接电子发票开票系统，PDF 下载不可用">电子票 PDF 下载：未接入</span>
+        </div>
+        <div class="hint" style="margin-bottom:12px">
+          流程：选账期 → 平台按该月 <span class="mono">billing_records</span> 汇总生成草稿 → 点「开具」转成已开具（演示环境为电子票，不产生真实税票）。
+          同一账期重复申请会直接返回已有草稿，不会重复开票。
+        </div>
+        <div id="table"><div class="empty">加载中…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login');
+const TENANT = U.tenantId || 't1';
+const fmt = n => (Number(n) || 0).toFixed(2);
+const ST = { draft: ['待开具', 'p-amber'], issued: ['已开具', 'p-green'] };
+let LIST = [], TENANT_NAME = '–', SETTLED = 0, RECORDS = [];
+
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opt.headers || {});
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function time(v) { return Tf.sec(v); }
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
+}
+function monthOf(v) { return String(v || '').slice(0, 7); }
+function sumOfMonth(p) {
+  return RECORDS.filter(r => monthOf(r.settled_at) === p)
+    .reduce((a, r) => a + Number(r.amount || 0), 0);
+}
+
+function render() {
+  const issued = LIST.filter(i => i.status === 'issued');
+  $('#kIssued').innerHTML = issued.length + '<small> 张</small>';
+  $('#kIssuedSum').textContent = '¥' + fmt(issued.reduce((a, i) => a + Number(i.amount || 0), 0));
+  $('#kDraft').innerHTML = LIST.filter(i => i.status === 'draft').length + '<small> 张</small>';
+  $('#kAvail').innerHTML = '<i>¥</i>' + fmt(SETTLED);
+  $('#kName').textContent = TENANT_NAME;
+
+  if (!LIST.length) {
+    $('#table').innerHTML = '<div class="empty-state"><div class="ic">🧾</div><b>还没有开票记录</b>' +
+      '<span>产生消费后，点上方「申请开票」选择账期即可生成该月发票草稿</span></div>';
+    return;
+  }
+  $('#table').innerHTML = '<table><thead><tr><th>账期</th><th class="num">开票金额</th><th>状态</th>' +
+    '<th>生成时间</th><th>开具时间</th><th>发票号</th><th>操作</th></tr></thead><tbody>' +
+    LIST.map(i => {
+      const st = ST[i.status] || [i.status, 'p-gray'];
+      return '<tr><td class="mono">' + i.period + '</td>' +
+        '<td class="num mono">¥' + fmt(i.amount) + '</td>' +
+        '<td><span class="pill ' + st[1] + '">' + st[0] + '</span></td>' +
+        '<td class="hint">' + time(i.created_at) + '</td>' +
+        '<td class="hint">' + (i.issued_at ? time(i.issued_at) : '—') + '</td>' +
+        '<td class="mono">' + Biz.esc(i.id) + '</td>' +
+        '<td>' + (i.status === 'draft'
+          ? '<button class="sm" style="background:#7c3aed;color:#fff;border:none" onclick="issue(\'' +
+              Biz.esc(i.id) + '\')">开具</button>'
+          : '<button class="ghost sm" onclick="copyId(\'' + Biz.esc(i.id) + '\')">复制发票号</button>') +
+        '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+async function load() {
+  try {
+    LIST = await api('/invoices');
+  } catch (e) {
+    LIST = [];
+    $('#table').innerHTML = '<div class="empty">发票列表加载失败：' + Biz.esc(e.message) + '</div>';
+  }
+  try {
+    const b = await api('/billing?tenantId=' + encodeURIComponent(TENANT));
+    SETTLED = Number(b.settled || 0);
+    RECORDS = b.records || [];
+  } catch (e) { RECORDS = []; }
+  try {
+    const ts = await api('/tenants');
+    const arr = Array.isArray(ts) ? ts : (ts.items || []);
+    const me = arr.find(t => t.id === TENANT || t.tenantId === TENANT) || {};
+    TENANT_NAME = me.name || '–';
+  } catch (e) { TENANT_NAME = '–'; }
+  render();
+}
+
+function thisPeriod() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function applyInvoice() {
+  const p = thisPeriod();
+  Biz.modal({
+    title: '申请开票',
+    okText: '生成发票草稿',
+    html:
+      '<div class="field"><label>开票主体（租户名称）</label>' +
+        '<input id="ivTitle" value="' + Biz.esc(TENANT_NAME) + '" readonly style="background:#fafafc"></div>' +
+      '<div class="field"><label>账期</label>' +
+        '<input type="month" id="ivPeriod" value="' + p + '"></div>' +
+      '<div class="inv-sum"><span>该账期可开票金额（按已加载账单前端预估）</span><b id="ivAmt">¥' +
+        fmt(sumOfMonth(p)) + '</b></div>' +
+      '<div class="tip" style="margin:0">最终金额由服务端按该自然月的已结算账单合计计算；' +
+        '账单接口最多返回最近 100 条，若账期较早，这里的预估可能偏小。' +
+        '抬头与税号需联系平台商务在后台维护，当前页面不支持自定义。</div>',
+    ready: box => {
+      const inp = box.querySelector('#ivPeriod');
+      inp.onchange = () => { box.querySelector('#ivAmt').textContent = '¥' + fmt(sumOfMonth(inp.value)); };
+    },
+    onOk: async (box, close) => {
+      const period = box.querySelector('#ivPeriod').value;
+      if (!/^\d{4}-\d{2}$/.test(period)) return box.showError('账期格式应为 yyyy-MM');
+      box.busy(true);
+      try {
+        const r = await api('/invoices/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ period })
+        });
+        close();
+        const inv = r.invoice || r;
+        Biz.toast(r.message + (inv.period ? '（' + inv.period + ' ¥' + fmt(inv.amount) + '）' : ''), 'ok');
+        await load();
+      } catch (e) {
+        box.busy(false);
+        box.showError(e.message);
+      }
+    }
+  });
+}
+
+function issue(id) {
+  const inv = LIST.find(i => i.id === id) || {};
+  Biz.modal({
+    title: '确认开具发票',
+    okText: '确认开具',
+    html: '<div class="biz-sum"><span class="hint">账期</span><b style="font-size:13.5px">' +
+      Biz.esc(inv.period || id) + '</b></div>' +
+      '<div class="biz-sum" style="margin-top:8px"><span class="hint">金额</span><b style="font-size:18px;color:#7c3aed">¥' +
+      fmt(inv.amount) + '</b></div>' +
+      '<div class="tip" style="margin:12px 0 0">开具后状态变为「已开具」，不可重复开具、不可作废（演示环境为电子票，不产生真实税票）。</div>',
+    onOk: async (box, close) => {
+      box.busy(true);
+      try {
+        const r = await api('/invoices/' + id + '/issue', { method: 'POST' });
+        close();
+        Biz.toast(r.message, 'ok');
+        await load();
+      } catch (e) {
+        box.busy(false);
+        box.showError(e.message);
+      }
+    }
+  });
+}
+
+function copyId(id) {
+  navigator.clipboard && navigator.clipboard.writeText(id)
+    .then(() => Biz.toast('发票号已复制：' + id, 'ok'))
+    .catch(() => Biz.toast('复制失败，请手动选中：' + id, 'err'));
+}
+
+function exportCsv() {
+  if (!LIST.length) { Biz.toast('还没有开票记录可导出', 'err'); return; }
+  const rows = [['账期', '状态', '开票金额(元)', '发票号', '开票主体', '生成时间', '开具时间']];
+  LIST.forEach(i => rows.push([i.period, (ST[i.status] || [i.status])[0], fmt(i.amount), i.id,
+    TENANT_NAME, time(i.created_at), i.issued_at ? time(i.issued_at) : '']));
+  const blob = new Blob(['\ufeff' + rows.map(l => l.map(c => {
+    const s = String(c == null ? '' : c);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '发票记录_' + TENANT + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  Biz.toast('已导出 ' + LIST.length + ' 条开票记录', 'ok');
+}
+
+load();
+</script>
+</body>
+</html>

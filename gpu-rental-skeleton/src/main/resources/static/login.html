@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>登录 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
 <style>
 .field .eye{position:absolute;right:12px;bottom:12px;font-size:11px;color:#98a1b3;cursor:pointer;
   user-select:none;padding:2px 5px}
@@ -18,6 +18,20 @@
 .demo table{width:100%;margin-top:9px;font-size:11.5px;border-collapse:collapse}
 .demo td{padding:4px 2px;color:#5b6478;border:none}
 .demo code{background:#faf7ff;padding:1px 5px;border-radius:3px;font-size:11px;color:#6d28d9}
+/* 登录 / 注册切换：注册是真接口（POST /api/auth/register），不是占位页 */
+.ltabs{display:flex;gap:22px;border-bottom:1px solid #f0ecf8;margin-bottom:18px}
+.ltabs button{background:none;border:0;padding:0 0 11px;font-size:15px;font-weight:650;color:#98a1b3;
+  cursor:pointer;position:relative;font-family:inherit}
+.ltabs button.on{color:#1c1533}
+.ltabs button.on::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,#7c3aed,#d946ef)}
+.lswap{font-size:12px;color:#5b6478;text-align:center;margin-top:14px}
+.lswap a{color:#7c3aed;cursor:pointer;font-weight:600}
+.invite-banner{background:#faf7ff;border:1px solid #efe6ff;border-radius:10px;padding:9px 12px;
+  font-size:12px;color:#6d28d9;margin-bottom:14px}
+.pwdmeter{height:4px;border-radius:3px;background:#f0ecf8;overflow:hidden;margin-top:6px}
+.pwdmeter i{display:block;height:100%;width:0;background:#dc2626;transition:width .2s,background .2s}
+.pwdhint{font-size:11px;color:#98a1b3;margin-top:5px}
 </style>
 </head>
 <body>
@@ -32,8 +46,8 @@
         </svg>
       </span>
       <div>
-        <div class="brand-name" style="font-size:16px">Token<span>Ark</span></div>
-        <div class="brand-sub" style="font-size:11px">创元方舟 · 算力运营平台</div>
+        <div class="brand-name" style="font-size:16px" id="brandName">Token<span>Ark</span></div>
+        <div class="brand-sub" style="font-size:11px" id="brandSlogan">创元方舟 · 算力运营平台</div>
       </div>
     </div>
 
@@ -61,10 +75,15 @@
 
   <div class="login-right">
     <div class="login-box">
-      <h3>账号登录</h3>
-      <div class="sub">请使用平台分配的账号登录，忘记密码请联系管理员</div>
+      <div class="ltabs">
+        <button type="button" id="tabLogin" class="on" onclick="showTab('login')">账号登录</button>
+        <button type="button" id="tabReg" onclick="showTab('reg')">免费注册</button>
+      </div>
 
       <div class="alert" id="alert"></div>
+
+      <div id="paneLogin">
+      <div class="sub" style="margin-top:0">请使用平台分配的账号登录，忘记密码请联系管理员</div>
 
       <form id="form" autocomplete="on">
         <div class="field">
@@ -82,20 +101,69 @@
           <label><input type="checkbox" id="remember"> 7 天内免登录</label>
           <span id="capsHint" style="color:#d97706;display:none">大写锁定已开启</span>
         </div>
+        <div class="hint" style="font-size:11px;color:#98a1b3;margin-bottom:8px">
+          登录即代表同意《<a href="/about#terms" style="color:#7c3aed">用户服务协议</a>》，
+          禁止利用平台算力从事虚拟货币「挖矿」等违规活动。
+        </div>
         <button class="btn-primary btn-login" id="submit" type="submit">登 录</button>
       </form>
+
+      <div class="lswap">还没有账号？<a onclick="showTab('reg')">免费注册，立即开通租户</a></div>
 
       <details class="demo">
         <summary>演示账号（点击展开）</summary>
         <table>
           <tr><td>平台管理员</td><td><code>admin</code></td><td><code>Hly@2026</code></td></tr>
           <tr><td>值班运维</td><td><code>ops</code></td><td><code>Hly@2026</code></td></tr>
-          <tr><td>租户用户</td><td><code>tenant_a</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td>星辰智能科技</td><td><code>tenant_a</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td>凌云机器人</td><td><code>tenant_b</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td>幻核互动娱乐</td><td><code>tenant_c</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td>极光量化科技</td><td><code>tenant_d</code></td><td><code>Hly@2026</code></td></tr>
+          <tr><td>蓝湾医疗影像</td><td><code>tenant_e</code></td><td><code>Hly@2026</code></td></tr>
           <tr><td colspan="3" style="color:#98a1b3;padding-top:6px">连续 5 次密码错误将锁定 10 分钟</td></tr>
         </table>
       </details>
+      </div>
 
-      <div class="login-tip">© 2026 TokenArk 创元方舟 · 保留所有权利</div>
+      <!-- 注册：POST /api/auth/register，成功即开通租户并直接返回登录态 -->
+      <div id="paneReg" style="display:none">
+        <div class="sub" style="margin-top:0">自助注册即开通独立租户（默认 2 卡 GPU 配额、余额 0），成功后可直接创建实例</div>
+        <div class="invite-banner" id="inviteBanner" style="display:none"></div>
+        <form id="regForm" autocomplete="on">
+          <div class="field">
+            <label for="rUser">账号</label>
+            <input id="rUser" type="text" placeholder="4-16 位字母、数字或下划线" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="rCompany">企业 / 团队名称</label>
+            <input id="rCompany" type="text" maxlength="48" placeholder="选填，例如：星辰智能科技有限公司">
+          </div>
+          <div class="field">
+            <label for="rPwd">密码</label>
+            <input id="rPwd" type="password" placeholder="至少 8 位，含大小写字母、数字和符号"
+                   autocomplete="new-password" required>
+            <span class="eye" id="eye2">显示</span>
+            <div class="pwdmeter"><i id="rBar"></i></div>
+            <div class="pwdhint" id="rPwdHint">密码至少 8 位，且需包含大写字母、小写字母、数字和符号</div>
+          </div>
+          <div class="field">
+            <label for="rPwd2">确认密码</label>
+            <input id="rPwd2" type="password" placeholder="再输入一次" autocomplete="new-password" required>
+          </div>
+          <div class="field">
+            <label for="rInvite">邀请码（选填）</label>
+            <input id="rInvite" type="text" maxlength="16" placeholder="填了才有首充赠券，邀请人同时返券">
+          </div>
+          <div class="hint" style="font-size:11px;color:#98a1b3;margin-bottom:8px">
+            注册即代表同意《<a href="/about#terms" style="color:#7c3aed">用户服务协议</a>》，
+            禁止利用平台算力从事虚拟货币「挖矿」等违规活动。
+          </div>
+          <button class="btn-primary btn-login" id="regSubmit" type="submit">注册并登录</button>
+        </form>
+        <div class="lswap">已有账号？<a onclick="showTab('login')">直接登录</a></div>
+      </div>
+
+      <div class="login-tip" id="brandCopyright">© 2026 TokenArk 创元方舟 · 保留所有权利</div>
     </div>
   </div>
 </div>
@@ -103,14 +171,40 @@
 <script>
 const $ = s => document.querySelector(s);
 const alertBox = $('#alert');
+const QS = new URLSearchParams(location.search);
+/* next 只允许站内路径，挡掉 //evil.com 这类开放重定向 */
+const NEXT = (() => {
+  const n = QS.get('next') || '';
+  return n.startsWith('/') && !n.startsWith('//') ? n : '';
+})();
+const INVITE = (QS.get('invite') || '').trim().toUpperCase();
+
+// 白标：平台名 / Slogan / 版权由 /api/public/branding 下发，改参数即换品牌
+fetch('/api/public/branding').then(r => r.json()).then(b => {
+  document.title = '登录 · ' + b.name;
+  $('#brandName').textContent = b.logoText;
+  $('#brandSlogan').textContent = b.slogan;
+  $('#brandCopyright').textContent = b.icp ? b.copyright + ' · ' + b.icp : b.copyright;
+  document.documentElement.style.setProperty('--primary', b.primaryColor);
+}).catch(() => {});
 
 function showAlert(msg, ok){
   alertBox.textContent = msg;
   alertBox.className = 'alert ' + (ok ? 'ok' : 'err');
 }
 
+function showTab(which){
+  const reg = which === 'reg';
+  $('#paneLogin').style.display = reg ? 'none' : '';
+  $('#paneReg').style.display = reg ? '' : 'none';
+  $('#tabLogin').classList.toggle('on', !reg);
+  $('#tabReg').classList.toggle('on', reg);
+  alertBox.className = 'alert';
+  alertBox.textContent = '';
+}
+
 const lastUser = localStorage.getItem('gu_last_user');
-if(lastUser) { $('#username').value = lastUser; $('#password').focus(); }
+if(lastUser) { $('#username').value = lastUser; }
 
 $('#eye').onclick = () => {
   const p = $('#password');
@@ -118,10 +212,101 @@ $('#eye').onclick = () => {
   p.type = show ? 'text' : 'password';
   $('#eye').textContent = show ? '隐藏' : '显示';
 };
+$('#eye2').onclick = () => {
+  const p = $('#rPwd');
+  const show = p.type === 'password';
+  p.type = show ? 'text' : 'password';
+  $('#eye2').textContent = show ? '隐藏' : '显示';
+};
 
 $('#password').addEventListener('keyup', e => {
   if(typeof e.getModifierState === 'function'){
     $('#capsHint').style.display = e.getModifierState('CapsLock') ? 'inline' : 'none';
+  }
+});
+
+function enter(j, username, msg){
+  localStorage.setItem('gu_token', j.token);
+  localStorage.setItem('gu_user', JSON.stringify(j.user));
+  localStorage.setItem('gu_last_user', username);
+  showAlert(msg, true);
+  const to = NEXT || ((j.user.role === 'tenant') ? '/portal' : '/admin');
+  setTimeout(() => location.replace(to), 400);
+}
+
+/* ---------------- 注册 ----------------
+ * 真接口 POST /api/auth/register：开通租户 + 租户管理员账号，带邀请码则记下邀请关系，
+ * 首次充值达标由后端发券（TenantExtApi.grantInviteRewards）。 */
+const RULES = [
+  [/[A-Z]/, '大写字母'], [/[a-z]/, '小写字母'], [/[0-9]/, '数字'], [/[^A-Za-z0-9]/, '符号']
+];
+$('#rPwd').addEventListener('input', () => {
+  const v = $('#rPwd').value;
+  const hit = RULES.filter(r => r[0].test(v)).length;
+  const strong = v.length >= 8 && hit === 4;
+  const score = v ? (strong ? 4 : Math.min(3, hit + (v.length >= 8 ? 1 : 0))) : 0;
+  const bar = $('#rBar');
+  bar.style.width = (score * 25) + '%';
+  bar.style.background = score >= 4 ? '#16a34a' : score >= 3 ? '#d97706' : '#dc2626';
+  const miss = RULES.filter(r => !r[0].test(v)).map(r => r[1]).join('、');
+  $('#rPwdHint').textContent = !v ? '密码至少 8 位，且需包含大写字母、小写字母、数字和符号'
+    : strong ? '强度符合要求'
+    : (v.length < 8 ? '还差 ' + (8 - v.length) + ' 位' + (miss ? '，且缺：' + miss : '') : '还缺：' + miss);
+});
+
+async function checkInvite(code){
+  const box = $('#inviteBanner');
+  if(!code){ box.style.display = 'none'; return; }
+  try{
+    const r = await fetch('/api/public/invite?code=' + encodeURIComponent(code));
+    const j = await r.json();
+    box.style.display = '';
+    box.textContent = j.valid
+      ? '🎁 ' + j.company + ' 邀请你加入：首次充值满 ' + j.rule.minRecharge + ' 元你得 '
+        + j.rule.rewardInvitee + ' 元代金券，对方同时获得 ' + j.rule.rewardInviter
+        + ' 元返券（' + j.rule.couponDays + ' 天内有效）'
+      : '⚠️ 邀请码 ' + code + ' 不存在，可以留空直接注册';
+  }catch(e){ box.style.display = 'none'; }
+}
+
+$('#rInvite').addEventListener('change', () => checkInvite($('#rInvite').value.trim().toUpperCase()));
+
+$('#regForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('#regSubmit');
+  const username = $('#rUser').value.trim();
+  const password = $('#rPwd').value;
+  const password2 = $('#rPwd2').value;
+  const tenantName = $('#rCompany').value.trim();
+  const inviteCode = $('#rInvite').value.trim();
+
+  if(!/^[A-Za-z0-9_]{4,16}$/.test(username)){ showAlert('账号需为 4-16 位字母、数字或下划线'); return; }
+  if(password.length < 8 || RULES.some(r => !r[0].test(password))){
+    showAlert('密码至少 8 位，且需包含大写字母、小写字母、数字和符号'); return;
+  }
+  if(password !== password2){ showAlert('两次输入的密码不一致'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '注册中…';
+  alertBox.className = 'alert';
+  try{
+    const r = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password, tenantName, inviteCode})
+    });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok){
+      showAlert(j.message || ('注册失败（HTTP ' + r.status + '）'));
+      btn.disabled = false;
+      btn.textContent = '注册并登录';
+      return;
+    }
+    enter(j, username, '注册成功，租户已开通，正在进入…');
+  }catch(err){
+    showAlert('无法连接服务器，请检查网络或稍后重试');
+    btn.disabled = false;
+    btn.textContent = '注册并登录';
   }
 });
 
@@ -150,20 +335,25 @@ $('#form').addEventListener('submit', async e => {
       btn.textContent = '登 录';
       return;
     }
-
-    localStorage.setItem('gu_token', j.token);
-    localStorage.setItem('gu_user', JSON.stringify(j.user));
-    localStorage.setItem('gu_last_user', username);
-    showAlert('登录成功，正在进入…', true);
-
-    const to = (j.user.role === 'tenant') ? '/portal.html' : '/admin.html';
-    setTimeout(() => location.replace(to), 300);
+    enter(j, username, '登录成功，正在进入…');
   }catch(err){
     showAlert('无法连接服务器，请检查网络或稍后重试');
     btn.disabled = false;
     btn.textContent = '登 录';
   }
 });
+
+/* 邀请链接进来：默认停在注册页，邀请码预填并校验有效性 */
+if(QS.get('tab') === 'register' || INVITE){
+  showTab('reg');
+  if(INVITE){
+    $('#rInvite').value = INVITE;
+    checkInvite(INVITE);
+  }
+  $('#rUser').focus();
+}else if(lastUser){
+  $('#password').focus();
+}
 </script>
 </body>
 </html>

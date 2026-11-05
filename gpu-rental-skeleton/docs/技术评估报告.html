@@ -97,6 +97,7 @@ tr:nth-child(even) td{background:#fbfcfe}
       <span>评估日期 2026-11-03</span>
       <span>评估对象 POC 一期交付物</span>
       <span>环境 单集群 / 2 节点 / 16 卡</span>
+      <span>更新 2026-11-04（C 端运营功能组补齐后）</span>
     </div>
   </div>
 
@@ -109,10 +110,10 @@ tr:nth-child(even) td{background:#fbfcfe}
   </div>
 
   <div class="kpi">
-    <div><b>75</b><span>REST 接口</span></div>
-    <div><b>18</b><span>数据表</span></div>
-    <div><b>3154</b><span>后端代码行</span></div>
-    <div><b>2374</b><span>前端代码行</span></div>
+    <div><b>132</b><span>REST 路由</span></div>
+    <div><b>38</b><span>数据表</span></div>
+    <div><b>8428</b><span>后端代码行</span></div>
+    <div><b>8577</b><span>前端代码行</span></div>
   </div>
 
   <h2 class="sec">一、评估范围与方法 <em>Scope &amp; Method</em></h2>
@@ -172,8 +173,8 @@ tr:nth-child(even) td{background:#fbfcfe}
     <thead><tr><th style="width:12%">阶段</th><th class="num" style="width:9%">条数</th><th class="num" style="width:9%">完整</th><th class="num" style="width:9%">部分</th><th class="num" style="width:9%">未做</th><th>说明</th></tr></thead>
     <tbody>
       <tr><td><b>P0 一期</b></td><td class="num">21</td><td class="num"><b>15</b></td><td class="num">6</td><td class="num">0</td><td>无「未做」，6 项部分实现均因缺硬件或外部组件</td></tr>
-      <tr><td>P1 二期</td><td class="num">12</td><td class="num">2</td><td class="num">5</td><td class="num">5</td><td>缺 RDMA、API Key、自助商城、OpenAPI</td></tr>
-      <tr><td>P2 三期</td><td class="num">7</td><td class="num">0</td><td class="num">1</td><td class="num">6</td><td>推理调优、Token 计费、MIG、发票</td></tr>
+      <tr><td>P1 二期</td><td class="num">12</td><td class="num">3</td><td class="num">5</td><td class="num">4</td><td>缺 RDMA、自助商城、OpenAPI；API Key 已由 MaaS 网关补齐</td></tr>
+      <tr><td>P2 三期</td><td class="num">7</td><td class="num">1</td><td class="num">1</td><td class="num">5</td><td>缺推理调优、MIG、发票；Token 计费已由 MaaS 网关交付</td></tr>
     </tbody>
   </table>
 
@@ -185,8 +186,8 @@ tr:nth-child(even) td{background:#fbfcfe}
       <tr><td>调度策略引擎</td><td>策略可选、可下发到 Pod spec</td><td>无 Volcano，Bin-pack/Spread/Gang 未真实生效</td></tr>
       <tr><td>队列与优先级</td><td>队列配额展示、PriorityClass 预留</td><td>抢占与资源回收未实现</td></tr>
       <tr><td>SSH / Jupyter 交付</td><td>接入信息、公钥、密码重置</td><td>cloud-init 注入与 Ingress 反代未接真机</td></tr>
-      <tr><td>指标采集体系</td><td>时序数据、趋势图、告警规则</td><td>无 Prometheus / DCGM，指标为模拟生成</td></tr>
-      <tr><td>平台部署与联调</td><td>Docker Compose 双容器，健康检查</td><td>未在客户机房 3+9 节点规模验证</td></tr>
+      <tr><td>指标采集体系</td><td>时序数据、趋势图、告警规则、webhook 投递、本机 GPU 实采 agent</td><td>Prometheus 已接（JVM/业务 Gauge/节点），本机 GPU 遥测已由采集 agent 落库（利用率 / 显存 / 温度 / 功耗）；GPU Operator + DCGM 卡级指标需真卡，无卡时给诚实空态不合成</td></tr>
+      <tr><td>平台部署与联调</td><td>Docker Compose + Helm Chart + K8s 部署形态（tokenark 命名空间实测）</td><td>未在客户机房 3+9 节点规模验证</td></tr>
     </tbody>
   </table>
 
@@ -203,6 +204,12 @@ tr:nth-child(even) td{background:#fbfcfe}
       <tr><td>开通租户 → 命名空间 + 配额 + 账号</td><td><span class="tag t-ok">通过</span></td><td>集群真出现 ns 与 gpu-quota 0/4</td></tr>
       <tr><td>重启后数据保留</td><td><span class="tag t-ok">通过</span></td><td>重启前后订单/审计/卡数一致</td></tr>
       <tr><td>平台自身部署为 K8s 工作负载</td><td><span class="tag t-ok">通过</span></td><td>tokenark 命名空间内两个 Deployment Running；ServiceAccount in-cluster 认证生效；由集群内平台创建租户 Pod 成功</td></tr>
+      <tr><td>实例生命周期整组（开关机 / 克隆 / 重置 / 升降配 / 定时关机）</td><td><span class="tag t-ok">通过</span></td><td>定时关机由 Reconciler 按 5 秒轮询自动执行；升降配换新实例并回收旧卡；克隆复制镜像与挂载配置</td></tr>
+      <tr><td>计费口径（闲时 5 折 / 学生 9 折 / 无卡调试 / 优惠券）</td><td><span class="tag t-ok">通过</span></td><td>下单金额=卡数×时长×单价×折扣叠加；券核销条件更新仅一次；结算按秒退款，51 项实测覆盖全部口径</td></tr>
+      <tr><td>实名认证 / 学生认证审核闭环</td><td><span class="tag t-ok">通过</span></td><td>租户提交 → 管理端审核通过 → 学生认证租户下单自动 9 折；驳回留痕可重提</td></tr>
+      <tr><td>镜像分享 / 安全扫描 / 社区广场</td><td><span class="tag t-ok">通过</span></td><td>分享后进入社区列表，扫描写回 <code>scan_status</code>（含「风险」标记），仅本人可删除</td></tr>
+      <tr><td>命令行客户端 ark-cli 全流程</td><td><span class="tag t-ok">通过</span></td><td>登录 / 套餐与 SKU 查询 / 余额 / 实例列表 / 开关机 / 续费 / 释放结算（返回 usedSeconds 与退款）与 Web 端同一套后端</td></tr>
+      <tr><td>三角色自动化回归（51 项）</td><td><span class="tag t-ok">通过</span></td><td>admin / ops / tenant 三角色 API 实测 + 数据库状态断言，2026-11-04 全绿</td></tr>
     </tbody>
   </table>
 
@@ -216,7 +223,7 @@ tr:nth-child(even) td{background:#fbfcfe}
       <tr><td>1</td><td>全链路单副本</td><td>应用、数据库、控制面均为单实例；任一进程崩溃即全站不可用，无自动接管</td><td><span class="tag t-p0">未闭环</span> 需应用 ≥2 副本 + PDB、PG 主备、控制面 3 节点</td></tr>
       <tr><td>2</td><td>无 TLS</td><td>HTTP 明文传输，登录密码与 Bearer Token 可被同网段嗅探</td><td><span class="tag t-ok">已闭环</span> nginx 1.27 终止 TLS，80→443 强制跳转，已配 HSTS 与安全响应头</td></tr>
       <tr><td>3</td><td>无备份与恢复演练</td><td>数据库损坏或误删即不可恢复；无 RPO/RTO 定义</td><td><span class="tag t-ok">已闭环</span> pg_dump -Fc 每 24 小时一次，保留 7 天，已生成并校验首份备份</td></tr>
-      <tr><td>4</td><td>无真实监控告警</td><td>故障靠用户报障发现；指标为模拟数据，不能反映真实状态</td><td><span class="tag t-ok">已闭环</span> Prometheus + Grafana + node-exporter；业务 Gauge 已暴露，仪表盘自动加载</td></tr>
+      <tr><td>4</td><td>无真实监控告警</td><td>故障靠用户报障发现；指标为模拟数据，不能反映真实状态</td><td><span class="tag t-ok">已闭环</span> Prometheus + Grafana + node-exporter；业务 Gauge 已暴露，仪表盘自动加载；告警规则引擎 30 秒评估并 webhook 真实投递</td></tr>
       <tr><td>5</td><td>无私有镜像仓库</td><td>Pod 镜像为占位（busybox），客户业务镜像无来源；离线环境无法交付</td><td><span class="tag t-ok">已闭环</span> registry:2，push/pull 已验证，可作离线镜像中转</td></tr>
       <tr><td>6</td><td>调度策略未验证</td><td>Gang / 抢占 / 队列均未真实生效，分布式训练场景可能死锁</td><td><span class="tag t-p0">未闭环</span> 需部署 Volcano（当前网络无法拉取官方清单）</td></tr>
     </tbody>
@@ -269,12 +276,15 @@ tr:nth-child(even) td{background:#fbfcfe}
       <tr><td>密码存储</td><td>BCrypt 加盐哈希，库内无明文</td></tr>
       <tr><td>暴力破解防护</td><td>连续 5 次失败锁定 10 分钟，失败次数落库</td></tr>
       <tr><td>会话管理</td><td>服务端会话表，可强制下线；同账号最多 5 个活跃会话</td></tr>
-      <tr><td>接口鉴权</td><td>拦截 <code>/api/**</code>，仅放行登录与健康检查</td></tr>
+      <tr><td>接口鉴权</td><td>拦截 <code>/api/**</code>，仅放行登录与健康检查；MaaS 网关 <code>/v1/**</code> 独立 Bearer sk- 鉴权</td></tr>
       <tr><td>身份防伪</td><td>请求头身份与会话不一致直接 403</td></tr>
       <tr><td>接口级 RBAC</td><td>管理接口限 admin/ops；系统管理限 admin</td></tr>
       <tr><td>横向越权</td><td>租户数据按会话强制过滤（本轮修复：此前可查全部租户）</td></tr>
       <tr><td>账号停用</td><td>停用后已签发会话立即失效</td></tr>
       <tr><td>审计</td><td>登录、锁定、改密、停用、清理等写操作全留痕</td></tr>
+      <tr><td>API Key 管理</td><td>MaaS 网关 sk- 密钥只存 SHA-256 哈希与 8 位前缀，明文仅在创建时展示一次，停用即失效</td></tr>
+      <tr><td>实名 / 学生认证</td><td>租户提交证明 → 管理端人工审核（通过 / 驳回留痕），学生认证租户下单自动 9 折；审核动作全审计</td></tr>
+      <tr><td>反挖矿治理</td><td>登录页服务协议条款明示禁止挖矿；巡检自动巡逻「满负荷疑似挖矿」卡并生成 P1 项与处置建议</td></tr>
     </tbody>
   </table>
 
@@ -312,8 +322,8 @@ tr:nth-child(even) td{background:#fbfcfe}
     <thead><tr><th style="width:30%">范围</th><th class="num" style="width:16%">WBS 人日</th><th class="num" style="width:16%">已完成</th><th>剩余</th></tr></thead>
     <tbody>
       <tr><td>P0 一期</td><td class="num">145</td><td class="num">约 130</td><td>已闭环 4 项 P0；剩余 2 项（HA、调度）<b>12–18 人日</b></td></tr>
-      <tr><td>P1 二期</td><td class="num">85</td><td class="num">约 20</td><td>RDMA、API Key、商城、OpenAPI 等</td></tr>
-      <tr><td>P2 三期</td><td class="num">50</td><td class="num">约 5</td><td>推理调优、Token 计费、MIG、发票</td></tr>
+      <tr><td>P1 二期</td><td class="num">85</td><td class="num">约 30</td><td>RDMA、商城、OpenAPI 等</td></tr>
+      <tr><td>P2 三期</td><td class="num">50</td><td class="num">约 10</td><td>推理调优、MIG、发票</td></tr>
     </tbody>
   </table>
 
@@ -346,9 +356,200 @@ tr:nth-child(even) td{background:#fbfcfe}
     <b>一句话给决策层</b>：底座和核心链路已经验证过了，剩下的是把它从「能跑」变成「敢跑」——这部分工作是可估算的工程活，不是技术风险。
   </div>
 
+  <h2 class="sec">十、客户招标需求逐条应答表 <em>req.md V3 全部 144 条 · A/B/C/D 四章</em></h2>
+
+  <p>本章按 <code>req.md</code> V3（2026-10 版）客户招标需求逐条应答，共 144 条：Part A C 端 53 条、Part B toB 37 条、Part C Token 工厂 35 条、Part D 非功能/商务 19 条。判定口径与统计见 <code>项目演进记录.md</code> 第十节，此处直接给结论。</p>
+
+  <div class="note warn">
+    <b>诚实优先</b>——四种状态定义：<span class="tag t-ok">已完成</span> 有可演示的后端实现与接口/类/页面证据；<span class="tag t-part">部分完成</span> 主链路在但明确写出短板；<span class="tag t-p2">仅前端展示</span> UI 存在但无后端支撑；<span class="tag t-no">需真实硬件/外部系统</span> 需 GPU device plugin、支付/短信/税控网关、私有 registry、BMC/RDMA、SSO、License 等外部条件。所有 <code>文件:行号</code> 均在 <code>gpu-rental-skeleton/src/main/java/com/example/rental/</code> 或 <code>src/main/resources/</code> 下，可直接跳转核对。
+  </div>
+
+  <div class="kpi">
+    <div><b>36</b><span>已完成（25.0%）</span></div>
+    <div><b>47</b><span>部分完成（32.6%）</span></div>
+    <div><b>8</b><span>仅前端展示（5.6%）</span></div>
+    <div><b>53</b><span>需真实硬件/外部系统（36.8%）</span></div>
+  </div>
+
+  <h3>A · C 端功能需求（Part A，53 条）</h3>
+  <table>
+    <thead><tr><th style="width:5%">编号</th><th style="width:22%">客户要求（原文摘要）</th><th style="width:9%">状态</th><th style="width:24%">证据（文件:行号 或 接口）</th><th>说明/短板</th></tr></thead>
+    <tbody>
+      <tr><td>A-1</td><td>算力市场（筛选比价）：按型号/卡数/区域/价格筛选排序</td><td><span class="tag t-part">部分完成</span></td><td>CatalogApi.java:224-305 <code>GET /api/catalog/market</code>；Api.java:100-154 <code>GET /api/skus</code>；market.html</td><td>筛选/排序 UI 与实时库存 API 均在；除 5090 外其它卡为预览价（CatalogApi.java:62-77），非真实报价</td></tr>
+      <tr><td>A-2</td><td>规格体系（1/2/4/8 卡阶梯）</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:116-127 sku("1"/"2"/"4"/"whole") 四档</td><td>库存按 <code>freeSingle/N</code> 与 <code>wholeStock</code>（同节点 ≥8）实时算</td></tr>
+      <tr><td>A-3</td><td>库存与缺货提醒</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:102-113 实时库存；TenantExtApi.java:557-583 <code>POST /api/stock-alerts</code>；BizAdminApi.java:176-214 fulfill</td><td>到货触发在 RentalService.java:572-578 settleAndRelease</td></tr>
+      <tr><td>A-4</td><td>无卡/调试模式（0.1 元/时量级）</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:142-147 debug SKU ¥0.10；RentalService.java:187-189 debug 分支不占卡</td><td>下单/计费链路走真实事务，仅 K8s Pod CPU-only</td></tr>
+      <tr><td>A-5</td><td>子账户/轻量团队协作</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:170-208 子账号 CRUD（上限 20）；AuthInterceptor RBAC role=sub</td><td>独立登录+共享余额真做；<b>按资源维度细粒度授权未做</b>（只有角色级）</td></tr>
+      <tr><td>A-6</td><td>多实例形态（容器/拼租/裸金属）</td><td><span class="tag t-part">部分完成</span></td><td>容器：RentalService.java:140-281；拼租：BizApi.java:69-124 + RentalService.java:611-714 真成团开实例；裸金属：CatalogApi.java:328-343 + BizApi.java:146-196 leads</td><td>容器与拼租后端闭环；<b>裸金属无交付后端</b>，仅需求登记，见 B-7</td></tr>
+      <tr><td>A-7</td><td>竞价/闲时计费</td><td><span class="tag t-part">部分完成</span></td><td>Api.java:128-133 offpeak 折扣；RentalService.java:185-186 闲时段价格</td><td>闲时（包夜折扣）已实现；<b>竞价实例 spot market 未做</b></td></tr>
+      <tr><td>A-8</td><td>实例全生命周期</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:212-242 创建；TenantExtApi.java:629-719 开关机/重启/重置/克隆/定时关机；RentalService.java:324-456 后端；Reconciler.java:50-71 定时执行</td><td>2026-11-04 实测端到端：UI 23:24 建计划 → 23:29:07 自动关机+通知落库</td></tr>
+      <tr><td>A-9</td><td>弹性升降配与扩容</td><td><span class="tag t-ok">已完成</span></td><td>TenantExtApi.java:665-680 <code>POST /instances/{id}/resize</code>；RentalService.java resize 段</td><td>调整卡数走真实占卡事务；CPU/内存按比例联动</td></tr>
+      <tr><td>A-10</td><td>开发接入矩阵（SSH/Jupyter/VSCode 等）</td><td><span class="tag t-p2">仅前端展示</span></td><td>TenantExtApi.java:999-1043 <code>GET /instances/{id}/access</code></td><td><b>IP 硬编码 10.0.0.11</b>、端口按 hashCode 拼；L1020 注释原话"真实开放需集群 Ingress/端口转发"。演示时只讲界面，不要现场 SSH</td></tr>
+      <tr><td>A-11</td><td>自定义端口/服务暴露（Gradio/WebUI）</td><td><span class="tag t-p2">仅前端展示</span></td><td>同上 access 接口 L1007-1010</td><td>仅返回 URL 字符串，<b>未真正开放端口</b>，需 Ingress/NodePort</td></tr>
+      <tr><td>A-12</td><td>远程桌面 GUI</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>TenantExtApi.java:1013-1016 novncNote</td><td>代码明写"需真实集群部署 noVNC 组件，当前演示环境未接入"；需 VNC + noVNC 镜像</td></tr>
+      <tr><td>A-13</td><td>守护进程（nohup/tmux 封装）</td><td><span class="tag t-p2">仅前端展示</span></td><td>TenantExtApi.java:1011 daemonGuide 字符串</td><td>只是文本指引；<b>未预装 tmux、未做进程守护</b>。真实能力取决于镜像内工具</td></tr>
+      <tr><td>A-14</td><td>公共基础镜像（PyTorch/TF/Paddle + CUDA 矩阵）</td><td><span class="tag t-ok">已完成</span></td><td>CatalogApi.java:170-197 <code>GET /api/catalog/images</code></td><td>矩阵完整可展示；镜像本体在私有 registry（README 已闭环）</td></tr>
+      <tr><td>A-15</td><td>应用镜像一键部署（ComfyUI/vLLM）</td><td><span class="tag t-part">部分完成</span></td><td>CatalogApi.java:170-197 + images.html + create.html 选择器</td><td>可下单选镜像并透传到 Pod；<b>预装应用配置未做</b>，仍需用户在实例内自启</td></tr>
+      <tr><td>A-16</td><td>私有镜像保存（系统盘快照/跨区域复用）</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:728-742 <code>POST /instances/{id}/save-image</code>；images 表 schema.sql:420</td><td>只落库元数据；<b>未真实 commit/push 到 registry</b>。演示说明：镜像层需 Containerd 快照 + registry 凭证</td></tr>
+      <tr><td>A-17</td><td>社区/共享镜像</td><td><span class="tag t-ok">已完成</span></td><td>TenantExtApi.java:744-753 share；773-812 useCommunityImage 真复制台账</td><td>业务链路（分享→社区→他人复制到自己库→开实例）端到端可跑</td></tr>
+      <tr><td>A-18</td><td>镜像安全扫描</td><td><span class="tag t-p2">仅前端展示</span></td><td>TenantExtApi.java:756-771 <code>POST /images/{id}/scan</code></td><td>演示基线：仅按 base 是否含"演示"字样判风险；<b>无 Trivy/Grype 真实扫描引擎</b></td></tr>
+      <tr><td>A-19</td><td>系统盘+数据盘分层</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:231-234 dataDiskGb 校验；RentalService.java:196-197 dataDiskFee；RealK8s.java:137-153 ensureDataClaim PVC 独立</td><td>关机保留数据盘 PVC 真做</td></tr>
+      <tr><td>A-20</td><td>文件存储（跨实例共享）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>TenantExtApi.java:246-284 storage CRUD；L260 注释"只落库元数据,不上传真实对象"</td><td>需后端 NAS/CPFS/JuiceFS 提供 RWX PVC；本 POC 无</td></tr>
+      <tr><td>A-21</td><td>公共数据集库</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:812-819 datasets；DbBootstrap.java:196 已种 MNIST 等元数据</td><td>清单/挂载 API 真做；<b>数据集本体未预置到集群</b></td></tr>
+      <tr><td>A-22</td><td>数据迁移工具（实例间直传/跨区域）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无对应接口；TenantExtApi.java:822-839 只是挂载</td><td>需 rsync/rclone 或平台级迁移组件；本 POC 无</td></tr>
+      <tr><td>A-23</td><td>按量计费（秒级）</td><td><span class="tag t-ok">已完成</span></td><td>RentalService.java:102-107 amountOf unitPrice×gpu×sec/3600；L527-587 settleAndRelease 按秒退款</td><td>关机即停费，差额退回余额；实测 2026-11-02</td></tr>
+      <tr><td>A-24</td><td>包日/包周/包月长租折扣</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:185-196 plans 1/2/8/24/72/168/720 小时档；rental.discountFor</td><td>与按量互转按剩余时长分段结算已实现</td></tr>
+      <tr><td>A-25</td><td>余额/欠费管理</td><td><span class="tag t-ok">已完成</span></td><td>Reconciler.java:74-87 forcePowerOffArrears；L90-104 expireStopped 7 天保留期</td><td>5s 巡检自动关机 + 保留期后自动释放</td></tr>
+      <tr><td>A-26</td><td>优惠券/代金券/邀请奖励</td><td><span class="tag t-ok">已完成</span></td><td>TenantExtApi.java:326-363 grantInviteRewards；847-871 券核销；PlatformApi.java:977-1003 后台发券</td><td>首充返券+邀请返券+运营发券全链路真</td></tr>
+      <tr><td>A-27</td><td>支付与发票（微信/支付宝/对公；电子票）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>TenantExtApi.java:294-320 recharge L294 注释"模拟支付回调"；L422-453 invoices"电子票演示"</td><td>需微信/支付宝商户号或银联通道 + 税控/开票服务商</td></tr>
+      <tr><td>A-28</td><td>实名认证（端口开放前置）</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:875-901 提交+脱敏（前 3 后 4）；PlatformApi.java:925-944 后台审核</td><td>业务链路真做；<b>无三要素/人脸核身外部接口</b>，见 A-45</td></tr>
+      <tr><td>A-29</td><td>学术资源加速（GitHub/HF 镜像）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>TenantExtApi.java:1017-1019 只读 setting academic.accelerator</td><td>需自建/接入镜像站并注入实例环境变量；本 POC 只有配置字段</td></tr>
+      <tr><td>A-30</td><td>学生认证/教育优惠</td><td><span class="tag t-ok">已完成</span></td><td>TenantExtApi.java:905-928 提交；PlatformApi.java:948-973 审核；RentalService.java:190-192 通过后 0.90 折扣</td><td>审核→打标签→下单自动打折闭环</td></tr>
+      <tr><td>A-31</td><td>社区与内容分享（镜像/项目/数据集）</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:744-812 镜像分享与社区镜像使用</td><td>只镜像一层；<b>项目/数据集分享未做</b></td></tr>
+      <tr><td>A-32</td><td>模型库/MaaS API（按 Token 计费）</td><td><span class="tag t-ok">已完成</span></td><td>MaaSController.java:114-188 /v1/chat/completions；MaasCatalog.java 4 模型</td><td>OpenAI 兼容格式，实测可用；上游未配时回退演示回复</td></tr>
+      <tr><td>A-33</td><td>在线推理部署 Serving</td><td><span class="tag t-part">部分完成</span></td><td>ClusterApi.java:697-758 deployments 可跑推理镜像；MaaSController 是 API 网关</td><td>网关侧已通；<b>自主部署推理副本+负载均衡未做</b>（见 C-9）</td></tr>
+      <tr><td>A-34</td><td>到期/余额/欠费提醒（短信/微信/邮件多通道）</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:142-166 站内信；AlertEngine.java:201-232 webhook 真投递，其它渠道 L228-230 "模拟投递"</td><td>站内/webhook 真；<b>短信/邮件/微信需外部网关</b>（同 D 类）</td></tr>
+      <tr><td>A-35</td><td>缺货/到货提醒</td><td><span class="tag t-ok">已完成</span></td><td>TenantExtApi.java:557-583 登记；BizAdminApi.java:176-214 fulfill；RentalService.java:572-578 结算时触发</td><td>与 A-3 共链路，实测通知落库</td></tr>
+      <tr><td>A-36</td><td>OpenAPI</td><td><span class="tag t-part">部分完成</span></td><td>Api.java/TenantExtApi.java/PlatformApi.java 等 132 个 REST 路由；ark-cli.py 走同接口</td><td>接口本身齐全，但<b>未接入 springdoc/swagger</b>（pom 无 springdoc 依赖），无自动文档</td></tr>
+      <tr><td>A-37</td><td>CLI 工具</td><td><span class="tag t-ok">已完成</span></td><td>deploy/cli/ark-cli.py（login/instances/plans/poweroff/release 等）</td><td>纯标准库 Python，与网页同权限</td></tr>
+      <tr><td>A-38</td><td>多集群/多数据中心纳管</td><td><span class="tag t-part">部分完成</span></td><td>RealK8s.java 单一 kubeconfig；skus zone 字段 Api.java:171</td><td>zone 字段与多池结构有；<b>多集群切换/统一视图未做</b>，需二期</td></tr>
+      <tr><td>A-39</td><td>节点管理与异常治理</td><td><span class="tag t-ok">已完成</span></td><td>ClusterApi.java:159-222 nodes；275-330 cordon/uncordon/drain；RealK8s.java:482-513 真下发；PlatformApi.java:650-686 nodes CRUD</td><td>污点/驱逐真实生效；孤儿对账 PlatformApi.java:584-620</td></tr>
+      <tr><td>A-40</td><td>商品与 SKU 管理（分层/多周期/上下架）</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:100-154；PlatformApi.java:269-314 settings 改价</td><td>上下架通过 pool.enabled 与 settings 控制；<b>无独立商品表</b>，见 D-4</td></tr>
+      <tr><td>A-41</td><td>GPU 监控与利用率分析（DCGM 指标）</td><td><span class="tag t-part">部分完成</span></td><td>ClusterApi.java:955-1020 metrics（host-agent/prometheus/synthetic 三源）；AgentApi.java:31-75 本机 nvidia-smi 真采；AlertEngine.java:182-198 DCGM 未接时 null</td><td>本机 GPU 真采已入库；<b>集群侧 DCGM-Exporter 需真卡部署</b></td></tr>
+      <tr><td>A-42</td><td>订单/流水/充值管理</td><td><span class="tag t-ok">已完成</span></td><td>Api.java:252-272 orders/billing；TenantExtApi.java:288-320 recharges；billing_records/recharges 表</td><td>资金流水可查可溯；充值为模拟到账</td></tr>
+      <tr><td>A-43</td><td>账户与券类运营</td><td><span class="tag t-ok">已完成</span></td><td>PlatformApi.java:977-1003 发券；ClusterApi.java:438-462 配额调整；tenants 表 balance/quota</td><td>余额调整/发券有；<b>标签运营未做</b></td></tr>
+      <tr><td>A-44</td><td>经营报表（收入/利用率/活跃看板）</td><td><span class="tag t-ok">已完成</span></td><td>PlatformApi.java:1014-1027 <code>GET /api/admin/report</code>；screen.html 大屏</td><td>近 30 天收入曲线+租户数+订单量+利用率</td></tr>
+      <tr><td>A-45</td><td>实名认证（合规级/接入支付与端口前）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>同 A-28 链路</td><td>需接入运营商三要素/人脸核身/公安接口，非代码层</td></tr>
+      <tr><td>A-46</td><td>内容合规与滥用防控（反挖矿/日志留存）</td><td><span class="tag t-part">部分完成</span></td><td>ClusterApi.java:590-596 反挖矿巡检；PlatformApi.java:368-404 audit 完整</td><td>日志留存+反挖矿巡查有；<b>未接监管接口/关键词库</b></td></tr>
+      <tr><td>A-47</td><td>等保备案支撑（二级/三级）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无对应代码</td><td>需实际测评机构 + 物理环境，非软件可交付</td></tr>
+      <tr><td>A-48</td><td>新卡型快速适配</td><td><span class="tag t-part">部分完成</span></td><td>CatalogApi.java:27-36 VRAM 映射表；Api.sku 抽象；RealK8s.java:318-342 discoverGpus 从 label/容量读</td><td>改常量即可加卡；<b>无热插拔式配置化适配</b></td></tr>
+      <tr><td>A-49</td><td>多代卡型并存管理</td><td><span class="tag t-ok">已完成</span></td><td>nodes/gpus/pools 表按 model 划分；RealK8s.java:318-342 GFD label 解析</td><td>结构上支持，实际多卡并存需真集群</td></tr>
+      <tr><td>A-50</td><td>驱动/固件版本矩阵管理</td><td><span class="tag t-part">部分完成</span></td><td>schema.sql:477 driver_matrix 表；PlatformApi.java:1007-1010 只读接口；RealK8s.java:312 从节点 label 读 gpuDriver</td><td>矩阵可查；<b>无版本推送/切换能力</b></td></tr>
+      <tr><td>A-51</td><td>异构卡型监控统一接入</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>AlertEngine.java:182-198 metricValue 只识别 DCGM/nvidia 类</td><td>需华为/寒武纪等 exporter；本 POC 无</td></tr>
+      <tr><td>A-52</td><td>客户指定卡型纳管（toB）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>依赖具体卡的 device plugin，非代码可交付</td></tr>
+      <tr><td>A-53</td><td>国产算力卡适配（toB）</td><td><span class="tag t-p2">仅前端展示</span></td><td>CatalogApi.java:328-343 baremetal 含 Ascend 910B 卡片</td><td>只有页面文字；<b>驱动/算子/监控/调度全未适配</b>。演示时说明"卡片是路线图"</td></tr>
+    </tbody>
+  </table>
+
+  <h3>B · toB 扩展需求（Part B，37 条）</h3>
+  <table>
+    <thead><tr><th style="width:5%">编号</th><th style="width:22%">客户要求（原文摘要）</th><th style="width:9%">状态</th><th style="width:24%">证据（文件:行号 或 接口）</th><th>说明/短板</th></tr></thead>
+    <tbody>
+      <tr><td>B-1</td><td>RDMA 组网（RoCE v2/IB）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>依赖 Mellanox/Marvell 网卡 + 交换机；软件侧需 SR-IOV device plugin</td></tr>
+      <tr><td>B-2</td><td>SR-IOV/裸金属透传</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需 sriov-network-operator + 支持 VF 的网卡</td></tr>
+      <tr><td>B-3</td><td>拓扑感知调度（Fat-tree/轨道优化）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>RealK8s.java:621-724 createWorkload 无 topologyKey 亲和</td><td>需 NodeTopologyReport / Koordinator / Volcano topology 插件</td></tr>
+      <tr><td>B-4</td><td>VPC 网络隔离</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无 NetworkPolicy 下发；租户命名空间已隔离</td><td>需 Calico/Cilium 或云厂商 VPC-CNI；本 POC 单 k3s 无</td></tr>
+      <tr><td>B-5</td><td>专线/VPN 接入客户 IDC</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需 WireGuard/IPSec/物理专线；商务+网络设备</td></tr>
+      <tr><td>B-6</td><td>多机集群 SKU（2 机 16 卡等）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>Api.java:100-154 最大 SKU 是"whole"（同节点 8 卡）</td><td>需 Volcano PodGroup 跨节点，本 POC 无</td></tr>
+      <tr><td>B-7</td><td>裸金属规格（无虚拟化整机）</td><td><span class="tag t-p2">仅前端展示</span></td><td>CatalogApi.java:328-343 静态卡；baremetal.html 页面；BizApi.java:146-196 leads 落库</td><td>只有需求登记；<b>无交付后端</b>。真实裸金属需 Ironic/MAAS + BMC</td></tr>
+      <tr><td>B-8</td><td>资源预留/专属资源池</td><td><span class="tag t-ok">已完成</span></td><td>PlatformApi.java:723-752 pools CRUD；gpus.status='reserved'；ClusterApi.java:76-79 状态计数</td><td>包年包月资源独占可配置</td></tr>
+      <tr><td>B-9</td><td>Gang Scheduling 成组调度</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>RealK8s.java:635-636 schedulerName=volcano（仅 volcano-system 存在时）；L655 gang 注解；L717 gangEnforced；L720-722 message"集群未部署 volcano,Gang/队列/抢占不生效"</td><td>代码就绪；<b>依赖 Volcano 部署</b>，本 POC k3s 无</td></tr>
+      <tr><td>B-10</td><td>分布式任务 Operator（PyTorchJob/MPIJob/RayJob）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>RealK8s.java:606 kindToApiVersion 含 PyTorchJob；PlatformApi.java:56-118 <code>POST /api/admin/resources</code> YAML apply 可下发</td><td>YAML apply 通道通；<b>CRD 与 Operator 未装</b>到集群</td></tr>
+      <tr><td>B-11</td><td>任务队列/优先级/抢占</td><td><span class="tag t-part">部分完成</span></td><td>schema.sql queues 表（gpu_quota/weight/priority）；PoolPolicy 字段；平台侧 preempt_tenant=false（项目演进记录.md 决策 6）</td><td>队列与优先级台账在；<b>集群侧 Volcano/QueueJob 未装</b>；抢占按商业决策关闭</td></tr>
+      <tr><td>B-12</td><td>故障容错与断点续训</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无 checkpoint 管理代码</td><td>需训练框架侧支持（PyTorch/DeepSpeed）+ 共享存储；平台层可编排</td></tr>
+      <tr><td>B-13</td><td>Slurm 支持</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需 Slurm 集群 + 桥接（如 Slinky）；非 K8s 生态</td></tr>
+      <tr><td>B-14</td><td>共享并行文件系统（Lustre/CPFS/JuiceFS）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>RealK8s.java:109-115 PVC 用 RWO；ensureDataClaim 单机</td><td>需 RWX StorageClass，本 POC k3s local-path 不支持</td></tr>
+      <tr><td>B-15</td><td>对象存储对接（S3 兼容）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>TenantExtApi.java:246-284 只元数据</td><td>需 MinIO/Ceph/OSS + S3 SDK；本 POC 无</td></tr>
+      <tr><td>B-16</td><td>数据集缓存预热</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需 Fluid/JuiceFS 缓存 Runtime</td></tr>
+      <tr><td>B-17</td><td>多级组织架构（部门/项目/团队）</td><td><span class="tag t-part">部分完成</span></td><td>users 表 role=tenant/sub 两级；TenantExtApi.java:170-208 子账号</td><td>只有租户+子账号两级；<b>部门/项目层级树未做</b></td></tr>
+      <tr><td>B-18</td><td>SSO 单点登录（LDAP/AD/OIDC）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>AuthService.java 仅用户名密码 + BCrypt + sessions 表</td><td>需 Keycloak / AD 侧对接；本 POC 无</td></tr>
+      <tr><td>B-19</td><td>审批流（资源开通/扩容/提额）</td><td><span class="tag t-part">部分完成</span></td><td>PlatformApi.java:925-973 实名/学生审核；tickets 审批</td><td>只有特定业务的 review；<b>通用审批流引擎未做</b></td></tr>
+      <tr><td>B-20</td><td>操作审计日志</td><td><span class="tag t-ok">已完成</span></td><td>PlatformApi.java:368-404 audit + CSV 导出；audit_logs 表；全后端 insertAudit</td><td>留存完整，但项目演进记录.md 六.P1-11 说明<b>无防篡改</b>（DBA 可删）</td></tr>
+      <tr><td>B-21</td><td>对公支付/合同计费</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>属财务流程 + ERP，非平台代码</td></tr>
+      <tr><td>B-22</td><td>发票管理（增值税专票/普票）</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:415-453 invoices 生成/开具；L452 message"演示环境为电子票"</td><td>台账/流程真；<b>需接入税控开票服务商</b></td></tr>
+      <tr><td>B-23</td><td>成本分摊（部门/项目拆分账单）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>billing_records 只有 tenant_id 维度</td><td>依赖 B-17 多级组织；本 POC 无</td></tr>
+      <tr><td>B-24</td><td>包年/资源包</td><td><span class="tag t-part">部分完成</span></td><td>Api.java:185-196 plans 最长到 720 小时（月付）</td><td>包年到 L876 折扣结构可扩；<b>资源包（预付费额度包）未做</b></td></tr>
+      <tr><td>B-25</td><td>SLA 承诺与赔付</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无 SLA 度量代码</td><td>依赖 3 控制节点 HA + 监控留痕；本 POC 单节点</td></tr>
+      <tr><td>B-26</td><td>GPU 自动巡检/坏卡隔离/换卡</td><td><span class="tag t-part">部分完成</span></td><td>ClusterApi.java:563-634 <code>POST /api/admin/inspections/run</code> 真跑；巡检项含温度/故障/NotReady/组件</td><td>诊断/告警真做；<b>只诊断不自动修复</b>（README 明说），换卡需 BMC/工单</td></tr>
+      <tr><td>B-27</td><td>工单系统</td><td><span class="tag t-ok">已完成</span></td><td>TenantExtApi.java:463-485 客户提交；PlatformApi.java:413-448 回复/关闭；ClusterApi.java:663-688 巡检转工单</td><td>提交→回复→关闭→巡检联动</td></tr>
+      <tr><td>B-28</td><td>专属客户支持</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>工单支持分类已做，无 SLA/客户经理系统</td><td>属组织承诺 + CRM，非平台代码</td></tr>
+      <tr><td>B-29</td><td>训练诊断（straggler/NCCL/HCCL）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>ClusterApi.java:493-510 diagnose 是告警 AI 诊断，非训练</td><td>需 DCGM + NCCL profiler + 采集器；本 POC 无</td></tr>
+      <tr><td>B-30</td><td>客户侧监控告警对接（钉钉/飞书/Webhook）</td><td><span class="tag t-ok">已完成</span></td><td>AlertEngine.java:201-232 deliver 中 webhook 真发 HTTP；inspections/alerts 表</td><td>webhook 通道完整；钉钉/飞书需配 webhook URL</td></tr>
+      <tr><td>B-31</td><td>客户指定卡型适配纳管</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>同 A-52</td></tr>
+      <tr><td>B-32</td><td>国产算力卡纳管</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>同 A-53</td></tr>
+      <tr><td>B-33</td><td>异构资源池统一调度</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>pools 表可分卡型；无跨 vendor 调度</td><td>依赖 Volcano/协调器插件</td></tr>
+      <tr><td>B-34</td><td>指定卡型适配 SLA</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>商务承诺项</td></tr>
+      <tr><td>B-35</td><td>专属云/私有化部署</td><td><span class="tag t-ok">已完成</span></td><td>deploy/k8s/tokenark.yaml + deploy/helm + docker-compose.yml</td><td>平台已跑进 K8s 命名空间；Helm Chart 齐</td></tr>
+      <tr><td>B-36</td><td>License 与离线升级</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无 License 校验代码</td><td>二期需授权模块 + 升级包签名</td></tr>
+      <tr><td>B-37</td><td>等保/国密合规适配</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>AuthService BCrypt；TLS 已闭环（README）</td><td>无 SM2/SM3/SM4；等保需测评</td></tr>
+    </tbody>
+  </table>
+
+  <h3>C · Token 工厂/聚合平台需求（Part C，35 条）</h3>
+  <table>
+    <thead><tr><th style="width:5%">编号</th><th style="width:22%">客户要求（原文摘要）</th><th style="width:9%">状态</th><th style="width:24%">证据（文件:行号 或 接口）</th><th>说明/短板</th></tr></thead>
+    <tbody>
+      <tr><td>C-1</td><td>推理专用资源池</td><td><span class="tag t-part">部分完成</span></td><td>pools 表 PlatformApi.java:723-752</td><td>可建"推理池"命名；<b>无 GPU 类型/工作负载标签强制隔离</b></td></tr>
+      <tr><td>C-2</td><td>模型副本粒度调度</td><td><span class="tag t-ok">已完成</span></td><td>RealK8s.java:621-724 createWorkload Deployment replicas</td><td>副本数下发真实生效</td></tr>
+      <tr><td>C-3</td><td>推理节点亲和调度（共享 KV Cache）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无 podAffinity/nodeAffinity 代码</td><td>需 vLLM 共享 KV + K8s 亲和；本 POC 无</td></tr>
+      <tr><td>C-4</td><td>PD 分离/异构推理架构</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需 vLLM/SGLang PD 分离部署，非平台代码</td></tr>
+      <tr><td>C-5</td><td>推理池弹性伸缩</td><td><span class="tag t-part">部分完成</span></td><td>RealK8s.java:606 HPA apiVersion 映射；PlatformApi.java:56-118 YAML apply 可下发 HPA</td><td>通道可下发 HPA；<b>无按 TPS/并发自动伸缩策略</b></td></tr>
+      <tr><td>C-6</td><td>高并发沙箱调度（Agent 短命实例）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需 Kata/Firecracker/gVisor 沙箱运行时</td></tr>
+      <tr><td>C-7</td><td>跨底座部署适配</td><td><span class="tag t-part">部分完成</span></td><td>RealK8s.java fabric8 走标准 K8s API；K8sClient 接口</td><td>可连标准 K8s；<b>未测其它发行版</b>（OpenShift/TKE/CCE）</td></tr>
+      <tr><td>C-8</td><td>异构卡型推理适配</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>依赖 B-32/C 类硬件</td></tr>
+      <tr><td>C-9</td><td>模型一键部署（vLLM/SGLang）</td><td><span class="tag t-part">部分完成</span></td><td>ClusterApi.java:697-758 deployments 可下发推理镜像</td><td>工作负载创建链路真；<b>无模型仓库/权重挂载</b>预置</td></tr>
+      <tr><td>C-10</td><td>模型版本管理与灰度发布</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无版本/权重字段；无 Canary/蓝绿</td><td>二期功能</td></tr>
+      <tr><td>C-11</td><td>多模型共池部署（MIG/时分复用）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>RealK8s.java:640-646, 914-929 HAMi vgpu 共享资源代码就绪</td><td>HAMi/5090 MIG 需真集群+真卡；本 POC 未验证</td></tr>
+      <tr><td>C-12</td><td>模型广场（名称/厂商/延迟/TPS/价格）</td><td><span class="tag t-part">部分完成</span></td><td>MaaSController.java:89-110 <code>GET /v1/models</code>；llm-api.html 展示</td><td>名称+价格真；<b>延迟/TPS/厂商未上报</b>（MaasCatalog 静态）</td></tr>
+      <tr><td>C-13</td><td>Token 级精确计量（Input/Output/Cached 分别计价）</td><td><span class="tag t-part">部分完成</span></td><td>MaaSController.java:147-165；L219-220 优先取上游 usage；L249-263 estimateTokens 启发式（汉字≈1/other÷4）</td><td>有上游时真实计量；<b>无上游回退本地估算非精确 tokenizer</b>；Cached 维度未做</td></tr>
+      <tr><td>C-14</td><td>Token Plan 订阅套餐</td><td><span class="tag t-part">部分完成</span></td><td>recharges 表；TenantExtApi.java:288-320 充值；无月度 Credits 档位</td><td>余额池有；<b>多档订阅套餐+超额降速未做</b></td></tr>
+      <tr><td>C-15</td><td>推理成本核算（GPU 时→定价）</td><td><span class="tag t-ok">已完成</span></td><td>MaaSController.java:265-271 cost 单价×tokens</td><td>输入/输出分别计价模型在；<b>成本回溯到 GPU 时长未做</b></td></tr>
+      <tr><td>C-16</td><td>与账户余额体系打通</td><td><span class="tag t-ok">已完成</span></td><td>MaaSController.java:162 db.deductBalance(tenantId)</td><td>共用 tenants.balance_yuan，与实例租赁同账</td></tr>
+      <tr><td>C-17</td><td>OpenAI 兼容 API</td><td><span class="tag t-ok">已完成</span></td><td>MaaSController.java:114-188 /v1/chat/completions 返回 choices/usage</td><td>兼容 curl 直接接入；<b>未做 /v1/embeddings、/v1/images</b></td></tr>
+      <tr><td>C-18</td><td>API Key 生命周期（创建/吊销/额度/速率）</td><td><span class="tag t-part">部分完成</span></td><td>TenantExtApi.java:73-130 CRUD + toggle；MaaSController.java:58-68 SHA-256 校验</td><td>创建/启停/删除真；<b>无额度上限/速率限制</b>（除单租户 5 key 上限）</td></tr>
+      <tr><td>C-19</td><td>多模型统一接入与路由</td><td><span class="tag t-part">部分完成</span></td><td>MaasCatalog.java 4 模型；MaaSController.generate L193-227 上游透传 model id</td><td>统一入口真；<b>Auto 智能路由（按价格/延迟）未做</b></td></tr>
+      <tr><td>C-20</td><td>请求日志与用量审计</td><td><span class="tag t-part">部分完成</span></td><td>maas_usage 表 MaaSController.java:163-164；TenantExtApi.java:601-612 /maas/usage</td><td>tokens/费用审计有；<b>无请求内容日志</b>（受 C-25 合规制约）</td></tr>
+      <tr><td>C-21</td><td>API 文档与 Quick Start</td><td><span class="tag t-part">部分完成</span></td><td>llm-api.html L52-64 有接口地址与 curl 说明；无独立文档站</td><td>基础用法可看；<b>无多语言 Code Samples 页</b>（见 A-36 无 swagger）</td></tr>
+      <tr><td>C-22</td><td>多语言 SDK（Python/Go/Node）</td><td><span class="tag t-part">部分完成</span></td><td>deploy/cli/ark-cli.py 只覆盖实例管理，非 MaaS SDK</td><td>直接可用 OpenAI 官方 SDK；<b>平台自有 SDK 未做</b></td></tr>
+      <tr><td>C-23</td><td>接入工具指南（LangChain/Dify 等）</td><td><span class="tag t-part">部分完成</span></td><td>无</td><td>llm-api.html 未列具体工具教程；需文档补齐</td></tr>
+      <tr><td>C-24</td><td>开发者控制台</td><td><span class="tag t-ok">已完成</span></td><td>llm-api.html（Key 管理+模型目录+调用记录）+ /maas/usage + /maas/models</td><td>API Key/用量/明细三合一</td></tr>
+      <tr><td>C-25</td><td>生成内容安全审核（双向过滤）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需接入外部内容安全服务（数美/网易易盾/阿里绿网）</td></tr>
+      <tr><td>C-26</td><td>模型输出水印与溯源</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>依赖上游模型水印或专用算法</td></tr>
+      <tr><td>C-27</td><td>合规日志留存（法定期限）</td><td><span class="tag t-part">部分完成</span></td><td>audit_logs 全量；maas_usage 有用量；<b>无生成内容留存</b></td><td>依赖 C-25</td></tr>
+      <tr><td>C-28</td><td>模型上架/下架管理</td><td><span class="tag t-p2">仅前端展示</span></td><td>MaasCatalog.java:12-16 硬编码 4 模型 List.of</td><td>无管理后台可 CRUD 模型；改目录要改代码重启</td></tr>
+      <tr><td>C-29</td><td>模型效果评测</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需评测集 + 独立跑分环境</td></tr>
+      <tr><td>C-30</td><td>热点模型跟踪与快速接入</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需外部情报 + 快速接入流程</td></tr>
+      <tr><td>C-31</td><td>模型分组与厂商管理</td><td><span class="tag t-p2">仅前端展示</span></td><td>MaasCatalog.java display 字段"（兼容）"字样；无 group/vendor 表</td><td>页面只列名；<b>无分组/厂商维度运营</b></td></tr>
+      <tr><td>C-32</td><td>第三方 API 聚合</td><td><span class="tag t-part">部分完成</span></td><td>MaaSController.java:193-227 上游透传；LlmClient.java 类似</td><td>单个上游可透传；<b>多厂商聚合+统一鉴权池未做</b></td></tr>
+      <tr><td>C-33</td><td>智能路由（按价格/延迟/质量）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>需打分模型 + 实时探测</td></tr>
+      <tr><td>C-34</td><td>统一账单</td><td><span class="tag t-ok">已完成</span></td><td>billing_records + maas_usage 同 tenants.balance_yuan；TenantExtApi.java /billing + /maas/usage</td><td>一个账户消费所有服务已跑通</td></tr>
+      <tr><td>C-35</td><td>开发者市场（第三方上架分成）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>依赖结算/审计/风控体系，二期</td></tr>
+    </tbody>
+  </table>
+
+  <h3>D · 非功能与商务要求（Part D，19 条）</h3>
+  <table>
+    <thead><tr><th style="width:5%">编号</th><th style="width:22%">客户要求（原文摘要）</th><th style="width:9%">状态</th><th style="width:24%">证据（文件:行号 或 接口）</th><th>说明/短板</th></tr></thead>
+    <tbody>
+      <tr><td>D-1</td><td>架构可扩展性（云原生/水平扩展）</td><td><span class="tag t-ok">已完成</span></td><td>App.java Spring Boot 3.4.1；deploy/k8s/tokenark.yaml 无状态化</td><td>可多副本；数据库需外置 PG 已支持</td></tr>
+      <tr><td>D-2</td><td>高可用（控制面多副本）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>_checklist_extract.txt 八.8 明确"未做"</td><td>单 k3s 节点；<b>需 3 控制节点 + 应用多副本 + PDB</b></td></tr>
+      <tr><td>D-3</td><td>API 性能（P95 ≤ 500ms）</td><td><span class="tag t-part">部分完成</span></td><td>无压测脚本</td><td>本地接口 <20ms 是常态；<b>未做规范压测报告</b></td></tr>
+      <tr><td>D-4</td><td>弹性扩展（百卡→千卡）</td><td><span class="tag t-part">部分完成</span></td><td>架构支持；无实测</td><td>POC 只有 2 节点 16 卡</td></tr>
+      <tr><td>D-5</td><td>租户隔离（容器/网络/存储三层）</td><td><span class="tag t-part">部分完成</span></td><td>容器：RealK8s.java:92-135 每租户 Namespace；配额：L438-462 syncResourceQuota；AuthInterceptor 数据级隔离</td><td>容器/数据真隔离；<b>NetworkPolicy 缺失</b>（项目演进记录.md P1-10）</td></tr>
+      <tr><td>D-6</td><td>数据安全（传输/静态加密）</td><td><span class="tag t-part">部分完成</span></td><td>TLS 已闭环（README）；密码 BCrypt；证件号脱敏 TenantExtApi.java:898</td><td>传输+凭据 OK；<b>数据盘静态加密需 CSI 加密支持</b></td></tr>
+      <tr><td>D-7</td><td>漏洞管理（定期扫描）</td><td><span class="tag t-part">部分完成</span></td><td>镜像扫描见 A-18；<b>依赖 CVE 扫描未接入</b></td><td>可接 Trivy CI；本 POC 未做</td></tr>
+      <tr><td>D-8</td><td>安全资质（等保三级/ISO27001）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>属企业资质 + 测评，非代码</td></tr>
+      <tr><td>D-9</td><td>交付周期</td><td><span class="tag t-ok">已完成</span></td><td>POC 两周内交付（项目演进记录.md 时间线）</td><td>已实测：11-02 立项 → 11-03 打包 → 11-04 C 端功能补齐</td></tr>
+      <tr><td>D-10</td><td>驻场支持</td><td><span class="tag t-part">部分完成</span></td><td>无系统证据</td><td>商务承诺项</td></tr>
+      <tr><td>D-11</td><td>培训</td><td><span class="tag t-part">部分完成</span></td><td>README + DEMO-GUIDE + 本文档</td><td>文档培训有；<b>现场培训体系需补</b></td></tr>
+      <tr><td>D-12</td><td>文档（部署/运维/API）</td><td><span class="tag t-ok">已完成</span></td><td>README.md；DEMO-GUIDE.md；docs/技术评估报告.html；docs/项目演进记录.md；docs/演示问答手册.md</td><td>四类文档齐；API 文档缺（A-36）</td></tr>
+      <tr><td>D-13</td><td>响应时效（7×24/P1 承诺）</td><td><span class="tag t-part">部分完成</span></td><td>AlertEngine.java 30s 巡检；工单系统</td><td>平台自动响应有；<b>人工 SLA 属商务</b></td></tr>
+      <tr><td>D-14</td><td>版本升级（不影响业务）</td><td><span class="tag t-part">部分完成</span></td><td>schema.sql 幂等 CREATE TABLE IF NOT EXISTS + ALTER ADD COLUMN；DbBootstrap 判空灌种子</td><td>可在线滚动升级；<b>无版本回滚脚本</b></td></tr>
+      <tr><td>D-15</td><td>授权模式（License）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>二期需授权模块</td></tr>
+      <tr><td>D-16</td><td>源码托管（escrow）</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>第三方托管机构事项</td></tr>
+      <tr><td>D-17</td><td>定制开发</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>商务+人日估算</td></tr>
+      <tr><td>D-18</td><td>知识产权</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>商务法务</td></tr>
+      <tr><td>D-19</td><td>成功案例</td><td><span class="tag t-no">需真实硬件/外部系统</span></td><td>无</td><td>商务资料</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note warn">
+    <b>现场演示口径速查</b>——「仅前端展示」8 条（A-10/A-11/A-13/A-18/B-7/A-53/C-28/C-31）：只讲界面/台账，明确说"接口在，真实效果需组件"，不做端到端操作。「需真实硬件/外部系统」53 条：直接归入"二期/依赖客户环境"话术，重点是 Volcano / HAMi / DCGM / GPU Operator / 支付网关 / 短信网关 / 税控 / 三要素 / 私有 registry / NAS / SSO 这几类。
+  </div>
+
   <div class="foot">
     <span>TokenArk 创元方舟 · 技术评估报告 v1.0</span>
-    <span>2026-11-03 · 内部资料</span>
+    <span>2026-11-03 编制 · 2026-11-04 更新（C 端运营功能组）· 内部资料</span>
   </div>
 </div>
 </body>

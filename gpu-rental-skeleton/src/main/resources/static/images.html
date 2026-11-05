@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>我的镜像 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 </head>
 <body data-active="img">
 
@@ -15,6 +15,7 @@
   <div class="cmain">
     <div class="ctopbar"></div>
     <div class="cbody">
+      <div class="msg" id="msg"></div>
       <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px">我的镜像</h2>
       <div class="hint" style="margin-bottom:12px">
         ⚠ 个人镜像容量计费，免费额度 <b>20GB</b>；创建时选择基础镜像，保存后实例可直接使用。
@@ -22,10 +23,10 @@
 
       <div class="card panel mb10" style="padding:16px 18px">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="quota-head">0 GB <small>/ 200 GB</small></div>
+          <div class="quota-head" id="qhead">0 GB <small>/ 200 GB</small></div>
           <div class="hint">今日流量 <b>0 GB</b> · 预估花费 <b>¥0</b></div>
         </div>
-        <div class="quota-bar"><i style="width:0%"></i></div>
+        <div class="quota-bar"><i id="qbar" style="width:0%"></i></div>
         <div class="hint" style="display:flex;gap:18px">
           <span>● 免费 20 GB</span><span>● 付费 0 GB</span>
         </div>
@@ -33,16 +34,23 @@
 
       <div class="card" style="overflow:hidden">
         <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f4f0f9">
+          <input id="newName" placeholder="镜像名称（例如：pytorch-cu124-v1）"
+                 style="flex:1;height:32px;border:1px solid #eee9f8;border-radius:8px;padding:0 12px;font-size:12px"
+                 onkeydown="if(event.key==='Enter')createImg()">
           <button class="sm pink-btn" onclick="createImg()">创建镜像</button>
           <span class="hint" style="margin-left:auto">⟳</span>
         </div>
+        <div style="display:flex;gap:8px;margin:0 16px 10px">
+          <button class="sm" id="tabMine" style="background:#7c3aed;color:#fff;border:none" onclick="switchTab('mine')">我的镜像</button>
+          <button class="sm ghost" id="tabComm" onclick="switchTab('comm')">社区镜像</button>
+        </div>
         <div style="display:flex;align-items:center;gap:14px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
              font-size:11px;color:#98a1b3">
-          <span style="flex:1">镜像名称</span><span style="width:80px">状态</span>
+          <span style="flex:1">镜像名称</span><span style="width:70px">状态</span><span style="width:70px">安全扫描</span>
           <span style="width:90px">镜像地区</span><span style="width:110px">基础镜像</span>
-          <span style="width:110px">镜像详情版本</span><span style="width:80px">大小</span>
-          <span style="width:150px">创建时间</span><span style="width:100px">UUID</span>
-          <span style="width:60px;text-align:right">操作</span>
+          <span style="width:80px">大小</span>
+          <span style="width:150px">创建时间</span>
+          <span style="width:130px;text-align:right">操作</span>
         </div>
         <div id="list"></div>
       </div>
@@ -50,14 +58,36 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v13"></script>
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
 <script>
-const KEY = 'gu_images';
-let imgs = JSON.parse(localStorage.getItem(KEY) || '[]');
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+if (!TOKEN || !localStorage.getItem('gu_user')) location.replace('/login');
+let IMGS = [];
+
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opt.headers || {});
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
+}
 
 function render() {
   const box = document.getElementById('list');
-  if (!imgs.length) {
+  let used = 0;
+  IMGS.forEach(m => used += Number(m.size_gb) || 0);
+  $('#qhead').innerHTML = used.toFixed(1) + ' GB <small>/ 200 GB</small>';
+  $('#qbar').style.width = Math.min(100, used / 2) + '%';
+  if (!IMGS.length) {
     box.innerHTML = '<div class="empty-state">' +
       '<div class="ic">◫</div><b>暂无数据</b>' +
       '<span>保存一台实例的环境，即可生成专属镜像</span>' +
@@ -65,43 +95,114 @@ function render() {
       '</div>';
     return;
   }
-  box.innerHTML = imgs.map(function (m, i) {
+  box.innerHTML = IMGS.map(function (m) {
+    const scanMap = { '未扫描': 'p-gray', '扫描中': 'p-amber', '安全': 'p-green', '风险': 'p-red' };
+    const scan = m.scan_status || '未扫描';
+    const ops = TAB === 'mine'
+      ? '<button class="sm ghost" onclick="scan(\'' + m.id + '\')">扫描</button>' +
+        '<button class="sm ghost" style="margin-left:4px" onclick="share(\'' + m.id + '\')">' + (m.shared ? '已分享' : '分享') + '</button>' +
+        '<button class="sm ghost" style="margin-left:4px" onclick="del(\'' + m.id + '\')">删除</button>'
+      : '<button class="sm ghost" onclick="useCommunity(\'' + m.id + '\')">使用</button>' +
+        '<button class="sm ghost" style="margin-left:4px" onclick="imageDetail(\'' + m.id + '\')">详情</button>';
     return '<div style="display:flex;align-items:center;gap:14px;padding:12px 16px;' +
       'border-bottom:1px solid #f8f5fc;font-size:12px">' +
-      '<span style="flex:1"><b>' + m.name + '</b></span>' +
-      '<span style="width:80px"><span class="pill p-green">可用</span></span>' +
-      '<span style="width:90px">可用区 A</span>' +
-      '<span style="width:110px" class="hint">' + m.base + '</span>' +
-      '<span style="width:110px" class="hint">v1</span>' +
-      '<span style="width:80px">' + m.size + '</span>' +
-      '<span style="width:150px" class="hint">' + m.time + '</span>' +
-      '<span style="width:100px" class="mono">' + m.uuid + '</span>' +
-      '<span style="width:60px;text-align:right">' +
-      '<button class="sm ghost" onclick="del(' + i + ')">删除</button></span>' +
+      '<span style="flex:1"><b>' + Biz.esc(m.name) + '</b>' + (m.shared && TAB === 'mine' ? ' <span class="pill p-blue">已分享</span>' : '') + '</span>' +
+      '<span style="width:70px"><span class="pill p-green">' + (m.status === 'available' ? '可用' : Biz.esc(m.status)) + '</span></span>' +
+      '<span style="width:70px"><span class="pill ' + scanMap[scan] + '">' + Biz.esc(scan) + '</span></span>' +
+      '<span style="width:90px">' + Biz.esc(m.zone) + '</span>' +
+      '<span style="width:110px" class="hint">' + Biz.esc(m.base) + '</span>' +
+      '<span style="width:80px">' + (Number(m.size_gb) || 0).toFixed(1) + ' GB</span>' +
+      '<span style="width:150px" class="hint">' + Tf.at(m.created_at) + '</span>' +
+      '<span style="width:130px;text-align:right">' + ops + '</span>' +
       '</div>';
   }).join('');
 }
 
-function createImg() {
-  const name = prompt('镜像名称（例如：pytorch-cu124-v1）');
-  if (!name) return;
-  imgs.unshift({
-    name: name, base: 'pytorch:2.4', size: '2.1 GB',
-    time: new Date().toLocaleString('zh-CN', { hour12: false }).slice(5),
-    uuid: Math.random().toString(16).slice(2, 10)
+let TAB = 'mine';
+function switchTab(t) {
+  TAB = t;
+  $('#tabMine').className = t === 'mine' ? 'sm' : 'sm ghost';
+  $('#tabMine').style.background = t === 'mine' ? '#7c3aed' : '';
+  $('#tabComm').className = t === 'comm' ? 'sm' : 'sm ghost';
+  $('#tabComm').style.background = t === 'comm' ? '#7c3aed' : '';
+  load();
+}
+async function share(id) {
+  try {
+    const r = await api('/images/' + id + '/share', { method: 'POST' });
+    toast(r.message, true);
+    load();
+  } catch (e) { toast(e.message, false); }
+}
+async function scan(id) {
+  toast('扫描中…', true);
+  try {
+    const r = await api('/images/' + id + '/scan', { method: 'POST' });
+    toast(r.message, r.status === '安全');
+    load();
+  } catch (e) { toast(e.message, false); }
+}
+/* 社区镜像「使用」：真接口把镜像复制进自己的镜像库，复制完自动切到「我的镜像」 */
+async function useCommunity(id) {
+  try {
+    const r = await api('/images/community/' + id + '/use', { method: 'POST' });
+    toast(r.message, true);
+    if (!r.reused) switchTab('mine');
+  } catch (e) { toast(e.message, false); }
+}
+
+/** 镜像详情：把库里的真实字段全部摊开，不再是一句「演示」提示 */
+function imageDetail(id) {
+  const m = IMGS.find(x => x.id === id);
+  if (!m) return toast('镜像不存在', false);
+  const row = (k, v) => '<div class="biz-row"><div class="t"><b>' + k + '</b></div>' +
+    '<div class="d mono">' + (v === null || v === undefined || v === '' ? '—' : v) + '</div></div>';
+  Biz.modal({
+    title: '镜像详情', wide: true, hideOk: true, cancelText: '关闭',
+    html: '<div class="biz-rows">' +
+      row('镜像名称', m.name) +
+      row('镜像 ID', m.id) +
+      row('状态', m.status === 'available' ? '可用' : m.status) +
+      row('安全扫描', m.scan_status || '未扫描') +
+      row('基础镜像', m.base) +
+      row('容量', (Number(m.size_gb) || 0).toFixed(1) + ' GB') +
+      row('镜像地区', m.zone) +
+      row('镜像 UUID', m.uuid) +
+      row('来源实例', m.source_instance) +
+      row('是否分享到社区', m.shared ? '是' : '否') +
+      row('创建时间', Tf.sec(m.created_at)) +
+      '</div>',
+    tip: TAB === 'comm'
+      ? '这是别人分享的社区镜像，点「使用」会把它复制进你自己的镜像库，创建实例时就能选到。'
+      : '这是你租户下的私有镜像，可以扫描、分享到社区或删除。'
   });
-  localStorage.setItem(KEY, JSON.stringify(imgs));
-  render();
 }
 
-function del(i) {
+async function load() {
+  try {
+    IMGS = TAB === 'comm' ? await api('/images/community') : await api('/images');
+    render();
+  } catch (e) { toast(e.message, false); }
+}
+async function createImg() {
+  const name = $('#newName').value.trim();
+  if (!name) { toast('请填写镜像名称', false); return; }
+  try {
+    const r = await api('/images', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, base: 'pytorch:2.4', zone: '可用区 A', sizeGb: '2.1' })
+    });
+    $('#newName').value = '';
+    toast(r.message, true);
+    await load();
+  } catch (e) { toast(e.message, false); }
+}
+async function del(id) {
   if (!confirm('确认删除该镜像？')) return;
-  imgs.splice(i, 1);
-  localStorage.setItem(KEY, JSON.stringify(imgs));
-  render();
+  try { await api('/images/' + id, { method: 'DELETE' }); await load(); }
+  catch (e) { toast(e.message, false); }
 }
-
-render();
+load();
 </script>
 </body>
 </html>

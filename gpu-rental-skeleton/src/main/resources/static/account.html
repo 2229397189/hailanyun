@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>账号管理 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 </head>
 <body data-active="acc">
 
 <div class="console">
   <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="ctopbar"></div>
     <div class="cbody">
 
       <div class="grid" style="grid-template-columns:1fr 1.2fr;gap:14px;align-items:start">
@@ -42,9 +42,46 @@
           <div class="hint">至少 8 位，需包含大写字母、小写字母、数字和符号。</div>
           <div style="display:flex;gap:8px;margin-top:16px">
             <button onclick="submitPwd()">确认修改</button>
-            <button class="ghost" onclick="tip('退出所有设备')">退出所有设备</button>
+            <button class="ghost" onclick="logoutAll()">退出所有设备</button>
           </div>
         </div>
+      </div>
+
+      <div class="card panel" style="margin-top:14px">
+        <h3>认证与优惠 <span class="s">实名认证是端口开放等敏感能力的前置条件</span></h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <div class="alert ok" id="rnAlert" style="display:none"></div>
+            <b style="font-size:12.5px">实名认证 <span class="pill p-gray" id="rnPill">未认证</span></b>
+            <div class="hint" id="rnStatus" style="margin:4px 0 8px">–</div>
+            <div class="field" style="display:none" id="rnForm">
+              <input id="rnName" placeholder="真实姓名">
+              <input id="rnIdNo" placeholder="身份证号（仅存脱敏号）" style="margin-top:6px">
+              <input id="rnPhone" placeholder="手机号" style="margin-top:6px">
+              <button onclick="submitRealname()" style="margin-top:8px">提交审核</button>
+            </div>
+          </div>
+          <div>
+            <div class="alert ok" id="stAlert" style="display:none"></div>
+            <b style="font-size:12.5px">学生认证 <span class="pill p-gray" id="stPill">未认证</span></b>
+            <div class="hint" id="stStatus" style="margin:4px 0 8px">–</div>
+            <div class="field" style="display:none" id="stForm">
+              <input id="stSchool" placeholder="学校名称">
+              <input id="stNo" placeholder="学号" style="margin-top:6px">
+              <button onclick="submitStudent()" style="margin-top:8px">提交审核</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card panel" style="margin-top:14px">
+        <h3>我的优惠券</h3>
+        <div id="couponList"><div class="hint">加载中…</div></div>
+      </div>
+
+      <div class="card panel" style="margin-top:14px">
+        <h3>我的需求 <span class="s">官网与控制台提交的商务需求，跟进结果会同步到这里和消息中心</span></h3>
+        <div id="leadList"><div class="hint">加载中…</div></div>
       </div>
 
       <div class="card panel" style="margin-top:14px">
@@ -72,29 +109,36 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v13"></script>
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if (!TOKEN || !U) location.replace('/login.html');
+if (!TOKEN || !U) location.replace('/login');
 const TENANT = U.tenantId || 't1';
 
 $('#ava').textContent = (U.username || 'U').slice(0, 1).toUpperCase();
 $('#uname').textContent = U.username;
-$('#urole').textContent = U.role === 'admin' ? '平台管理员' : U.role === 'ops' ? '值班运维' : '租户用户';
+$('#urole').textContent = U.role === 'admin' ? '平台管理员' : U.role === 'ops' ? '值班运维'
+  : U.role === 'sub' ? '子账号' : '租户用户';
 
 async function api(p, opt) {
   opt = opt || {};
   opt.headers = Object.assign({}, opt.headers || {}, { Authorization: 'Bearer ' + TOKEN });
   const r = await fetch('/api' + p, opt);
-  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
   const t = await r.text();
   let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
   if (!r.ok) throw new Error(j.message || r.status);
   return j;
 }
-function tip(n) { alert('演示环境：「' + n + '」需要后端会话管理接口。'); }
+async function logoutAll() {
+  try {
+    const r = await api('/auth/logout-all', { method: 'POST' });
+    pwdMsg(r.message, true);
+  } catch (e) { pwdMsg(e.message, false); }
+}
 function pwdMsg(t, ok) {
   const a = $('#pwdAlert'); a.textContent = t; a.className = 'alert ' + (ok ? 'ok' : 'err'); a.style.display = 'block';
 }
@@ -122,6 +166,114 @@ async function submitPwd() {
     $('#ubal').textContent = '¥' + Number(me.balance_yuan || 0).toFixed(2);
   } catch (e) { console.error(e); }
 })();
+
+/* ---------------- 实名 / 学生 / 优惠券 ---------------- */
+async function loadCerts() {
+  try {
+    const rn = await api('/realname');
+    if (rn.status === 'none') {
+      $('#rnPill').textContent = '未认证'; $('#rnPill').className = 'pill p-gray';
+      $('#rnStatus').textContent = '提交实名后可开放端口等敏感能力';
+      $('#rnForm').style.display = 'block';
+    } else {
+      const map = { pending: ['审核中', 'p-amber'], approved: ['已认证', 'p-green'], rejected: ['已驳回', 'p-red'] };
+      const p = map[rn.status] || [rn.status, 'p-gray'];
+      $('#rnPill').textContent = p[0]; $('#rnPill').className = 'pill ' + p[1];
+      $('#rnStatus').textContent = rn.real_name + ' · ' + (rn.id_no_masked || '');
+      if (rn.status === 'rejected') { $('#rnForm').style.display = 'block'; $('#rnStatus').textContent += '（可重新提交）'; }
+    }
+  } catch (e) { console.error(e); }
+  try {
+    const st = await api('/student-cert');
+    if (st.status === 'none') {
+      $('#stPill').textContent = '未认证'; $('#stPill').className = 'pill p-gray';
+      $('#stStatus').textContent = '学生认证通过后下单自动 9 折';
+      $('#stForm').style.display = 'block';
+    } else {
+      const map = { pending: ['审核中', 'p-amber'], approved: ['已认证 · 9 折', 'p-green'], rejected: ['已驳回', 'p-red'] };
+      const p = map[st.status] || [st.status, 'p-gray'];
+      $('#stPill').textContent = p[0]; $('#stPill').className = 'pill ' + p[1];
+      $('#stStatus').textContent = st.school + ' · ' + st.student_no;
+      if (st.status === 'rejected') { $('#stForm').style.display = 'block'; }
+    }
+  } catch (e) { console.error(e); }
+  try {
+    const cs = await api('/coupons');
+    $('#couponList').innerHTML = cs.length ? cs.map(c => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px dashed #f0e5ff;
+           border-radius:10px;background:#fbf9ff;margin-bottom:8px">
+        <b style="color:#7c3aed;font-size:17px">¥${Number(c.amount_yuan).toFixed(2)}</b>
+        <div style="flex:1"><b style="font-size:12.5px">${c.title}</b>
+          <div class="hint">${c.expire_at ? '有效期至 ' + new Date(c.expire_at).toLocaleDateString('zh-CN') : '长期有效'}</div></div>
+        ${c.status === 'unused'
+          ? '<button class="sm" style="background:#7c3aed;color:#fff;border:none" onclick="redeem(\'' + c.id + '\')">兑换</button>'
+          : '<span class="pill p-gray">' + (c.status === 'redeemed' ? '已兑换' : '已过期') + '</span>'}
+      </div>`).join('') : '<span class="hint">暂无优惠券</span>';
+  } catch (e) { console.error(e); }
+}
+async function redeem(id) {
+  try {
+    const r = await api('/coupons/' + id + '/redeem', { method: 'POST' });
+    Biz.toast(r.message, 'ok');
+    loadCerts();
+    const ts = await api('/tenants');
+    const me = ts.find(t => t.id === TENANT) || {};
+    $('#ubal').textContent = '¥' + Number(me.balance_yuan || 0).toFixed(2);
+  } catch (e) { Biz.toast('兑换失败：' + e.message, 'err'); }
+}
+
+/* ---------------- 我的需求 ----------------
+ * 官网裸金属申请、演示机型开通、控制台咨询都会落到这里，管理端跟进的回复同步可见 */
+const LEAD_ST = {
+  'new': ['待受理', 'p-gray'], following: ['跟进中', 'p-amber'],
+  done: ['已完成', 'p-green'], rejected: ['已驳回', 'p-red']
+};
+async function loadLeads() {
+  const box = $('#leadList');
+  try {
+    const ls = await api('/leads');
+    box.innerHTML = ls.length ? ls.map(l => {
+      const st = LEAD_ST[l.status] || [l.status, 'p-gray'];
+      return '<div style="padding:11px 12px;border:1px solid #f0eaf9;border-radius:10px;margin-bottom:8px">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<b style="font-size:12.5px">' + Biz.esc(l.source) + (l.model ? ' · ' + Biz.esc(l.model) : '') + '</b>' +
+          '<span class="pill ' + st[1] + '">' + st[0] + '</span>' +
+          '<span class="hint" style="margin-left:auto">需求编号 ' + Biz.esc(l.id) + '</span>' +
+        '</div>' +
+        '<div class="hint" style="margin-top:5px">联系人 ' + Biz.esc(l.contact_name) + ' · ' +
+          Biz.esc(l.contact_phone) + ' · 提交于 ' + Biz.esc(Tf.at(l.created_at)) + '</div>' +
+        (l.note ? '<div class="hint" style="margin-top:4px;white-space:pre-wrap">需求：' + Biz.esc(l.note) + '</div>' : '') +
+        (l.reply ? '<div style="margin-top:7px;padding:8px 10px;background:#f7fbf8;border-left:3px solid #16a34a;' +
+          'border-radius:6px;font-size:12px">商务回复：' + Biz.esc(l.reply) +
+          (l.updated_at ? '<span class="hint"> · ' + Biz.esc(Tf.at(l.updated_at)) + '</span>' : '') +
+          '</div>'
+        : '<div class="hint" style="margin-top:6px">商务尚未回复，受理后会推送到消息中心。</div>') +
+        '</div>';
+    }).join('') : '<span class="hint">还没有提交过需求。裸金属申请、演示机型开通、到货咨询都会记录在这里。</span>';
+  } catch (e) { box.innerHTML = '<span class="hint">加载失败：' + Biz.esc(e.message) + '</span>'; }
+}
+async function submitRealname() {
+  const body = { realName: $('#rnName').value, idNo: $('#rnIdNo').value, phone: $('#rnPhone').value };
+  try {
+    const r = await api('/realname', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const a = $('#rnAlert'); a.textContent = r.message; a.style.display = 'block';
+    loadCerts();
+  } catch (e) {
+    const a = $('#rnAlert'); a.className = 'alert err'; a.textContent = e.message; a.style.display = 'block';
+  }
+}
+async function submitStudent() {
+  const body = { school: $('#stSchool').value, studentNo: $('#stNo').value };
+  try {
+    const r = await api('/student-cert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const a = $('#stAlert'); a.textContent = r.message; a.style.display = 'block';
+    loadCerts();
+  } catch (e) {
+    const a = $('#stAlert'); a.className = 'alert err'; a.textContent = e.message; a.style.display = 'block';
+  }
+}
+loadCerts();
+loadLeads();
 </script>
 </body>
 </html>

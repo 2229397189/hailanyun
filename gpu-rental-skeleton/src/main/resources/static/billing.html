@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>消费账单 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
+<style>
+.billbar{display:flex;gap:10px;align-items:center;margin:2px 0 6px;flex-wrap:wrap}
+.billbar .seg{display:inline-flex;border:1px solid #ece7f6;border-radius:9px;overflow:hidden}
+.billbar .seg button{border:none;background:#fff;padding:6px 13px;font-size:12px;color:#5b6478;cursor:pointer;border-radius:0}
+.billbar .seg button.on{background:#7c3aed;color:#fff;font-weight:600}
+.chartbox{border:1px solid #f1eef8;border-radius:12px;padding:14px 12px 8px;background:#fcfbff;margin-bottom:14px}
+.chartbox svg{width:100%;height:180px;display:block}
+.chartbox .cl{font-size:10px;fill:#9aa2b1}
+.chartbox .cv{font-size:10px;fill:#6d28d9;font-weight:600}
+.legend{display:flex;justify-content:space-between;font-size:10.5px;color:#9aa2b1;padding:2px 4px 0}
+</style>
+</head>
+<body data-active="billing">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"></div>
+    <div class="cbody">
+      <div class="msg" id="msg"></div>
+
+      <div class="dtiles" style="margin-bottom:14px">
+        <div class="dtile tint-p">
+          <div class="k">已结算消费</div>
+          <div class="v" id="kSettled"><i>¥</i>0.00</div>
+          <div class="hint">按秒结算落库的账单合计</div>
+        </div>
+        <div class="dtile tint-a">
+          <div class="k">运行中预估</div>
+          <div class="v" id="kRun"><i>¥</i>0.00</div>
+          <div class="hint">在跑实例到此刻的实时消费，尚未结算</div>
+        </div>
+        <div class="dtile">
+          <div class="k">近 <b id="kDays">7</b> 日合计</div>
+          <div class="v" id="kDaily"><i>¥</i>0.00</div>
+          <div class="hint">最高单日 <b id="kMax">¥0.00</b></div>
+        </div>
+        <div class="dtile">
+          <div class="k">明细条数</div>
+          <div class="v" id="kCnt">0<small> 条</small></div>
+          <div class="hint">平台最多返回最近 100 条</div>
+        </div>
+      </div>
+
+      <div class="card panel">
+        <h3>按日消费 <span class="s">按订单结算时间汇总的真实消费</span></h3>
+        <div class="billbar">
+          <div class="seg" id="daySeg">
+            <button data-d="7" class="on">近 7 日</button>
+            <button data-d="14">近 14 日</button>
+            <button data-d="30">近 30 日</button>
+          </div>
+          <button class="ghost sm" onclick="load()">刷新</button>
+          <button class="ghost sm" onclick="exportCsv()">导出 CSV</button>
+          <span class="hint" id="csvHint" style="margin-left:auto">导出内容即当前页面加载到的真实数据</span>
+        </div>
+        <div class="chartbox" id="chart"><div class="empty">加载中…</div></div>
+        <div id="dailyTable"></div>
+      </div>
+
+      <div class="card panel" style="margin-top:14px">
+        <h3>结算明细 <span class="s">每条 = 一个实例的一段计费（卡数 × 秒数 × 单价）</span></h3>
+        <div id="records"><div class="empty">加载中…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js?v17"></script>
+<script src="/biz.js?v17"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
+if (!TOKEN || !U) location.replace('/login');
+const TENANT = U.tenantId || 't1';
+const fmt = n => (Number(n) || 0).toFixed(2);
+let DAYS = 7, BILL = { settled: 0, runningEstimate: 0, records: [] }, DAILY = [];
+
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opt.headers || {});
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(j.message || r.status);
+  return j;
+}
+function toast(t, ok) {
+  const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err');
+  clearTimeout(toast._t); toast._t = setTimeout(() => m.className = 'msg', 6000);
+}
+function time(v) { return Tf.sec(v); }
+
+function renderKpi() {
+  $('#kSettled').innerHTML = '<i>¥</i>' + fmt(BILL.settled);
+  $('#kRun').innerHTML = '<i>¥</i>' + fmt(BILL.runningEstimate);
+  $('#kDays').textContent = DAYS;
+  const sum = DAILY.reduce((a, r) => a + Number(r.amount || 0), 0);
+  $('#kDaily').innerHTML = '<i>¥</i>' + fmt(sum);
+  const max = DAILY.reduce((a, r) => Math.max(a, Number(r.amount || 0)), 0);
+  $('#kMax').textContent = '¥' + fmt(max);
+  $('#kCnt').innerHTML = (BILL.records || []).length + '<small> 条</small>';
+}
+
+function renderChart() {
+  if (!DAILY.length) {
+    $('#chart').innerHTML = '<div class="empty">近 ' + DAYS + ' 日没有已结算的消费' +
+      '<div class="hint" style="margin-top:6px">账单在实例释放或结算时才写入，创建实例跑一段时间后这里才会有数据。</div></div>';
+    $('#dailyTable').innerHTML = '';
+    return;
+  }
+  const W = Math.max(560, DAILY.length * 74), H = 180, PAD = 26;
+  const max = Math.max.apply(null, DAILY.map(r => Number(r.amount || 0)).concat([0.01]));
+  const bw = Math.min(34, (W - PAD * 2) / DAILY.length - 12);
+  const bars = DAILY.map((r, i) => {
+    const v = Number(r.amount || 0);
+    const h = Math.max(2, (v / max) * (H - PAD - 34));
+    const x = PAD + i * ((W - PAD * 2) / DAILY.length) + ((W - PAD * 2) / DAILY.length - bw) / 2;
+    const y = H - PAD - h;
+    return '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) +
+      '" height="' + h.toFixed(1) + '" rx="4" fill="url(#bg1)">' +
+      '<title>' + r.d + '　¥' + fmt(v) + '</title></rect>' +
+      '<text class="cv" x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 5).toFixed(1) +
+      '" text-anchor="middle">' + fmt(v) + '</text>' +
+      '<text class="cl" x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 8) +
+      '" text-anchor="middle">' + String(r.d).slice(5) + '</text>';
+  }).join('');
+  $('#chart').innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
+      '<defs><linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ec4899"/>' +
+      '</linearGradient></defs>' +
+      [0.25, 0.5, 0.75, 1].map(f =>
+        '<line x1="' + PAD + '" x2="' + (W - PAD) + '" y1="' + (H - PAD - (H - PAD - 34) * f) +
+        '" y2="' + (H - PAD - (H - PAD - 34) * f) + '" stroke="#f0eaf9" stroke-width="1"/>').join('') +
+      '<line x1="' + PAD + '" x2="' + (W - PAD) + '" y1="' + (H - PAD) + '" y2="' + (H - PAD) +
+      '" stroke="#e6dcfa" stroke-width="1"/>' + bars + '</svg>' +
+    '<div class="legend"><span>纵轴单位：元（每柱顶部已标注实际金额）</span><span>合计 ¥' +
+      fmt(DAILY.reduce((a, r) => a + Number(r.amount || 0), 0)) + '</span></div>';
+
+  $('#dailyTable').innerHTML = '<table><thead><tr><th>日期</th><th class="num">消费金额</th>' +
+    '<th class="num">占近 ' + DAYS + ' 日比</th></tr></thead><tbody>' + DAILY.map(r => {
+      const v = Number(r.amount || 0);
+      const total = DAILY.reduce((a, x) => a + Number(x.amount || 0), 0) || 1;
+      return '<tr><td class="mono">' + r.d + '</td><td class="num mono">¥' + fmt(v) + '</td>' +
+        '<td class="num hint">' + (v / total * 100).toFixed(1) + '%</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function renderRecords() {
+  const rs = BILL.records || [];
+  if (!rs.length) {
+    $('#records').innerHTML = '<div class="empty-state"><div class="ic">🧾</div><b>还没有结算记录</b>' +
+      '<span>实例释放或周期结算时会写入账单，跑满一个计费周期后这里就有明细</span></div>';
+    return;
+  }
+  $('#records').innerHTML = '<table><thead><tr><th>结算时间</th><th>实例 ID</th><th class="num">卡数</th>' +
+    '<th class="num">计费时长</th><th class="num">单价（元/卡·小时）</th><th class="num">金额</th></tr></thead><tbody>' +
+    rs.map(r => '<tr><td class="hint">' + time(r.settled_at) + '</td>' +
+      '<td class="mono">' + Biz.esc(r.instance_id) + '</td>' +
+      '<td class="num">' + (Number(r.gpu_count) === 8 ? '整机 8 卡' : r.gpu_count) + '</td>' +
+      '<td class="num">' + dur(r.seconds) + '</td>' +
+      '<td class="num mono">¥' + Number(r.unit_price || 0).toFixed(4) + '</td>' +
+      '<td class="num mono" style="color:#dc2626">-¥' + fmt(r.amount) + '</td></tr>').join('') +
+    '</tbody></table>';
+}
+function dur(s) {
+  s = Number(s || 0);
+  return s >= 3600 ? (s / 3600).toFixed(2) + ' 小时' : (s >= 60 ? (s / 60).toFixed(1) + ' 分钟' : s + ' 秒');
+}
+
+function exportCsv() {
+  const lines = [];
+  lines.push('类型,时间,对象,卡数,时长(秒),单价(元/卡·小时),金额(元)');
+  (BILL.records || []).forEach(r => lines.push([
+    '结算消费', time(r.settled_at), r.instance_id, r.gpu_count, r.seconds,
+    Number(r.unit_price || 0).toFixed(4), '-' + fmt(r.amount)
+  ].map(csvCell).join(',')));
+  DAILY.forEach(r => lines.push([
+    '按日汇总', r.d, '', '', '', '', fmt(r.amount)
+  ].map(csvCell).join(',')));
+  lines.push('');
+  lines.push('已结算合计,¥' + fmt(BILL.settled));
+  lines.push('运行中预估,¥' + fmt(BILL.runningEstimate));
+  if (lines.length <= 1) { Biz.toast('当前没有可导出的数据', 'err'); return; }
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '消费账单_' + TENANT + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  Biz.toast('已导出 ' + ((BILL.records || []).length + DAILY.length) + ' 行真实账单数据', 'ok');
+}
+function csvCell(v) {
+  const s = String(v == null ? '' : v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+async function load() {
+  try {
+    const [b, d] = await Promise.all([
+      api('/billing?tenantId=' + encodeURIComponent(TENANT)),
+      api('/billing/daily?tenantId=' + encodeURIComponent(TENANT) + '&days=' + DAYS)
+    ]);
+    BILL = b || {}; DAILY = Array.isArray(d) ? d : [];
+  } catch (e) {
+    BILL = { settled: 0, runningEstimate: 0, records: [] }; DAILY = [];
+    $('#chart').innerHTML = '<div class="empty">加载失败：' + Biz.esc(e.message) + '</div>';
+    $('#records').innerHTML = '<div class="empty">加载失败：' + Biz.esc(e.message) + '</div>';
+    toast(e.message, false);
+  }
+  renderKpi(); renderChart(); renderRecords();
+}
+
+document.querySelectorAll('#daySeg button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#daySeg button').forEach(x => x.classList.toggle('on', x === btn));
+    DAYS = Number(btn.dataset.d);
+    load();
+  };
+});
+load();
+</script>
+</body>
+</html>

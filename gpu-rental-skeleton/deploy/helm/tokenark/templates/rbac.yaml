@@ -1,0 +1,39 @@
+{{- if .Values.rbac.enabled }}
+# real 模式下平台需要管理租户命名空间、Pod 与 ResourceQuota
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tokenark-app
+  namespace: {{ .Values.namespace.name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tokenark-app
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "create"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["resourcequotas"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tokenark-app
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tokenark-app
+subjects:
+  - kind: ServiceAccount
+    name: tokenark-app
+    namespace: {{ .Values.namespace.name }}
+{{- end }}

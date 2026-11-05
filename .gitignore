@@ -28,3 +28,13 @@ Thumbs.db
 .idea/
 *.iml
 .vscode/
+
+# 客户招标资料与临时产物（不入库）
+海兰云需求文档.pdf
+req.md
+req.pdf
+req.txt
+需求可行性评估.*
+_bill.png
+_test_out.txt
+_checklist_extract.txt

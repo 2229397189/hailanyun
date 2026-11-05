@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>我的订单 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/console.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/console.css?v17">
 </head>
 <body data-active="orders">
 
 <div class="console">
   <aside class="cs" id="cside"></aside>
   <div class="cmain">
-    <div class="ctopbar"><div class="ctabs" id="ctabs"></div></div>
+    <div class="ctopbar"></div>
     <div class="cbody">
       <div class="msg" id="msg"></div>
 
@@ -40,12 +40,12 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v13"></script>
+<script src="/console-nav.js?v17"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if (!TOKEN || !U) location.replace('/login.html');
+if (!TOKEN || !U) location.replace('/login');
 const TENANT = U.tenantId || 't1';
 const fmt = n => (Number(n) || 0).toFixed(2);
 const OS = { created: ['已创建', 'p-blue'], paid: ['已支付', 'p-green'], closed: ['已完成', 'p-gray'], cancelled: ['已取消', 'p-gray'] };
@@ -53,7 +53,7 @@ let ALL = [], FILTER = 'all';
 
 async function api(p) {
   const r = await fetch('/api' + p, { headers: { Authorization: 'Bearer ' + TOKEN } });
-  if (r.status === 401) { location.replace('/login.html'); throw new Error('401'); }
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
   const t = await r.text();
   let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
   if (!r.ok) throw new Error(j.message || r.status);

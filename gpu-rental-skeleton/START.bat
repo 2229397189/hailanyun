@@ -34,8 +34,15 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo   [2/3] 正在启动 8 个服务...
-docker compose up -d
+echo   [2/3] 正在启动服务...
+docker ps --format "{{.Names}}" | findstr /x "k3s-test" >nul 2>&1
+if not errorlevel 1 (
+    echo         检测到 k3s 集群，按 real 模式启动（真 K8s 调度）
+    docker compose -f docker-compose.yml -f docker-compose.real.yml up -d
+) else (
+    echo         未检测到 k3s 集群，按 fake 模式启动（模拟调度，不依赖集群）
+    docker compose up -d
+)
 if errorlevel 1 (
     color 0C
     echo   [错误] 启动失败，请截图本窗口发给技术同事。
@@ -49,7 +56,7 @@ set /a n=0
 :wait
 timeout /t 3 /nobreak >nul
 set /a n+=1
-curl -sk https://localhost/login.html >nul 2>&1
+curl -s http://localhost:8099/api/health >nul 2>&1
 if not errorlevel 1 goto ready
 if %n% lss 20 goto wait
 
@@ -59,15 +66,26 @@ echo   ============================================
 echo      启动完成
 echo   ============================================
 echo.
-echo   地址：https://localhost
-echo   账号：admin
-echo   密码：Hly@2026
+echo   地址：http://localhost:8099
+echo.
+echo   租户账号：tenant_a    密码：Hly@2026
+echo   管理账号：admin       密码：Hly@2026
+echo.
+echo   常用页面：
+echo     首页        http://localhost:8099/index.html
+echo     容器云      http://localhost:8099/portal.html
+echo     拼租卡      http://localhost:8099/group.html
+echo     裸金属      http://localhost:8099/baremetal.html
+echo     控制台      http://localhost:8099/console.html
+echo     运维台      http://localhost:8099/admin.html
+echo     运维大屏    http://localhost:8099/screen.html
 echo.
 echo   提示：
-echo   1. 浏览器会提示"证书不安全"，点【高级】-【继续前往】
-echo   2. 这是自签证书，内网演示正常现象，不是故障
-echo   3. 关闭本窗口不会停止服务
+echo   1. 请用 http:// 开头访问，不要用 https
+echo      （https 走自签证书，浏览器会拦一道警告页）
+echo   2. 关闭本窗口不会停止服务，停止请双击 STOP.bat
+echo   3. 数据持久化在 Docker 卷里，重启不会丢
 echo.
-start https://localhost
+start http://localhost:8099/index.html
 echo.
 pause

@@ -42,8 +42,9 @@ docker compose up -d --build
 | registry | 5000 | 私有镜像仓库 |
 | backup | — | 每日 pg_dump，保留 7 天 |
 
-> K8s 模式默认 `real`，需要 `../k8s-demo/kubeconfig`。没有集群时把
-> `docker-compose.yml` 里的 `RENTAL_K8S_MODE` 改成 `fake`。
+> K8s 模式默认 `fake`（模拟 Pod 生命周期，不需要集群）。接真集群时：
+> `docker compose -f docker-compose.yml -f docker-compose.real.yml up -d --build app`
+> （`KUBECONFIG_PATH` 默认 `../k8s-demo/kubeconfig`）。
 
 ---
 
@@ -56,14 +57,15 @@ docker compose up -d --build
 docker save gpu-rental-skeleton-app:latest | \
   docker exec -i <k3s容器名> ctr -n k8s.io images import -
 
-# 2. 部署
-kubectl apply -f deploy/k8s/tokenark.yaml
+# 2. 部署（Helm 推荐；或裸清单 kubectl apply -f deploy/k8s/tokenark.yaml）
+helm install tokenark deploy/helm/tokenark -n tokenark --create-namespace
 
 # 3. 访问
 kubectl port-forward -n tokenark svc/tokenark-app 8099:8099
 ```
 
 平台会自动检测集群内 ServiceAccount，用 in-cluster 认证，不需要挂 kubeconfig。
+Helm values 里 `app.k8sMode=real` 同时下发平台所需的 RBAC；`fake` 演示可改 values 或加 `--set app.k8sMode=fake`。
 
 ---
 
@@ -73,8 +75,11 @@ kubectl port-forward -n tokenark svc/tokenark-app 8099:8099
 |---|---|---|---|
 | `admin` | `Hly@2026` | 平台管理员 | 管理端 + 大屏 |
 | `ops` | `Hly@2026` | 值班运维 | 管理端（无系统管理） |
-| `tenant_a` | `Hly@2026` | 租户用户 | 用户端 |
-| `tenant_b` | `Hly@2026` | 租户用户 | 用户端 |
+| `tenant_a` | `Hly@2026` | 星辰智能科技（t1） | 用户端 |
+| `tenant_b` | `Hly@2026` | 凌云机器人（t2） | 用户端 |
+| `tenant_c` | `Hly@2026` | 幻核互动娱乐（t4） | 用户端 |
+| `tenant_d` | `Hly@2026` | 极光量化科技（t5） | 用户端 |
+| `tenant_e` | `Hly@2026` | 蓝湾医疗影像（t6） | 用户端 |
 | `guest` | — | 已停用 | 登录被拒 |
 
 > 连续 5 次密码错误锁定 10 分钟。初始密码由 `SeedUsers` 启动时写入 BCrypt。
@@ -85,17 +90,53 @@ kubectl port-forward -n tokenark svc/tokenark-app 8099:8099
 
 | 路径 | 页面 |
 |---|---|
-| `/login.html` | 登录 |
-| `/admin.html` | 管理端（10 个模块） |
-| `/portal.html` | 用户端（算力市场 / 我的实例 / 我的账单） |
-| `/screen.html` | NOC 监控大屏 |
+| `/login` | 登录（演示账号表 + 反挖矿协议条款） |
+| `/admin` | 管理端（集群总览 / 节点 / 工作负载 / 资源池 / 租户 / 认证审核 / 监控告警 / 巡检 / 工单 / 经营报表 / 系统管理） |
+| `/portal` | 用户端（算力市场 / 我的实例 / 我的账单） |
+| `/instances` | 用户端 · 实例详情（全部生命周期操作按钮） |
+| `/market` | 用户端 · 算力市场（含闲时 5 折 / 无卡调试规格卡） |
+| `/llm-api` | 用户端 · 大模型 API（密钥 / 模型目录 / 调用计量） |
+| `/images` | 用户端 · 镜像（我的 / 社区广场 / 分享 / 安全扫描） |
+| `/storage` | 用户端 · 文件存储 + 公共数据集库 |
+| `/account` | 用户端 · 账户（余额 / 优惠券 / 实名 / 学生认证 / 发票） |
+| `/tickets`、`/notifications`、`/subaccounts`、`/recharge`、`/wallet`、`/orders` | 用户端 · 工单 / 消息 / 子账号 / 充值 / 钱包 / 订单 |
+| `/about`、`/solutions`、`/group`、`/baremetal` | 品牌站（关于我们含用户服务协议、解决方案、拼租卡、裸金属） |
+| `/screen` | NOC 监控大屏 |
+
+> 控制台右上角点**头像**打开账号面板：身份 / 账户总余额（充值入口）/ 外观（浅色·深色·跟随系统）/ 退出登录。
+
+## 命令行客户端 ark-cli（可选）
+
+纯 Python 标准库，与 Web 端同一套后端，适合脚本化演示：
+
+```bash
+python deploy/cli/ark-cli.py login                       # 交互式登录（或 ARK_USER/ARK_PASSWORD 环境变量）
+python deploy/cli/ark-cli.py skus                        # SKU 与单价（含闲时/无卡）
+python deploy/cli/ark-cli.py balance                     # 余额与代金券
+python deploy/cli/ark-cli.py instances                   # 实例列表
+python deploy/cli/ark-cli.py poweroff <实例ID>            # 关机（poweron 开机 / restart 重启）
+python deploy/cli/ark-cli.py renew <实例ID> <小时数>       # 续费
+python deploy/cli/ark-cli.py release <实例ID>             # 释放：输出使用秒数与退款金额
+```
+
+Token 缓存于 `~/.ark-cli.json`；平台地址默认 `http://localhost:8099`（`ARK_URL` 可改，`ARK_TOKEN` 可直接注入）。
+
+## 接入本机真实 GPU 数据（可选）
+
+有 NVIDIA 显卡的机器跑一个脚本，监控曲线就是真实数据（每 10 秒上报）：
+
+```bash
+python deploy/agent/win-agent.py http://localhost:8099 hly-local-agent-2026
+```
+
+管理端「节点管理」出现「本机实采」只读节点卡、监控页曲线标注「本机真实 GPU 实采」即接入成功。令牌可在 系统管理→系统参数 `agent.token` 修改。不跑 agent 则回退 Prometheus/DCGM，再回退到标注「合成」的演示曲线。
 
 ---
 
 ## 常见问题
 
 **Q：启动报 `nvidia-smi` 相关错误？**
-A：当前版本不依赖 nvidia-smi，GPU 数据是模拟的。有真卡后另接。
+A：当前版本不依赖 nvidia-smi。`fake` 模式 GPU 数据来自台账模拟；`real` 模式接真集群后能读的（节点 / Pod / 配额）读真的，卡级 DCGM 指标需 GPU Operator 就绪后接入（界面会标注"未接入"）。想在本机展示真实 GPU 曲线，跑 `deploy/agent/win-agent.py`（见上）。
 
 **Q：`real` 模式启动失败？**
 A：检查 `kubeconfig` 路径，或改成 `RENTAL_K8S_MODE=fake`。

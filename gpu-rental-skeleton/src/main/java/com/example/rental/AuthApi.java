@@ -26,10 +26,25 @@ public class AuthApi {
         return auth.login(username, password, remember, clientIp(req), req.getHeader("User-Agent"));
     }
 
+    @PostMapping("/register")
+    public Map<String, Object> register(@RequestBody Map<String, Object> body) {
+        String username = body.get("username") == null ? "" : String.valueOf(body.get("username"));
+        String password = body.get("password") == null ? "" : String.valueOf(body.get("password"));
+        String tenantName = body.get("tenantName") == null ? "" : String.valueOf(body.get("tenantName"));
+        String inviteCode = body.get("inviteCode") == null ? "" : String.valueOf(body.get("inviteCode"));
+        return auth.register(username, password, tenantName, inviteCode);
+    }
+
     @PostMapping("/logout")
     public Map<String, Object> logout(HttpServletRequest req) {
         auth.logout(token(req));
         return Map.of("ok", true, "message", "已退出登录");
+    }
+
+    @PostMapping("/logout-all")
+    public Map<String, Object> logoutAll(HttpServletRequest req) {
+        int n = auth.logoutOthers(token(req));
+        return Map.of("kicked", n, "message", n > 0 ? "已退出其它设备（" + n + " 个）" : "当前只有这一个会话");
     }
 
     @GetMapping("/me")

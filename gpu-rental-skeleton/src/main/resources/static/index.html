@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TokenArk 创元方舟 · 弹性 GPU 算力云</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
-<link rel="stylesheet" href="/ref.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/ref.css?v17">
 </head>
 <body>
 
 <header class="topnav">
   <div class="inner">
-    <a class="brand" href="/index.html">
+    <a class="brand" href="/index">
       <span class="brand-mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
@@ -25,15 +25,15 @@
       </span>
     </a>
     <nav class="navlinks">
-      <a class="on" href="/index.html">首页</a>
-      <a href="/market.html">算力市场</a>
-      <a class="soon">大模型 API</a>
-      <a href="/solutions.html">解决方案</a>
-      <a href="/about.html">关于我们</a>
+      <a class="on" href="/index">首页</a>
+      <a href="/market">算力市场</a>
+      <a href="/llm-api">大模型 API</a>
+      <a href="/solutions">解决方案</a>
+      <a href="/about">关于我们</a>
       <a href="#pricing">帮助文档</a>
     </nav>
     <div class="nav-right">
-      <a class="btn-console" href="/portal.html">控制台</a>
+      <a class="btn-console" href="/console">控制台</a>
       <span class="avatar">L</span>
     </div>
   </div>
@@ -49,7 +49,7 @@
       </h1>
       <p class="rh-lead">专为高校科研与开发者打造的弹性 GPU 云平台，从“按量训练”到“弹性推理”，我们为您提供覆盖 AI 模型全生命周期的算力服务。</p>
       <div class="rh-actions">
-        <a class="rh-btn-p" href="/login.html">立即开始使用</a>
+        <a class="rh-btn-p" href="/login">立即开始使用</a>
         <a class="rh-btn-g" href="#pricing">查看价格表</a>
       </div>
     </div>
@@ -84,7 +84,7 @@
           <div class="rh-back">
             <div class="ok">✓</div>
             <h3>配置已锁定</h3>
-            <button onclick="location.href='/login.html'">立即创建实例</button>
+            <button onclick="goCreate()">立即创建实例</button>
             <a href="#" onclick="rhUnlock();return false">重新选择</a>
           </div>
         </div>
@@ -99,7 +99,7 @@
       <div class="blk-title">算力市场</div>
       <div class="blk-sub">灵活多样的算力选择，打破硬件门槛</div>
     </div>
-    <a class="pill-link" href="/market.html">查看所有实例 →</a>
+    <a class="pill-link" href="/market">查看所有实例 →</a>
   </div>
 
   <div class="type-grid">
@@ -113,7 +113,7 @@
       <div class="type-title">容器云实例</div>
       <div class="type-desc">无需配置环境，秒级启动，适合 JupyterLab 直连，作业提交与论文复现。</div>
       <div class="spec-box"><span class="k">RTX4090-24G</span><span class="p">¥1.08<small> /小时</small></span></div>
-      <a class="type-btn line" href="/portal.html" style="text-decoration:none">立即创建</a>
+      <a class="type-btn line" href="/portal" style="text-decoration:none">立即创建</a>
     </div>
 
     <div class="type-card">
@@ -128,7 +128,7 @@
       <div class="type-title">拼租卡 · 团购</div>
       <div class="type-desc">多人团购一整机，显存共享或切分。大幅降低大显存卡使用门槛。</div>
       <div class="spec-box"><span class="k">RTX4090-24G</span><span class="p">¥670<small> /月·卡</small></span></div>
-      <a class="type-btn btn-primary" href="/group.html" style="text-decoration:none">去拼团</a>
+      <a class="type-btn btn-primary" href="/group" style="text-decoration:none">去拼团</a>
     </div>
 
     <div class="type-card">
@@ -142,7 +142,7 @@
       <div class="type-title">B端裸金属</div>
       <div class="type-desc">无虚拟化损耗，整机独占，提供极致性能，适合长时间大规模训练。</div>
       <div class="spec-box"><span class="k">RTX4090-24G</span><span class="p">¥5500<small>/月</small></span></div>
-      <a class="type-btn line" href="/baremetal.html" style="text-decoration:none">查看配置</a>
+      <a class="type-btn line" href="/baremetal" style="text-decoration:none">查看配置</a>
     </div>
   </div>
 </section>
@@ -153,7 +153,7 @@
       <div class="blk-title" style="font-size:24px">弹性算力服务</div>
       <div class="blk-sub">按需动态伸缩，从「按量训练」到「弹性推理」</div>
     </div>
-    <a class="pill-link" href="/solutions.html">了解方案 →</a>
+    <a class="pill-link" href="/solutions">了解方案 →</a>
   </div>
   <div class="feat-grid">
     <div class="feat-card"><div class="feat-ic">⚡</div><div class="feat-t">极致弹性</div>
@@ -170,7 +170,7 @@
 <section class="section" style="padding-top:6px">
   <div class="blk-head"><div><div class="blk-title" style="font-size:22px">热门模型镜像</div>
     <div class="blk-sub">预置环境，开箱即用 · 数据来自服务端镜像目录</div></div>
-    <a class="pill-link" href="/images.html">查看全部镜像 →</a></div>
+    <a class="pill-link" href="/images">查看全部镜像 →</a></div>
   <div class="mirror-strip"><div class="mirror-track" id="mirrorTrack"></div></div>
 </section>
 
@@ -213,7 +213,7 @@
     <div style="position:relative;color:#fff">
       <div style="font-size:32px;font-weight:800;letter-spacing:.06em">智算无疆　川流不息</div>
       <div style="font-size:11px;letter-spacing:.34em;opacity:.62;margin-top:8px">INFINITE COMPUTE · FLOWING FUTURE</div>
-      <a class="btn-primary" href="/market.html" style="margin-top:22px">解锁 2026 AI 算力新篇章</a>
+      <a class="btn-primary" href="/market" style="margin-top:22px">解锁 2026 AI 算力新篇章</a>
     </div>
   </div>
 </section>
@@ -257,8 +257,8 @@
     <div style="font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:14px">我们为您提供全力支持</div>
     <div class="hint" style="margin-top:8px">7×24 技术支持 · 定制化解决方案 · 免费测试额度</div>
     <div style="display:flex;gap:12px;justify-content:center;margin-top:22px">
-      <a class="btn-primary" href="/login.html">免费注册，领取测试额度</a>
-      <a class="btn-ghost" href="/baremetal.html">咨询算力方案</a>
+      <a class="btn-primary" href="/login?tab=register">免费注册，领取测试额度</a>
+      <a class="btn-ghost" href="#" onclick="Biz.lead({source:'解决方案咨询',title:'咨询算力方案',desc:'留下机型、台数和使用时长，商务会给出配置方案和报价。',note:'业务场景：\n需要的机型 / 台数：\n预计使用时长：'});return false">咨询算力方案</a>
     </div>
   </div>
 </section>
@@ -271,18 +271,19 @@
       <div style="margin-top:6px">GPU 算力运营平台 · 私有化交付</div>
     </div>
     <div style="display:flex;gap:26px">
-      <a href="/market.html">算力市场</a><a href="/group.html">拼团</a>
-      <a href="/baremetal.html">裸金属</a><a href="/about.html">关于我们</a>
+      <a href="/market">算力市场</a><a href="/group">拼团</a>
+      <a href="/baremetal">裸金属</a><a href="/about">关于我们</a>
     </div>
     <div>© 2026 TokenArk · 演示环境 · 卡池 <b id="statPool">--</b> · <span id="statTime">--:--</span> 更新</div>
   </div>
 </footer>
 
-<a href="#" onclick="alert('演示环境：智能助手尚未接入大模型。');return false"
+<a href="#" onclick="Biz.assistant();return false" title="智能助手"
    style="position:fixed;right:26px;bottom:26px;width:48px;height:48px;border-radius:50%;
    background:linear-gradient(135deg,#7c3aed,#d946ef);color:#fff;display:flex;align-items:center;
    justify-content:center;font-size:20px;box-shadow:0 14px 30px -10px rgba(124,58,237,.7);z-index:60">☁</a>
 
+<script src="/biz.js?v17"></script>
 <script>
 /* 首页数据全部来自 Spring Boot：/api/catalog/home */
 (async function () {
@@ -317,7 +318,7 @@
     { logo: '/img/intel.svg', alt: 'Intel',  model: 'CLOUD CPU3', spec: '20 核心 · 80 GB 内存', price: '0.60' },
     { logo: '/img/nvidia.svg',alt: 'NVIDIA', model: 'RTX 5090',   spec: '32 核心 · 160 GB 内存 · 32G 显存', price: '2.80' }
   ];
-  var i = 0, flip = document.getElementById('rhFlip'), busy = false;
+  var i = 0, flip = document.getElementById('rhFlip'), busy = false, locked = false;
   var logo = document.getElementById('rhLogo'), model = document.getElementById('rhModel');
   var spec = document.getElementById('rhSpec'), price = document.getElementById('rhPrice');
 
@@ -331,15 +332,26 @@
   window.rhLock = function () {
     if (busy) return;
     busy = true;
+    locked = true;
     flip.classList.add('flipped');
+    document.getElementById('rhState').textContent = '配置已锁定';
     setTimeout(function () { busy = false; }, 1000);
   };
   window.rhUnlock = function () {
     flip.classList.remove('flipped');
+    locked = false;
+    document.getElementById('rhState').textContent = '正在搜索...';
+  };
+
+  /* 立即创建实例：进容器云下单页，带上锁定的机型做预选（未登录先去登录，登录后回跳） */
+  window.goCreate = function () {
+    const m = document.getElementById('rhModel').textContent.trim();
+    const next = '/portal' + (m ? '?model=' + encodeURIComponent(m) : '');
+    location.href = Biz.token() ? next : '/login?next=' + encodeURIComponent(next);
   };
 
   setInterval(function () {
-    if (busy) return;
+    if (busy || locked) return;
     busy = true;
     flip.classList.add('flipped');
     setTimeout(function () {
@@ -353,6 +365,6 @@
   }, 7000);
 })();
 </script>
-<script src="/nav.js?v13"></script>
+<script src="/nav.js?v17"></script>
 </body>
 </html>

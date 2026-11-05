@@ -28,6 +28,8 @@ rental:
     # fake = 模拟 Pod 生命周期（无需集群）；real = 真连 K8s apiserver
     mode: fake
     image: busybox:1.36
+  # 监控数据源：配置了才注册 PrometheusClient；不配置则监控页用合成曲线并标注
+  # prometheus.url: http://localhost:9090
 
 # 可观测性：Prometheus 抓取端点（/actuator/prometheus）
 management:

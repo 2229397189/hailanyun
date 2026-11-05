@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TokenArk 创元方舟 · 管理控制台</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v13">
+<link rel="stylesheet" href="/app.css?v17">
 </head>
 <body>
 <div class="layout">
@@ -30,16 +30,23 @@
       <a data-p="workloads"><span class="ic">▥</span>工作负载</a>
       <a data-p="resources"><span class="ic">◧</span>资源对象</a>
       <a data-p="pools"><span class="ic">◈</span>资源池与调度</a>
+      <div class="grp">业务运营</div>
+      <a data-p="instances"><span class="ic">◨</span>算力实例</a>
+      <a data-p="leads"><span class="ic">◩</span>商务需求</a>
+      <a data-p="groups"><span class="ic">◪</span>拼团管理</a>
+      <a data-p="stock"><span class="ic">◫</span>到货提醒</a>
       <div class="grp">租户与运营</div>
       <a data-p="tenants"><span class="ic">◉</span>租户管理</a>
       <a data-p="alerts"><span class="ic">◔</span>监控告警</a>
       <a data-p="inspections"><span class="ic">✦</span>智能巡检</a>
+      <a data-p="certs" data-roles="admin"><span class="ic">☑</span>认证与优惠</a>
+      <a data-p="report" data-roles="admin"><span class="ic">▦</span>经营报表</a>
       <div class="grp">系统</div>
       <a data-p="system" data-roles="admin"><span class="ic">⚙</span>系统管理</a>
-      <a href="/screen.html" target="_blank" rel="noopener"><span class="ic">▣</span>监控大屏</a>
-      <a href="/portal.html"><span class="ic">◫</span>返回用户端</a>
+      <a href="/screen" target="_blank" rel="noopener"><span class="ic">▣</span>监控大屏</a>
+      <a href="/portal"><span class="ic">◫</span>返回用户端</a>
     </nav>
-    <div class="foot">K8s v1.34.1+k3s1<br>Node 2 · GPU 16</div>
+    <div class="foot" id="sideFoot">K8s 版本读取中…</div>
   </aside>
 
   <div class="main">
@@ -92,7 +99,7 @@
         </div>
         <div class="grid g2">
           <div class="card panel">
-            <h3>节点健康 <span class="s">2 台</span></h3>
+            <h3>节点健康 <span class="s" id="ovNodeSub"></span></h3>
             <div id="ovNodes"></div>
           </div>
           <div class="card panel">
@@ -219,6 +226,13 @@
         </div>
         <div class="card panel mb10"><h3>平台账号 <span class="s">RBAC · 可停用 / 解锁</span></h3><div id="sysUsers"></div></div>
         <div class="card panel mb10"><h3>系统参数 <span class="s">改动立即生效并写审计</span></h3><div id="sysSettings"></div></div>
+        <div class="card panel mb10">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">数据字典 <span class="s" id="dictSub">分类码表，业务下拉与标签取数</span></h3>
+            <button class="sm" onclick="openDict()">新增字典项</button>
+          </div>
+          <div id="sysDicts"></div>
+        </div>
         <div class="card panel">
           <div class="between" style="margin-bottom:10px">
             <h3 style="margin:0">操作审计 <span class="s" id="auditSub">所有写操作留痕</span></h3>
@@ -265,6 +279,108 @@
         </div>
       </div>
 
+      <!-- 8 算力实例（代租户操作） -->
+      <div class="page" id="page-instances">
+        <div class="grid g4 mb10" id="isKpi"></div>
+        <div class="card panel">
+          <div class="between mb10">
+            <h3 style="margin:0">租户算力实例 <span class="s">与用户端同一套 RentalService 路径，全部真实下发</span></h3>
+            <div class="btnrow" style="align-items:center">
+              <select id="isTenant" onchange="loadInstances()" style="width:190px;padding:6px 9px;font-size:12px">
+                <option value="">全部租户</option>
+              </select>
+              <select id="isStatus" onchange="loadInstances()" style="width:126px;padding:6px 9px;font-size:12px">
+                <option value="">全部状态</option>
+                <option value="running">运行中</option>
+                <option value="stopped">已关机</option>
+                <option value="provisioning">创建中</option>
+                <option value="resetting">重置中</option>
+                <option value="releasing">回收中</option>
+                <option value="released">已释放</option>
+                <option value="failed">失败</option>
+              </select>
+              <button class="sm ghost" onclick="loadInstances()">刷新</button>
+            </div>
+          </div>
+          <div id="isTable"></div>
+          <div class="hint mt10">关机＝停止计费、数据保留 7 天；释放＝按秒实结、差额退回租户余额，占用卡同步归还卡池；重置系统只还原系统盘，数据盘不动。续费从<b>租户余额</b>预扣，余额不足会被服务端拒绝。</div>
+        </div>
+      </div>
+
+      <!-- 9 商务需求 -->
+      <div class="page" id="page-leads">
+        <div class="grid g3 mb10" id="ldKpi"></div>
+        <div class="card panel">
+          <div class="between mb10">
+            <h3 style="margin:0">商务需求跟进 <span class="s">来自算力市场 / 裸金属申请 / 官网询价</span></h3>
+            <div class="btnrow" style="align-items:center">
+              <select id="ldStatus" onchange="loadLeads()" style="width:126px;padding:6px 9px;font-size:12px">
+                <option value="">全部状态</option>
+                <option value="new">新提交</option>
+                <option value="following">跟进中</option>
+                <option value="done">已办结</option>
+                <option value="rejected">已驳回</option>
+              </select>
+              <button class="sm ghost" onclick="loadLeads()">刷新</button>
+            </div>
+          </div>
+          <div class="alert" id="ldNote"></div>
+          <div id="ldTable"></div>
+          <div class="hint mt10">已办结 / 已驳回<b>必须写回复</b>（服务端会拒绝空回复）。登录租户的回复会推到它的「消息中心」；未登录访客没有线上账号，服务端会提示改走电话回访。</div>
+        </div>
+      </div>
+
+      <!-- 10 拼团管理 -->
+      <div class="page" id="page-groups">
+        <div class="grid g3 mb10" id="gjKpi"></div>
+        <div class="card panel mb10">
+          <div class="between mb10">
+            <h3 style="margin:0">拼团进度 <span class="s">与用户端拼团页读同一份目录</span></h3>
+            <button class="sm ghost" onclick="loadGroups()">刷新</button>
+          </div>
+          <div id="gcTable"></div>
+          <div class="hint mt10">满员时系统会自动成团；「手动成团」是给「差一个人但客户催着要」的兜底，点下去会立即为所有进行中拼单建实例并转订单。</div>
+        </div>
+        <div class="card panel">
+          <div class="between mb10">
+            <h3 style="margin:0">拼单明细 <span class="s">forming / formed / cancelled / failed</span></h3>
+            <div class="btnrow" style="align-items:center">
+              <select id="gjStatus" onchange="loadGroups()" style="width:126px;padding:6px 9px;font-size:12px">
+                <option value="">全部状态</option>
+                <option value="forming">进行中</option>
+                <option value="formed">已成团</option>
+                <option value="cancelled">已取消</option>
+                <option value="failed">成团失败</option>
+              </select>
+              <button class="sm ghost" onclick="loadGroups()">刷新</button>
+            </div>
+          </div>
+          <div id="gjTable"></div>
+          <div class="hint mt10">「代撤单」只对进行中拼单有效，预付款原路退回租户余额并通知租户；已成团请改到「算力实例」按秒释放。</div>
+        </div>
+      </div>
+
+      <!-- 11 到货提醒 -->
+      <div class="page" id="page-stock">
+        <div class="grid g3 mb10" id="saKpi"></div>
+        <div class="card panel">
+          <div class="between mb10">
+            <h3 style="margin:0">到货提醒 <span class="s">租户在商城登记的缺货订阅</span></h3>
+            <div class="btnrow" style="align-items:center">
+              <select id="saStatus" onchange="loadStock()" style="width:126px;padding:6px 9px;font-size:12px">
+                <option value="open">待处理</option>
+                <option value="fulfilled">已完结</option>
+                <option value="">全部</option>
+              </select>
+              <button class="sm ghost" onclick="loadStock()">刷新</button>
+            </div>
+          </div>
+          <div class="alert" id="saNote"></div>
+          <div id="saTable"></div>
+          <div class="hint mt10">系统已有一条自动通道：实例释放、卡归还卡池时，会按机型自动完结同名提醒并通知租户。这里的「完结并通知」是给线下已经协调好机器、但池子里还没释放的场景用的。</div>
+        </div>
+      </div>
+
       <!-- 6 监控告警 -->
       <div class="page" id="page-alerts">
         <div class="grid g4 mb10" id="alKpi"></div>
@@ -293,6 +409,66 @@
           <div id="insList" class="mt10"></div>
         </div>
       </div>
+
+      <!-- 认证与优惠 -->
+      <div class="page" id="page-certs">
+        <div class="card panel mb10">
+          <div class="between">
+            <h3 style="margin:0">实名认证审核 <span class="s">租户在「账号管理 → 认证与优惠」提交</span></h3>
+            <select id="rnFilter" onchange="loadCerts()">
+              <option value="pending">待审核</option>
+              <option value="approved">已通过</option>
+              <option value="rejected">已驳回</option>
+            </select>
+          </div>
+          <div id="rnList" class="mt10"></div>
+        </div>
+
+        <div class="card panel mb10">
+          <div class="between">
+            <h3 style="margin:0">学生认证审核 <span class="s">通过后租户自动享 9 折优惠（下单时生效）</span></h3>
+            <select id="scFilter" onchange="loadCerts()">
+              <option value="pending">待审核</option>
+              <option value="approved">已通过</option>
+              <option value="rejected">已驳回</option>
+            </select>
+          </div>
+          <div id="scList" class="mt10"></div>
+        </div>
+
+        <div class="card panel mb10">
+          <div class="between"><h3 style="margin:0">代金券发放 <span class="s">发放后租户可在控制台券包查看与兑换</span></h3></div>
+          <div class="alert" id="cpAlert" style="display:none"></div>
+          <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center">
+            <div class="field" style="margin:0;width:180px"><label>租户 ID</label><input id="cpTenant" placeholder="t1"></div>
+            <div class="field" style="margin:0;width:180px"><label>券面额（元）</label><input id="cpAmount" type="number" min="1" step="0.5" value="5"></div>
+            <div class="field" style="margin:0;width:180px"><label>标题</label><input id="cpTitle" value="平台活动赠送"></div>
+            <div class="field" style="margin:0;width:140px"><label>有效期（天）</label><input id="cpDays" type="number" min="1" value="30"></div>
+            <button onclick="issueCoupon()" style="margin-top:14px">发放</button>
+          </div>
+        </div>
+
+        <div class="card panel mb10">
+          <div class="between"><h3 style="margin:0">驱动矩阵 <span class="s">GPU 型号 → 驱动 / CUDA / cuDNN 版本对照</span></h3></div>
+          <div id="dmList" class="mt10"></div>
+        </div>
+      </div>
+
+      <!-- 经营报表 -->
+      <div class="page" id="page-report">
+        <div class="card panel mb10">
+          <div class="between"><h3 style="margin:0">经营概览 <span class="s">近 30 天结算数据 · 实时查询</span></h3></div>
+          <div id="rpKpi" class="mt10" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px"></div>
+        </div>
+        <div class="card panel mb10">
+          <div class="between"><h3 style="margin:0">近 30 日结算收入（按日）</h3></div>
+          <div id="rpChart" class="mt10"></div>
+        </div>
+        <div class="card panel mb10">
+          <div class="between"><h3 style="margin:0">代金券汇总 <span class="s">未兑换 / 已兑换 / 已过期</span></h3></div>
+          <div id="rpCoupons" class="mt10"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -306,6 +482,22 @@
     <div class="hint mb10">与 kubectl get node -o yaml 的字段对应，用来证明底层是标准 K8s 对象。</div>
     <pre id="drawerBody" style="font-family:ui-monospace,Consolas,monospace;font-size:11.5px;line-height:1.75;
       background:#f7f8fb;border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;margin:0"></pre>
+  </div>
+</div>
+
+<div class="modal" id="dictModal">
+  <div class="box">
+    <h3 id="dictTitle">新增字典项</h3>
+    <div class="alert" id="dictAlert" style="display:none"></div>
+    <div class="field"><label>分类（如 alert_level / instance_status）</label><input id="dictCategory" placeholder="category"></div>
+    <div class="field"><label>编码</label><input id="dictCode" placeholder="code"></div>
+    <div class="field"><label>显示名</label><input id="dictLabel" placeholder="label"></div>
+    <div class="field"><label>排序值（小在前）</label><input id="dictSort" type="number" value="0"></div>
+    <div class="field"><label><input type="checkbox" id="dictEnabled" checked> 启用</label></div>
+    <div class="foot">
+      <button class="ghost sm" onclick="closeDict()">取消</button>
+      <button class="sm" onclick="saveDict()">保存</button>
+    </div>
   </div>
 </div>
 
@@ -324,6 +516,45 @@
   </div>
 </div>
 
+<div class="modal" id="askModal">
+  <div class="box">
+    <h3 id="askTitle">请输入</h3>
+    <div class="alert" id="askAlert"></div>
+    <div class="biz-body" id="askBody"></div>
+    <div id="askDyn"></div>
+    <div class="tip" id="askTip"></div>
+    <div class="foot">
+      <button class="ghost sm" onclick="closeAsk()">取消</button>
+      <button class="sm" id="askOkBtn" onclick="submitAsk()">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="confirmModal">
+  <div class="box">
+    <h3 id="cfTitle">确认操作</h3>
+    <div class="alert" id="cfAlert"></div>
+    <div class="biz-rows" id="cfBody"></div>
+    <div class="tip" id="cfTip"></div>
+    <div class="foot">
+      <button class="ghost sm" onclick="closeConfirm()">取消</button>
+      <button class="sm danger" id="cfOkBtn" onclick="doConfirm()">确认执行</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="box wide">
+    <h3 id="rsTitle">处理结果</h3>
+    <div class="alert" id="rsAlert"></div>
+    <div class="biz-rows" id="rsBody"></div>
+    <div class="tip">结果由服务端逐单返回，可在「算力实例」核对生成的实例与扣款。</div>
+    <div class="foot">
+      <button class="sm" onclick="closeResult()">知道了</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const $ = s => document.querySelector(s);
 const fmt = n => (Number(n) || 0).toFixed(2);
@@ -331,8 +562,8 @@ const fmt = n => (Number(n) || 0).toFixed(2);
 // ---- 会话守卫：没 token 直接回登录页 ----
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if(!TOKEN || !U){ location.replace('/login.html'); throw new Error('no-session'); }
-if(U.role === 'tenant'){ location.replace('/portal.html'); throw new Error('wrong-role'); }
+if(!TOKEN || !U){ location.replace('/login'); throw new Error('no-session'); }
+if(U.role === 'tenant'){ location.replace('/portal'); throw new Error('wrong-role'); }
 
 $('#who').textContent = U.displayName || U.username;
 $('#umName').textContent = U.displayName || U.username;
@@ -353,7 +584,7 @@ async function logout(){
   try{ await post('/auth/logout'); }catch(e){ /* 忽略 */ }
   localStorage.removeItem('gu_token');
   localStorage.removeItem('gu_user');
-  location.replace('/login.html');
+  location.replace('/login');
 }
 
 function openPwd(){
@@ -381,7 +612,10 @@ async function submitPwd(){
 }
 const TITLES = {overview:['集群总览','集群 / 总览'],nodes:['节点管理','集群 / 节点'],workloads:['工作负载','集群 / 工作负载'],
   resources:['资源对象','集群 / 资源对象'],pools:['资源池与调度','集群 / 资源池'],tenants:['租户管理','运营 / 租户'],
-  alerts:['监控告警','运营 / 告警'],inspections:['智能巡检','运营 / 巡检'],system:['系统管理','运营 / 系统']};
+  instances:['算力实例','业务运营 / 算力实例'],leads:['商务需求','业务运营 / 商务需求'],
+  groups:['拼团管理','业务运营 / 拼团'],stock:['到货提醒','业务运营 / 到货提醒'],
+  alerts:['监控告警','运营 / 告警'],inspections:['智能巡检','运营 / 巡检'],
+  certs:['认证与优惠','运营 / 认证与优惠'],report:['经营报表','运营 / 报表'],system:['系统管理','运营 / 系统']};
 
 async function api(path, opt){
   opt = opt || {};
@@ -390,7 +624,7 @@ async function api(path, opt){
   if(r.status === 401){
     localStorage.removeItem('gu_token');
     localStorage.removeItem('gu_user');
-    location.replace('/login.html');
+    location.replace('/login');
     throw new Error('登录已失效，请重新登录');
   }
   const t = await r.text();
@@ -403,6 +637,11 @@ function post(path, body){
     headers:{'Content-Type':'application/json','X-User': U.username},
     body: body ? JSON.stringify(body) : undefined});
 }
+function put(path, body){
+  return api(path, {method:'PUT',
+    headers:{'Content-Type':'application/json','X-User': U.username},
+    body: body ? JSON.stringify(body) : undefined});
+}
 function del(path){
   return api(path, {method:'DELETE', headers:{'X-User': U.username}});
 }
@@ -410,6 +649,179 @@ function toast(text, ok){
   const m = $('#msg'); m.textContent = text; m.className = 'msg ' + (ok ? 'ok' : 'err');
   clearTimeout(toast._t); toast._t = setTimeout(()=>{ m.className = 'msg'; }, 4500);
   window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------- 通用弹窗设施（本项目不用 prompt / confirm，一律走 .modal） ---------- */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtSec = n => {
+  const s = Number(n) || 0;
+  if(s < 60) return s + ' 秒';
+  if(s < 3600) return (s/60).toFixed(1) + ' 分';
+  return (s/3600).toFixed(2) + ' 小时';
+};
+// 后端时间戳带 +00:00，直接截字符串会把 UTC 当本地时间显示，管理端会统一晚 8 小时才对
+const fmtAt = v => {
+  if (!v) return '—';
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return String(v).replace('T', ' ').slice(0, 16);
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+};
+function alertIn(sel, msg){
+  const a = $(sel);
+  if(!msg){ a.className = 'alert'; a.style.display = 'none'; a.textContent = ''; return; }
+  a.className = 'alert err'; a.style.display = 'block'; a.textContent = msg;
+}
+function okMsg(sel, msg){
+  const a = $(sel);
+  if(!msg){ alertIn(sel, null); return; }
+  a.className = 'alert ok'; a.style.display = 'block'; a.textContent = msg;
+}
+
+/* 字段式输入弹窗：text / number / select / radio / textarea */
+let askCfg = null;
+function optVal(o){ return typeof o === 'object' ? o.v : o; }
+function optTxt(o){ return typeof o === 'object' ? o.t : o; }
+function askFieldHtml(f){
+  const id = 'ask_' + f.k, v = f.value == null ? '' : f.value;
+  const star = f.required ? ' <b style="color:#b91c1c">*</b>' : '';
+  if(f.type === 'radio'){
+    return `<div class="field"><label>${esc(f.label)}</label><div class="btnrow" style="gap:16px">` +
+      f.options.map(o => `<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:400;color:var(--ink);margin:0">
+        <input type="radio" style="width:auto" name="${id}" value="${esc(optVal(o))}"${String(optVal(o)) === String(v) ? ' checked' : ''}> ${esc(optTxt(o))}</label>`).join('') +
+      `</div></div>`;
+  }
+  if(f.type === 'textarea'){
+    return `<div class="field"><label>${esc(f.label)}${star}</label>
+      <textarea id="${id}" rows="${f.rows || 4}" maxlength="${f.maxlen || 500}" placeholder="${esc(f.ph || '')}">${esc(v)}</textarea></div>`;
+  }
+  if(f.options){
+    return `<div class="field"><label>${esc(f.label)}</label><select id="${id}">` +
+      f.options.map(o => `<option value="${esc(optVal(o))}"${String(optVal(o)) === String(v) ? ' selected' : ''}>${esc(optTxt(o))}</option>`).join('') +
+      `</select></div>`;
+  }
+  return `<div class="field"><label>${esc(f.label)}${star}</label>
+    <input id="${id}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}" placeholder="${esc(f.ph || '')}"
+    ${f.min != null ? `min="${f.min}" ` : ''}${f.max != null ? `max="${f.max}" ` : ''}${f.step != null ? `step="${f.step}" ` : ''}${f.maxlen != null ? `maxlength="${f.maxlen}"` : ''}></div>`;
+}
+function openAsk(cfg){
+  askCfg = cfg;
+  $('#askTitle').textContent = cfg.title || '请输入';
+  $('#askBody').innerHTML = (cfg.fields || []).map(askFieldHtml).join('');
+  $('#askBody').oninput = () => { if(askCfg && askCfg.dyn) $('#askDyn').innerHTML = askCfg.dyn(readAsk()); };
+  $('#askBody').onchange = $('#askBody').oninput;
+  $('#askTip').style.display = cfg.tip ? 'block' : 'none';
+  $('#askTip').innerHTML = cfg.tip || '';
+  $('#askDyn').innerHTML = cfg.dyn ? cfg.dyn(readAsk()) : '';
+  alertIn('#askAlert', null);
+  const b = $('#askOkBtn');
+  b.className = 'sm' + (cfg.danger ? ' danger' : '');
+  b.textContent = cfg.okText || '确定';
+  $('#askModal').classList.add('on');
+}
+function closeAsk(){ $('#askModal').classList.remove('on'); askCfg = null; }
+function readAsk(){
+  const vals = {};
+  if(!askCfg) return vals;
+  (askCfg.fields || []).forEach(f => {
+    if(f.type === 'radio'){
+      const c = document.querySelector(`input[name="ask_${f.k}"]:checked`);
+      vals[f.k] = c ? c.value : '';
+    } else {
+      const el = $('#ask_' + f.k);
+      vals[f.k] = el ? String(el.value).trim() : '';
+    }
+  });
+  return vals;
+}
+function askValid(vals){
+  for(const f of (askCfg ? askCfg.fields : [])){
+    const label = f.label || '该项', raw = vals[f.k];
+    const req = typeof f.required === 'function' ? !!f.required(vals) : !!f.required;
+    if((raw === '' || raw == null) && req) return label + '不能为空';
+    if(raw === '' || raw == null) continue;
+    if(f.type === 'number'){
+      const n = Number(raw);
+      if(!isFinite(n) || String(raw).match(/[^0-9.+-]/)) return label + '必须是数字';
+      if(f.min != null && n < f.min) return label + '不能小于 ' + f.min;
+      if(f.max != null && n > f.max) return label + '不能大于 ' + f.max;
+    }
+    if(f.options && !f.options.some(o => String(optVal(o)) === String(raw))) return label + '取值不合法';
+    if(f.pattern && !f.pattern.test(raw)) return f.patternMsg || (label + '格式不正确');
+    if(f.maxlen && raw.length > f.maxlen) return label + '不能超过 ' + f.maxlen + ' 字';
+  }
+  return null;
+}
+async function submitAsk(){
+  const cfg = askCfg;
+  if(!cfg) return;
+  const vals = readAsk();
+  const err = askValid(vals);
+  if(err){ alertIn('#askAlert', err); return; }
+  askCfg = null;
+  $('#askModal').classList.remove('on');
+  try { await cfg.run(vals); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* 危险动作二次确认弹窗 */
+let cfRun = null;
+function openConfirm(cfg){
+  $('#cfTitle').textContent = cfg.title || '确认操作';
+  $('#cfBody').innerHTML = (cfg.rows || []).map(r => `<div class="biz-row">
+      <div class="t"><b>${esc(r[0])}</b>${r[2] ? `<span class="biz-tag ${r[3] || ''}">${esc(r[2])}</span>` : ''}</div>
+      ${r[1] ? `<div class="d">${r[1]}</div>` : ''}</div>`).join('') || '<div class="biz-empty">没有更多上下文</div>';
+  $('#cfTip').style.display = cfg.tip ? 'block' : 'none';
+  $('#cfTip').innerHTML = cfg.tip || '';
+  alertIn('#cfAlert', null);
+  const b = $('#cfOkBtn');
+  b.className = 'sm ' + (cfg.danger ? 'danger' : (cfg.warn ? 'warn' : 'ghost'));
+  b.textContent = cfg.okText || '确认执行';
+  cfRun = cfg.run || null;
+  $('#confirmModal').classList.add('on');
+}
+function closeConfirm(){ $('#confirmModal').classList.remove('on'); cfRun = null; }
+async function doConfirm(){
+  const fn = cfRun;
+  cfRun = null;
+  $('#confirmModal').classList.remove('on');
+  if(!fn) return;
+  try { await fn(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* 批量结果弹窗（手动成团这类逐单返回的动作用） */
+function openResult(title, msg, rows){
+  $('#rsTitle').textContent = title || '处理结果';
+  okMsg('#rsAlert', msg || null);
+  $('#rsBody').innerHTML = (rows || []).length ? rows.map(r => `<div class="biz-row">
+      <div class="t"><b>${esc(r.t)}</b>${r.tag ? `<span class="biz-tag ${r.tagCls || ''}">${esc(r.tag)}</span>` : ''}</div>
+      ${r.d ? `<div class="d">${r.d}</div>` : ''}</div>`).join('')
+    : '<div class="biz-empty">服务端没有返回明细</div>';
+  $('#resultModal').classList.add('on');
+}
+function closeResult(){ $('#resultModal').classList.remove('on'); }
+
+/* 实例索引：卡号 → 占用它的实例，节点页与实例页共用，20 秒内走缓存 */
+let instIdx = {at: 0, items: [], byId: {}, byCard: {}};
+function buildInstIdx(items){
+  const byId = {}, byCard = {};
+  (items || []).forEach(i => {
+    const tenant = i.tenant_name || i.tenant_id || '—';
+    const info = {id: i.id, tenant, status: i.status, short: tenant.slice(0, 6), node: i.node_id || '—'};
+    byId[i.id] = info;
+    if(i.status === 'released' || i.status === 'releasing') return;
+    String(i.gpu_ids || '').split(',').map(s => s.trim()).filter(Boolean).forEach(cid => { byCard[cid] = info; });
+  });
+  return {at: Date.now(), items: items || [], byId, byCard};
+}
+async function allInstances(force){
+  if(!force && instIdx.at && (Date.now() - instIdx.at) < 20000) return instIdx.items;
+  try{
+    const d = await api('/admin/instances');
+    instIdx = buildInstIdx(d.items);
+  }catch(e){ /* 实例台账取不到时，节点格子仍按显卡自身状态渲染 */ }
+  return instIdx.items;
 }
 
 /* ---------- 简易 SVG 折线 ---------- */
@@ -466,7 +878,9 @@ function go(p){
   $('#pTitle').textContent = TITLES[p][0];
   $('#pCrumb').textContent = TITLES[p][1];
   const fn = {overview:loadOverview, nodes:loadNodes, workloads:loadWorkloads, resources:loadResources,
-    pools:loadPools, tenants:loadTenants, alerts:loadAlerts, inspections:loadInspections, system:loadSystem}[p];
+    pools:loadPools, tenants:loadTenants, instances:loadInstances, leads:loadLeads,
+    groups:loadGroups, stock:loadStock, alerts:loadAlerts, inspections:loadInspections,
+    certs:loadCerts, report:loadReport, system:loadSystem}[p];
   if(fn) fn();
 }
 document.querySelectorAll('.side a[data-p]').forEach(a => a.onclick = () => go(a.dataset.p));
@@ -474,22 +888,49 @@ document.querySelectorAll('.side a[data-p]').forEach(a => a.onclick = () => go(a
 /* ---------- 1 总览 ---------- */
 const STAT = {free:['空闲','p-green'],occupied:['占用','p-blue'],fault:['故障','p-red'],reserved:['预留','p-gray']};
 
+/* 侧栏底部：全部来自 /admin/overview，台账与集群分开写，不能混为一谈 */
+function renderSideFoot(ov){
+  const el = $('#sideFoot');
+  if(!el) return;
+  if(!ov){ el.innerHTML = '集群信息读取失败'; return; }
+  el.innerHTML = `K8s ${esc(ov.k8sVersion || '未知')}<br>`
+    + `集群 ${ov.nodeTotal ?? '—'} 节点（Ready ${ov.nodeReady ?? '—'}）· 台账 ${ov.nodeLedger ?? '—'} 节点<br>`
+    + `GPU：台账 ${ov.gpuTotal ?? '—'} 卡 / 集群 ${ov.gpuCapacity ?? '—'} 卡（可分配 ${ov.gpuAllocatable ?? '—'}）`;
+  el.title = '台账 = 平台登记的可售卡池；集群 = k3s 实测（无 device plugin 时可能远小于台账）';
+}
+
 async function loadOverview(){
   const [ov, m, nodes, tns, pls, comps] = await Promise.all([
     api('/admin/overview'), api('/admin/metrics?minutes=30'), api('/admin/nodes'),
     api('/admin/tenants'), api('/admin/pools'), api('/admin/components')
   ]);
+  renderSideFoot(ov);
+  $('#ovNodeSub').textContent = nodes.length + ' 台 · 台账 ' + (ov.nodeLedger ?? '—') + ' / 集群 ' + (ov.nodeTotal ?? '—');
+  const utilSrc = ov.gpuUtilizationSource === 'dcgm'
+    ? '利用率 ' + ov.gpuUtilization + '% (DCGM 实测)'
+    : '出租率 ' + (ov.gpuRentalRate ?? ov.gpuUtilization) + '%';
   $('#ovKpi').innerHTML = [
-    ['节点', ov.nodeReady + '/' + ov.nodeTotal, 'Ready / 总数'],
-    ['GPU 总数', ov.gpuTotal, '张 RTX 5090'],
-    ['已分配', ov.gpuStatus.occupied + '/' + ov.gpuTotal, '利用率 ' + ov.gpuUtilization + '%'],
+    ['节点', ov.nodeReady + '/' + ov.nodeTotal, 'Ready / 总数' + (ov.dataSource === 'ledger' ? ' · 台账' : ' · 集群实测')],
+    ['GPU 总数', ov.gpuTotal, ov.gpuCapacity != null ? '集群实测 ' + ov.gpuCapacity + ' 卡' : '台账可售池'],
+    ['已分配', ov.gpuStatus.occupied + '/' + ov.gpuTotal, utilSrc],
     ['运行实例', ov.runningInstances, '个'],
     ['活跃租户', ov.tenantActive, '个'],
     ['今日收入', '¥' + fmt(ov.todayRevenue), '已结算'],
+    ['本月收入', '¥' + fmt(ov.monthRevenue), '自然月累计'],
   ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
 
-  $('#utilLabel').textContent = '平均 ' + m.baseUtil + '% · 峰值 ' + Math.max(...m.gpuUtil) + '%';
-  lineChart($('#utilChart'), [{data:m.gpuUtil, cls:'ln'}], {height:130});
+  if (m.gpuUtil && m.gpuUtil.length) {
+    $('#utilLabel').textContent = '平均 ' + m.baseUtil + '% · 峰值 ' + Math.max(...m.gpuUtil) + '%'
+      + (m.dataSource === 'prometheus' ? ' · 来源 Prometheus 实测'
+        : m.dataSource === 'host-agent' ? ' · 本机真实 GPU 实采（nvidia-smi agent）'
+        : ' · 合成曲线');
+  } else {
+    $('#utilLabel').textContent = (m.note || '暂无数据');
+  }
+  lineChart($('#utilChart'), [{data: m.gpuUtil || [], cls: 'ln'}], {height: 130});
+  if (!m.gpuUtil || !m.gpuUtil.length) {
+    $('#utilChart').innerHTML = '<div class="empty">' + (m.note || '暂无监控数据') + '</div>';
+  }
 
   donut($('#donut'), [
     {n:'空闲', v:ov.gpuStatus.free, c:'#15a24d'},
@@ -502,15 +943,24 @@ async function loadOverview(){
     const gs = n.gpus || [];
     const used = gs.filter(g => g.status === 'occupied').length;
     const pct = gs.length ? Math.round(used * 100 / gs.length) : 0;
+    const ver = n.k8sVersion || n.k8s_version || '—';
+    const cpu = n.cpuCores ?? n.cpu_cores ?? '—';
+    const mem = n.memGb ?? n.mem_gb ?? '—';
+    const pods = n.podCount ?? n.pod_count ?? '—';
+    const badge = n.dataSource === 'ledger'
+      ? '<span class="pill p-gray" title="该节点不在集群里，仅台账记录">台账</span>'
+      : '<span class="pill p-blue" title="来自集群实测">集群</span>';
+    const cards = gs.length ? 'GPU ' + used + '/' + gs.length + ' 已分配'
+      : (n.gpuCount ? 'GPU ' + n.gpuCount + ' 张（集群实测，未入台账）' : '无 GPU 台账');
     return `<div style="padding:9px 0;border-bottom:1px solid var(--line2)">
       <div class="between" style="margin-bottom:6px">
-        <div><b>${n.hostname}</b> <span class="hint">${n.ip} · ${n.k8s_version}</span></div>
+        <div><b>${n.hostname || n.name}</b> <span class="hint">${n.ip || '—'} · ${ver}</span> ${badge}</div>
         <span class="pill ${n.status==='Ready'?'p-green':(n.status==='NotReady'?'p-red':'p-amber')}">${n.status}</span>
       </div>
       <div style="height:5px;background:#eef2f7;border-radius:3px;overflow:hidden">
         <div style="width:${pct}%;height:100%;background:var(--blue)"></div>
       </div>
-      <div class="hint" style="margin-top:4px">GPU ${used}/${gs.length} 已分配 · Pod ${n.pod_count} · ${n.cpu_cores} 核 / ${n.mem_gb} GB</div>
+      <div class="hint" style="margin-top:4px">${cards} · Pod ${pods} · ${cpu} 核 / ${mem} GB${n.gpuProduct ? ' · ' + n.gpuProduct : ''}</div>
     </div>`;
   }).join('');
 
@@ -548,12 +998,21 @@ async function loadOverview(){
     </div>`;
   }).join('');
 
+  const compPill = {
+    Healthy: ['p-green', '#15a24d'], Embedded: ['p-green', '#15a24d'],
+    Degraded: ['p-amber', '#d97a0c'], Down: ['p-red', '#dc2828'],
+    NotFound: ['p-gray', '#8b98ab'], Simulated: ['p-gray', '#8b98ab'],
+  };
   $('#healthBar').innerHTML = comps.map(c => {
-    const ok = c.status === 'Healthy';
-    return `<span class="pill ${ok ? 'p-green' : 'p-amber'}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px">
-      <i style="width:6px;height:6px;border-radius:50%;background:${ok ? '#15a24d' : '#d97a0c'};display:inline-block"></i>
-      ${c.name}</span>`;
-  }).join('') + `<span class="hint" style="margin-left:6px">降级 ${comps.filter(c=>c.status !== 'Healthy').length} / 共 ${comps.length}</span>`;
+    const st = compPill[c.status] || compPill.Simulated;
+    const title = c.status === 'NotFound' ? '未部署（集群里没有该组件）'
+      : c.status === 'Simulated' ? '演示值（fake 模式无集群）'
+      : c.status === 'Embedded' ? '内嵌进程（k3s）' : (c.detail || c.status);
+    return `<span class="pill ${st[0]}" title="${title}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px">
+      <i style="width:6px;height:6px;border-radius:50%;background:${st[1]};display:inline-block"></i>
+      ${c.name} · ${c.status}</span>`;
+  }).join('') + `<span class="hint" style="margin-left:6px">
+      未部署 ${comps.filter(c=>c.status==='NotFound').length} · 降级 ${comps.filter(c=>c.status==='Degraded'||c.status==='Down').length} / 共 ${comps.length}</span>`;
 
   const layers = [
     ['接入层', ['用户控制台', '租户自助商城', 'OpenAPI / SDK', '监控大屏']],
@@ -576,38 +1035,67 @@ async function loadOverview(){
 
 /* ---------- 2 节点 ---------- */
 async function loadNodes(){
-  const nodes = await api('/admin/nodes');
+  const [nodes] = await Promise.all([api('/admin/nodes'), allInstances()]);
   $('#nodeList').innerHTML = nodes.map(n => {
-    const gs = (n.gpus || []).sort((a,b)=>a.idx-b.idx);
+    const gs = (n.gpus || []).sort((a,b)=>(a.idx||0)-(b.idx||0));
     const used = gs.filter(g=>g.status==='occupied').length;
     const lbl = (n.labels||'').split(',').filter(Boolean);
+    const cpu = n.cpuCores ?? n.cpu_cores ?? '—';
+    const mem = n.memGb ?? n.mem_gb ?? '—';
+    const disk = n.diskGb ?? n.disk_gb ?? '—';
+    const pods = n.podCount ?? n.pod_count ?? '—';
+    const isCluster = n.dataSource === 'cluster';
+    const isAgent = n.dataSource === 'host-agent';
+    const srcPill = isCluster ? '<span class="pill p-blue" title="节点信息来自集群实测">集群</span>'
+      : isAgent ? '<span class="pill p-green" title="本机 Windows 主机 nvidia-smi agent 实采">本机实采</span>'
+      : '<span class="pill p-gray" title="台账记录（集群中不存在）">台账</span>';
+    const grid = isCluster && gs.length && gs[0].id == null
+      ? gs.map(g => `<div class="gcell" style="background:#eef2f7" title="集群实测：${g.model} · ${g.memGb}GB（未入台账，无状态）">
+          <b>#${g.idx}</b>${g.model}</div>`).join('')
+      : gs.map(g => gpuCell(g, isAgent)).join('');
     return `<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px">
       <div class="between" style="margin-bottom:10px">
         <div class="flex" style="gap:10px">
-          <b style="font-size:14px">${n.hostname}</b>
-          <span class="hint">${n.ip}</span>
+          <b style="font-size:14px">${n.hostname || n.name}</b>
+          <span class="hint">${n.ip || '—'}</span>
           <span class="pill ${n.status==='Ready'?'p-green':(n.status==='NotReady'?'p-red':'p-amber')}">${n.status}</span>
-          <span class="pill p-gray">${n.role}</span>
+          <span class="pill p-gray">${n.role || '—'}</span>
+          ${srcPill}
         </div>
         <div class="btnrow">
-          <button class="sm ghost" onclick='openNodeYaml(${JSON.stringify(n).replace(/'/g,"&#39;")})'>YAML</button>
+          ${isAgent ? `<span class="hint" style="font-size:11px">实采节点（只读）</span>`
+            : `<button class="sm ghost" onclick='openNodeYaml(${JSON.stringify(n).replace(/'/g,"&#39;")})'>YAML</button>
           ${n.status==='Ready'
             ? `<button class="sm ghost" onclick="nodeAct('${n.id}','cordon')">Cordon</button>
                <button class="sm warn" onclick="nodeAct('${n.id}','drain')">Drain</button>`
             : `<button class="sm ghost" onclick="nodeAct('${n.id}','uncordon')">恢复调度</button>`}
-          <button class="sm danger" onclick="removeNode('${n.id}')">下线</button>
+          ${isCluster ? '' : `<button class="sm danger" onclick="removeNode('${n.id}')">下线</button>`}`}
         </div>
       </div>
-      <div class="hint mb10">GPU ${used}/${gs.length} 已分配 · CPU ${n.cpu_cores} 核 · 内存 ${n.mem_gb} GB · 磁盘 ${n.disk_gb} GB · Pod ${n.pod_count}</div>
-      <div class="gpugrid">${gs.map(g => `
-        <div class="gcell ${g.status}" onclick="gpuAct('${g.id}','${g.status}')" title="${g.id} ${g.model} ${g.mem_gb}GB 温度${g.temp_c}°C">
-          <b>#${g.idx}</b>${STAT[g.status][0]}
-        </div>`).join('')}</div>
+      <div class="hint mb10">GPU ${used}/${gs.length} 已分配 · CPU ${cpu} 核 · 内存 ${mem} GB · 磁盘 ${disk} GB · Pod ${pods}${isAgent && n.lastSeen ? ' · 最近上报 ' + new Date(n.lastSeen).toLocaleTimeString('zh-CN') : ''}${isCluster && n.gpuProduct ? ' · 型号 ' + n.gpuProduct : ''}</div>
+      <div class="gpugrid">${grid || '<span class="hint">无 GPU</span>'}</div>
       <div class="legend" style="margin-top:8px">
         ${lbl.map(l=>`<span style="background:#f4f6fa;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:10.5px">${l}</span>`).join('')}
+        ${n.taints ? `<span class="hint" style="margin-left:6px">污点: ${n.taints || '无'}</span>` : ''}
       </div>
     </div>`;
   }).join('');
+}
+/* 台账显卡格子：占用中的卡直接把「哪个租户、哪个实例」写进格子与 title */
+function gpuCell(g, isAgent){
+  if(isAgent){
+    return `<div class="gcell free" title="实采：${esc(g.model)} · 温度 ${g.temp_c}°C · 显存 ${g.mem_gb}GB">
+          <b>#${g.idx}</b>${STAT.free[0]} ${g.temp_c}°C</div>`;
+  }
+  const own = (g.instance_id && instIdx.byId[g.instance_id]) || instIdx.byCard[g.id] || null;
+  const stTxt = (STAT[g.status] || [g.status])[0];
+  const tip = `${g.id} ${g.model} ${g.mem_gb}GB 温度${g.temp_c}°C`
+    + (own ? ` · 占用租户 ${own.tenant} · 实例 ${own.id}（${own.status}）· 节点 ${own.node}`
+           : (g.status === 'occupied' ? ' · 占用中，台账未回填实例 ID' : ''));
+  return `
+        <div class="gcell ${g.status}" onclick="gpuAct('${esc(g.id)}','${esc(g.status)}')" title="${esc(tip)}">
+          <b>#${g.idx}</b>${stTxt}${own ? `<i style="display:block;font-style:normal;font-size:8.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(own.short)}</i>` : ''}
+        </div>`;
 }
 async function nodeAct(id, act){
   try { const r = await post(`/admin/nodes/${id}/${act}`); toast(r.message, true); loadNodes(); }
@@ -615,37 +1103,90 @@ async function nodeAct(id, act){
 }
 
 async function addNodePrompt(){
-  const hostname = prompt('节点主机名（同时作为节点 ID）', 'gpu-node-3');
-  if(!hostname) return;
-  const ip = prompt('节点内网 IP', '10.0.0.13');
-  if(!ip) return;
-  try{
-    const r = await post('/admin/nodes', {hostname, ip, role:'agent', poolId:'p1'});
-    toast(r.message, true);
-    $('#drawerTitle').textContent = '节点接入命令 · ' + hostname;
-    $('#drawerBody').textContent = r.joinCommand +
-      '\n\n# 在目标节点执行上述命令后：\nkubectl get nodes\n# 期望看到 ' + hostname + ' 状态为 Ready\n'
-      + '# 注意：token 默认 24 小时过期，过期后重新 kubeadm token create --print-join-command';
-    $('#drawer').style.display = 'block';
-    loadNodes();
-  }catch(e){ toast(e.message, false); }
+  let pools = [];
+  try { pools = (await api('/admin/pools')).pools || []; } catch(e){ /* 拿不到池列表时只留默认池 */ }
+  const poolOpts = pools.length ? pools.map(p => ({v: p.id, t: p.id + ' · ' + p.name})) : [{v:'p1', t:'p1'}];
+  openAsk({
+    title: '接入计算节点',
+    fields: [
+      {k:'hostname', label:'节点主机名（同时作为节点 ID）', value:'gpu-node-3', required:true,
+        pattern:/^[a-zA-Z0-9][a-zA-Z0-9._-]{1,62}$/, patternMsg:'主机名只能含字母 / 数字 / - . _，长度 2~63',
+        ph:'例如 gpu-node-3'},
+      {k:'ip', label:'节点内网 IP', value:'10.0.0.13', required:true,
+        pattern:/^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/,
+        patternMsg:'请输入合法 IPv4（每段 0~255），例如 10.0.0.13', ph:'10.0.0.13'},
+      {k:'poolId', label:'归属资源池', value: poolOpts[0].v, type:'select', options: poolOpts}
+    ],
+    tip: '登记台账后服务端会返回接入命令，在目标节点执行 <code class="mono">kubeadm join</code> 才会真正 Ready；token 默认 24 小时过期。',
+    okText: '生成接入命令',
+    run: async v => {
+      const r = await post('/admin/nodes', {hostname: v.hostname, ip: v.ip, role:'agent', poolId: v.poolId});
+      toast(r.message, true);
+      $('#drawerTitle').textContent = '节点接入命令 · ' + v.hostname;
+      $('#drawerBody').textContent = r.joinCommand +
+        '\n\n# 在目标节点执行上述命令后：\nkubectl get nodes\n# 期望看到 ' + v.hostname + ' 状态为 Ready\n'
+        + '# 注意：token 默认 24 小时过期，过期后重新 kubeadm token create --print-join-command';
+      $('#drawer').style.display = 'block';
+      loadNodes();
+    }
+  });
 }
 
-async function removeNode(id){
-  if(!confirm('确认下线节点 ' + id + '？\n会移除该节点的 8 张显卡，且不可恢复。')) return;
-  try{ const r = await del('/admin/nodes/' + id); toast(r.message, r.deleted > 0); loadNodes(); }
-  catch(e){ toast(e.message, false); }
+function removeNode(id){
+  openConfirm({
+    title: '下线节点 ' + id,
+    danger: true, okText: '确认下线',
+    rows: [
+      ['节点', esc(id), '台账操作', 'warn'],
+      ['影响', '该节点名下的显卡台账记录会被一并移除，不可恢复。'],
+    ],
+    tip: '只影响平台台账；如果节点仍在集群里，请先在集群侧 <code class="mono">kubectl delete node</code>。',
+    run: async () => {
+      const r = await del('/admin/nodes/' + id);
+      toast(r.message, r.deleted > 0);
+      instIdx.at = 0;
+      loadNodes();
+    }
+  });
 }
-async function gpuAct(id, st){
-  try {
-    if(st === 'occupied'){ toast('该卡正在被租户占用，需先释放实例', false); return; }
-    const r = await post(`/admin/gpus/${id}/${st === 'fault' ? 'repair' : 'fault'}`);
-    toast(r.message, r.changed > 0); loadNodes();
-  } catch(e){ toast(e.message, false); }
+
+function gpuAct(id, st){
+  const own = instIdx.byCard[id] || null;
+  if(st === 'occupied' || own){
+    openConfirm({
+      title: '该卡正被租户占用',
+      warn: true, okText: own ? '去算力实例处理' : '知道了',
+      rows: [
+        ['显卡', esc(id), st, 'warn'],
+        ['占用租户', own ? esc(own.tenant) : '台账状态为 occupied，但未回填实例 ID（可能是历史脏数据）'],
+        ['实例', own ? esc(own.id) : '—', own ? own.status : ''],
+      ],
+      tip: '租户实例不做自动干预：先在「算力实例」里代租户关机 / 释放，卡归还卡池后才能把它标记为故障或空闲。',
+      run: () => { if(own) go('instances'); }
+    });
+    return;
+  }
+  const toFault = st !== 'fault';
+  openConfirm({
+    title: toFault ? '标记故障 · ' + id : '修复该卡 · ' + id,
+    danger: toFault, okText: '确认执行',
+    rows: [
+      ['显卡', esc(id), (STAT[st] || [st])[0]],
+      ['将变更为', toFault ? 'fault（故障卡不再参与调度与出售）' : 'free（重新回到可售池）'],
+    ],
+    tip: '会写入操作审计；故障卡释放后如与到货提醒同机型，系统会通知订阅该型号的租户。',
+    run: async () => {
+      const r = await post(`/admin/gpus/${id}/${toFault ? 'fault' : 'repair'}`);
+      toast(r.message, r.changed > 0);
+      loadNodes();
+    }
+  });
 }
 
 /* ---------- 3 工作负载 ---------- */
-const IST = {provisioning:['创建中','p-amber'],running:['运行中','p-green'],releasing:['回收中','p-purple'],released:['已释放','p-gray'],failed:['失败','p-red']};
+const IST = {provisioning:['创建中','p-amber'],running:['运行中','p-green'],stopped:['已关机','p-gray'],
+  resetting:['重置中','p-blue'],releasing:['回收中','p-purple'],released:['已释放','p-gray'],failed:['失败','p-red']};
+const istPill = st => `<span class="pill ${IST[st] ? IST[st][1] : 'p-gray'}">${IST[st] ? IST[st][0] : (st || '—')}</span>`;
 async function loadWorkloads(){
   const [list, deps, nss, tns] = await Promise.all([
     api('/admin/workloads'), api('/admin/deployments'), api('/admin/namespaces'), api('/admin/tenants')
@@ -725,9 +1266,8 @@ async function deploy(){
 
 async function undeploy(id){
   try{
-    const rr = await fetch('/api/admin/deployments/' + id, {method:'DELETE'});
-    const j = await rr.json();
-    toast(j.message, rr.ok);
+    const r = await del('/admin/deployments/' + id);
+    toast(r.message, r.deleted > 0);
     loadWorkloads();
   }catch(e){ toast(e.message, false); }
 }
@@ -814,31 +1354,60 @@ async function loadPools(){
     </tr>`).join('')}</tbody></table>`;
 }
 
-async function createPoolPrompt(){
-  const name = prompt('资源池名称', 'inference-pool');
-  if(!name) return;
-  const policy = prompt('调度策略：binpack / spread / gang', 'binpack');
-  if(!policy) return;
-  try{
-    const r = await post('/admin/pools', {name, policy, description:'手工创建'});
-    toast(r.message, true); loadPools();
-  }catch(e){ toast(e.message, false); }
+const POLICY_OPTS = [{v:'binpack', t:'binpack · 装箱（优先填满单节点）'},
+  {v:'spread', t:'spread · 打散（跨节点均摊）'},
+  {v:'gang', t:'gang · 整机成组（Volcano gang 调度）'}];
+
+function createPoolPrompt(){
+  openAsk({
+    title: '新建资源池',
+    fields: [
+      {k:'name', label:'资源池名称', value:'inference-pool', required:true,
+        pattern:/^[a-zA-Z0-9一-龥][a-zA-Z0-9._-一-龥]{1,31}$/, patternMsg:'名称 2~32 位，不能含空格', ph:'例如 inference-pool'},
+      {k:'policy', label:'默认调度策略', value:'binpack', type:'select', options: POLICY_OPTS},
+      {k:'desc', label:'用途说明（可选）', value:'手工创建', maxlen:60}
+    ],
+    tip: '资源池决定节点归属与默认调度策略；池下还有节点时不允许删除。',
+    okText: '创建',
+    run: async v => {
+      const r = await post('/admin/pools', {name: v.name, policy: v.policy, description: v.desc || '手工创建'});
+      toast(r.message, true);
+      loadPools();
+    }
+  });
 }
-async function setPoolPolicy(id, cur){
-  const next = prompt('新的调度策略：binpack / spread / gang', cur);
-  if(!next) return;
-  try{ const r = await post(`/admin/pools/${id}/policy`, {policy: next}); toast(r.message, r.changed>0); loadPools(); }
-  catch(e){ toast(e.message, false); }
+function setPoolPolicy(id, cur){
+  openAsk({
+    title: '调整调度策略 · ' + id,
+    fields: [{k:'policy', label:'新的调度策略', value: cur || 'binpack', type:'select', options: POLICY_OPTS}],
+    tip: '只改资源池默认策略，已运行的实例不会被驱逐；对外租赁场景仍不允许跨队列借用与抢占。',
+    okText: '保存',
+    run: async v => {
+      const r = await post(`/admin/pools/${id}/policy`, {policy: v.policy});
+      toast(r.message, r.changed > 0);
+      loadPools();
+    }
+  });
 }
-async function delPool(id){
-  if(!confirm('确认删除资源池 ' + id + '？池下还有节点时会被拒绝。')) return;
-  try{ const r = await del('/admin/pools/' + id); toast(r.message, r.deleted>0); loadPools(); }
-  catch(e){ toast(e.message, false); }
+function delPool(id){
+  openConfirm({
+    title: '删除资源池 ' + id,
+    danger: true, okText: '确认删除',
+    rows: [['资源池', esc(id), '删除', 'err'],
+      ['前置条件', '池下必须已经没有节点，否则服务端会拒绝。']],
+    run: async () => {
+      const r = await del('/admin/pools/' + id);
+      toast(r.message, r.deleted > 0);
+      loadPools();
+    }
+  });
 }
 
 /* ---------- 5 租户 ---------- */
+let tenantCache = null;
 async function loadTenants(){
   const list = await api('/admin/tenants');
+  tenantCache = list;
   $('#tCount').textContent = list.length + ' 个';
   $('#tenantTable').innerHTML = `<table>
     <thead><tr><th>租户</th><th>配额</th><th>已用</th><th>余额</th><th>累计消费</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
@@ -890,15 +1459,39 @@ function resetTenantForm(){
   $('#tUser').value = '';
   $('#tQuota').value = '4';
 }
-async function editQuota(id, cur){
-  const v = prompt('新的配额（卡）', cur);
-  if(v === null) return;
-  try{ const r = await post(`/admin/tenants/${id}/quota`, {quota:Number(v)}); toast(r.message, true); loadTenants(); }
-  catch(e){ toast(e.message, false); }
+function editQuota(id, cur){
+  openAsk({
+    title: '调整 GPU 配额 · ' + id,
+    fields: [{k:'quota', label:'新的配额（卡）', type:'number', value: cur, required:true, min:0, max:256}],
+    dyn: v => `<div class="biz-row"><div class="t"><b>配额变更</b><span class="biz-tag ${Number(v.quota) < cur ? 'warn' : 'ok'}">${cur} → ${esc(v.quota || '0')} 卡</span></div>
+      <div class="d">当前已占用 ${tenantUsed(id)} 卡。调低到小于已占用量不会驱逐租户实例，但新单会被配额拦住。</div></div>`,
+    tip: '台账与集群 ResourceQuota 一起改；集群侧同步失败时消息里会写明，需要人工复核。',
+    okText: '保存',
+    run: async v => {
+      const r = await post(`/admin/tenants/${id}/quota`, {quota: Number(v.quota)});
+      toast(r.message, true);
+      tenantCache = null;
+      loadTenants();
+    }
+  });
 }
-async function toggleTenant(id, st){
-  try{ const r = await post(`/admin/tenants/${id}/status`, {status: st==='active'?'frozen':'active'}); toast(r.message, true); loadTenants(); }
-  catch(e){ toast(e.message, false); }
+function tenantUsed(id){
+  const t = (tenantCache || []).find(x => x.id === id);
+  return t ? (t.used_gpus ?? 0) : '—';
+}
+function toggleTenant(id, st){
+  const next = st === 'active' ? 'frozen' : 'active';
+  openConfirm({
+    title: (next === 'frozen' ? '冻结租户 ' : '解冻租户 ') + id,
+    danger: next === 'frozen', warn: false, okText: '确认' + (next === 'frozen' ? '冻结' : '解冻'),
+    rows: [['租户', esc(id), next === 'frozen' ? '冻结' : '解冻', next === 'frozen' ? 'err' : 'ok'],
+      ['影响', next === 'frozen' ? '租户无法下单与续费，已运行实例继续按秒计费直到到期或释放。' : '租户恢复正常下单。']],
+    run: async () => {
+      const r = await post(`/admin/tenants/${id}/status`, {status: next});
+      toast(r.message, true);
+      loadTenants();
+    }
+  });
 }
 
 /* ---------- 6 告警 ---------- */
@@ -913,18 +1506,24 @@ async function loadAlerts(){
     ['已解决', d.alerts.filter(a=>a.status==='resolved').length, '条'],
   ].map(k=>`<div class="card kpi"><div class="k">${k[0]}</div><div class="v" style="${k[0].includes('P0')?'color:#dc2828':''}">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
 
-  lineChart($('#alChart'), [{data:m.gpuUtil, cls:'ln'}, {data:m.memUtil, cls:'ln2'}], {height:130});
-  lineChart($('#pwChart'), [{data:m.powerW, cls:'ln'}], {height:130});
+  if (m.gpuUtil && m.gpuUtil.length) {
+    lineChart($('#alChart'), [{data:m.gpuUtil, cls:'ln'}, {data:m.memUtil || [], cls:'ln2'}], {height:130});
+    lineChart($('#pwChart'), [{data:m.powerW || [], cls:'ln'}], {height:130});
+  } else {
+    $('#alChart').innerHTML = '<div class="empty">' + (m.note || '暂无监控数据') + '</div>';
+    $('#pwChart').innerHTML = '<div class="empty">' + (m.note || '暂无监控数据') + '</div>';
+  }
 
   $('#alertTable').innerHTML = d.alerts.length ? `<table>
     <thead><tr><th>级别</th><th>标题</th><th>来源</th><th>对象</th><th>详情</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
     <tbody>${d.alerts.map(a=>`<tr>
       <td><span class="pill ${a.level==='P0'?'p-red':(a.level==='P1'?'p-amber':'p-gray')}">${a.level}</span></td>
       <td><b>${a.title}</b></td><td>${a.source}</td><td class="mono">${a.target}</td>
-      <td class="hint" style="max-width:280px">${a.detail||''}</td>
+      <td class="hint" style="max-width:280px">${a.detail||''}${a.diagnosis?`<div class="mt6" style="color:var(--blue)">▸ ${a.diagnosis}</div>`:''}</td>
       <td><span class="pill ${a.status==='active'?'p-red':(a.status==='acked'?'p-amber':'p-green')}">${a.status==='active'?'待处理':(a.status==='acked'?'已确认':'已解决')}</span></td>
       <td style="text-align:right;white-space:nowrap">
-        ${a.status==='active'?`<button class="sm ghost" onclick="alertAct('${a.id}','ack')">确认</button>`:''}
+        <button class="sm ghost" onclick="diagAlert('${a.id}')">AI 诊断</button>
+        ${a.status==='active'?`<button class="sm ghost" style="margin-left:4px" onclick="alertAct('${a.id}','ack')">确认</button>`:''}
         ${a.status!=='resolved'?`<button class="sm ghost" style="margin-left:4px" onclick="alertAct('${a.id}','resolve')">解决</button>`:'<span class="hint">—</span>'}
       </td></tr>`).join('')}</tbody></table>` : '<div class="empty">没有告警</div>';
 
@@ -942,16 +1541,24 @@ async function loadAlerts(){
       </td></tr>`).join('')}</tbody></table>` : '<div class="empty">还没有规则</div>';
 }
 
-async function createRulePrompt(){
-  const name = prompt('规则名称', '新告警规则');
-  if(!name) return;
-  const expr = prompt('触发条件（PromQL 风格）', 'temp_c > 85 持续 5min');
-  if(!expr) return;
-  const level = prompt('级别：P0 / P1 / P2', 'P1');
-  try{
-    const r = await post('/admin/alert-rules', {name, expr, level: level || 'P1', target:'gpu', notify:'群'});
-    toast(r.message, true); loadAlerts();
-  }catch(e){ toast(e.message, false); }
+function createRulePrompt(){
+  openAsk({
+    title: '新建告警规则',
+    fields: [
+      {k:'name', label:'规则名称', value:'新告警规则', required:true, maxlen:40, ph:'例如 GPU 温度过高'},
+      {k:'expr', label:'触发条件（PromQL 风格）', value:'temp_c > 85 持续 5min', required:true, maxlen:120, ph:'temp_c > 85 持续 5min'},
+      {k:'level', label:'级别', value:'P1', type:'select', options:[{v:'P0',t:'P0 · 紧急（电话 + 群）'},{v:'P1',t:'P1 · 重要（群 + 站内）'},{v:'P2',t:'P2 · 提示（站内）'}]},
+      {k:'target', label:'监控对象', value:'gpu', type:'select', options:[{v:'gpu',t:'gpu · 单卡'},{v:'node',t:'node · 节点'},{v:'instance',t:'instance · 租户实例'}]},
+      {k:'notify', label:'通知渠道', value:'群', maxlen:30}
+    ],
+    tip: '命中阈值即生成告警，级别决定通知渠道。租户实例<b>不配置抢占类自动动作</b>——对客户实例只做告警，不自动处置。',
+    okText: '创建规则',
+    run: async v => {
+      const r = await post('/admin/alert-rules', {name: v.name, expr: v.expr, level: v.level, target: v.target, notify: v.notify || '群'});
+      toast(r.message, true);
+      loadAlerts();
+    }
+  });
 }
 async function toggleRule(id, enabled){
   try{ const r = await post(`/admin/alert-rules/${id}/toggle`, {enabled}); toast(r.message, r.changed>0); loadAlerts(); }
@@ -963,6 +1570,11 @@ async function delRule(id){
 }
 async function alertAct(id, act){
   try{ const r = await post(`/admin/alerts/${id}/${act}`); toast(r.message, true); loadAlerts(); }
+  catch(e){ toast(e.message, false); }
+}
+async function diagAlert(id){
+  try{ const r = await post(`/admin/alerts/${id}/diagnose`);
+    toast(r.source==='llm'?'已生成 AI 诊断':'已生成内置建议（未配置大模型）', true); loadAlerts(); }
   catch(e){ toast(e.message, false); }
 }
 
@@ -980,13 +1592,17 @@ async function loadInspections(){
         <span class="hint mono">${i.id}</span>
       </div>
       <div class="hint mb10">${i.summary||''}</div>
+      <div class="mb10">
+        <button class="sm ghost" onclick="diagIns('${i.id}')">AI 诊断</button>
+        <button class="sm ghost" style="margin-left:4px" onclick="insTicket('${i.id}')">转工单</button>
+      </div>
       ${(i.items||[]).length ? `<table>
-        <thead><tr><th>级别</th><th>检查项</th><th>对象</th><th>建议</th><th>状态</th></tr></thead>
+        <thead><tr><th>级别</th><th>检查项</th><th>对象</th><th>建议 / 诊断</th><th>状态</th></tr></thead>
         <tbody>${i.items.map(it=>`<tr>
           <td><span class="pill ${it.level==='P0'?'p-red':(it.level==='P1'?'p-amber':'p-gray')}">${it.level}</span></td>
           <td>${it.item}</td><td class="mono">${it.target}</td>
-          <td class="hint">${it.suggestion}</td>
-          <td><span class="pill ${it.fixed?'p-green':'p-amber'}">${it.fixed?'已处理':'待处理'}</span></td>
+          <td class="hint">${it.suggestion}${it.diagnosis?`<div class="mt6" style="color:var(--blue)">▸ ${it.diagnosis}</div>`:''}</td>
+          <td><span class="pill ${it.fixed?'p-green':'p-amber'}">${it.fixed?'已处理':'待处理'}</span>${it.ticket_id?`<div class="hint mt6 mono">工单 ${it.ticket_id}</div>`:''}</td>
         </tr>`).join('')}</tbody></table>` : '<div class="hint">本次巡检未发现问题</div>'}
     </div>`).join('') || '<div class="empty">还没有巡检记录</div>';
 }
@@ -994,39 +1610,148 @@ async function runInspection(){
   try{ const r = await post('/admin/inspections/run'); toast(`巡检完成：健康度 ${r.healthScore}，${r.summary}`, true); loadInspections(); }
   catch(e){ toast(e.message, false); }
 }
+async function diagIns(id){
+  try{ const r = await post(`/admin/inspections/${id}/diagnose`); toast(r.message, true); loadInspections(); }
+  catch(e){ toast(e.message, false); }
+}
+async function insTicket(id){
+  try{ const r = await post(`/admin/inspections/${id}/ticket`); toast(r.message, r.created>0); loadInspections(); }
+  catch(e){ toast(e.message, false); }
+}
+
+/* ---------- 认证与优惠 ---------- */
+async function loadCerts(){
+  try{
+    const [rns, scs, dms] = await Promise.all([
+      api('/admin/realnames?status=' + $('#rnFilter').value),
+      api('/admin/student-certs?status=' + $('#scFilter').value),
+      api('/admin/driver-matrix')
+    ]);
+    $('#rnList').innerHTML = rns.length ? `<table>
+      <thead><tr><th>租户</th><th>姓名</th><th>证件号（脱敏）</th><th>手机号</th><th>提交时间</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+      <tbody>${rns.map(r=>`<tr>
+        <td class="mono">${r.tenant_id}</td><td>${r.real_name}</td>
+        <td class="mono">${r.id_no_masked}</td><td class="mono">${r.phone}</td>
+        <td class="hint">${fmtAt(r.created_at)}</td>
+        <td><span class="pill ${r.status==='approved'?'p-green':(r.status==='rejected'?'p-red':'p-amber')}">${{pending:'待审核',approved:'已通过',rejected:'已驳回'}[r.status]||r.status}</span></td>
+        <td style="text-align:right;white-space:nowrap">${r.status==='pending'?`
+          <button class="sm ghost" onclick="reviewRn('${r.id}','approved')">通过</button>
+          <button class="sm ghost" style="margin-left:4px" onclick="reviewRn('${r.id}','rejected')">驳回</button>`:'—'}</td>
+      </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无该状态申请</div>';
+
+    $('#scList').innerHTML = scs.length ? `<table>
+      <thead><tr><th>租户</th><th>学校</th><th>学号</th><th>提交时间</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+      <tbody>${scs.map(s=>`<tr>
+        <td class="mono">${s.tenant_id}</td><td>${s.school}</td>
+        <td class="mono">${s.student_no}</td>
+        <td class="hint">${fmtAt(s.created_at)}</td>
+        <td><span class="pill ${s.status==='approved'?'p-green':(s.status==='rejected'?'p-red':'p-amber')}">${{pending:'待审核',approved:'已通过',rejected:'已驳回'}[s.status]||s.status}</span></td>
+        <td style="text-align:right;white-space:nowrap">${s.status==='pending'?`
+          <button class="sm ghost" onclick="reviewSc('${s.id}','approved')">通过（9折）</button>
+          <button class="sm ghost" style="margin-left:4px" onclick="reviewSc('${s.id}','rejected')">驳回</button>`:'—'}</td>
+      </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无该状态申请</div>';
+
+    $('#dmList').innerHTML = `<table>
+      <thead><tr><th>GPU 型号</th><th>驱动版本</th><th>CUDA</th><th>cuDNN</th><th>PyTorch</th><th>状态</th><th>备注</th></tr></thead>
+      <tbody>${dms.map(m=>`<tr>
+        <td><b>${m.gpu_model}</b></td><td class="mono">${m.driver_version}</td>
+        <td class="mono">${m.cuda}</td><td class="mono">${m.cudnn}</td><td class="mono">${m.pytorch}</td>
+        <td><span class="pill ${m.status==='已验证'?'p-green':'p-amber'}">${m.status}</span></td>
+        <td class="hint">${m.note||'—'}</td>
+      </tr>`).join('')}</tbody></table>`;
+  }catch(e){ toast(e.message, false); }
+}
+async function reviewRn(id, status){
+  try{ const r = await post(`/admin/realnames/${id}/review`, {status}); toast(r.message, true); loadCerts(); }
+  catch(e){ toast(e.message, false); }
+}
+async function reviewSc(id, status){
+  try{ const r = await post(`/admin/student-certs/${id}/review`, {status}); toast(r.message, true); loadCerts(); }
+  catch(e){ toast(e.message, false); }
+}
+async function issueCoupon(){
+  const a = $('#cpAlert');
+  a.style.display = 'none';
+  try{
+    const r = await post('/admin/coupons', {
+      tenantId: $('#cpTenant').value.trim(),
+      amountYuan: Number($('#cpAmount').value),
+      title: $('#cpTitle').value.trim() || '平台活动赠送',
+      expireDays: Number($('#cpDays').value) || 30
+    });
+    toast(r.message, true);
+  }catch(e){ a.textContent = e.message; a.className = 'alert err'; a.style.display = 'block'; }
+}
+
+/* ---------- 经营报表 ---------- */
+async function loadReport(){
+  try{
+    const r = await api('/admin/report');
+    const days = r.revenueByDay || [];
+    const revTotal = days.reduce((a,d)=>a+Number(d.amount||0),0);
+    const order = r.totalOrders || {};
+    const ri = r.runningInstances || {};
+    $('#rpKpi').innerHTML = [
+      ['近30日收入', '¥' + fmt(revTotal), days.length + ' 个结算日'],
+      ['租户数', r.tenantCount ?? '–', '余额合计 ¥' + fmt(r.tenantBalance)],
+      ['运行中实例', ri.n ?? '–', '含创建中 / 重置中'],
+      ['累计订单', order.n ?? '–', '订单额 ¥' + fmt(order.amount)],
+    ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+    if(days.length){
+      lineChart($('#rpChart'), [{name:'收入', data: days.map(d=>Number(d.amount||0))}], {height:160});
+      $('#rpChart').insertAdjacentHTML('beforeend',
+        '<div class="hint mt6">横轴：' + days[0].d + ' ~ ' + days[days.length-1].d + '（日结算额，元）</div>');
+    } else {
+      $('#rpChart').innerHTML = '<div class="empty">近 30 天暂无结算记录（释放实例时产生结算）</div>';
+    }
+    const cs = r.couponSummary || [];
+    $('#rpCoupons').innerHTML = cs.length ? cs.map(c=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:12.5px">
+        <span class="pill ${c.status==='unused'?'p-blue':(c.status==='used'?'p-green':'p-gray')}">${{unused:'未兑换',used:'已兑换',expired:'已过期'}[c.status]||c.status}</span>
+        <b style="width:60px">${c.n} 张</b>
+        <span class="hint">合计 ¥${fmt(c.total)}</span>
+      </div>`).join('') : '<div class="empty">暂无代金券</div>';
+  }catch(e){ toast(e.message, false); }
+}
 
 /* ---------- 节点 YAML 抽屉 ---------- */
 function openNodeYaml(n){
   const labels = (n.labels||'').split(',').filter(Boolean)
     .map(l => { const p = l.split('='); return `    ${p[0]}: "${p[1]||''}"`; }).join('\n');
-  const gpuLines = (n.gpus||[]).map(g =>
-    `  - id: ${g.id}        # index ${g.idx} · ${g.model} ${g.mem_gb}GB\n` +
-    `    status: ${g.status}${g.instance_id ? '  # 实例 ' + g.instance_id : ''}`
-  ).join('\n');
+  const gpuLines = (n.gpus||[]).map(g => {
+    const id = g.id || (n.name + '-' + g.idx);
+    const st = g.status || (n.dataSource === 'cluster' ? 'cluster-reported' : 'unknown');
+    return `  - id: ${id}        # index ${g.idx} · ${g.model || '未知'} ${g.memGb ?? g.mem_gb ?? '?'}GB\n` +
+      `    status: ${st}${g.instance_id ? '  # 实例 ' + g.instance_id : ''}`;
+  }).join('\n');
+  const ver = n.k8sVersion || n.k8s_version || '—';
+  const cpu = n.cpuCores ?? n.cpu_cores ?? '—';
+  const mem = n.memGb ?? n.mem_gb ?? '—';
+  const gpuCnt = n.gpuCount ?? n.gpu_count ?? (n.gpus || []).length;
   const yaml =
 `apiVersion: v1
 kind: Node
 metadata:
-  name: ${n.hostname}
+  name: ${n.hostname || n.name}
   labels:
 ${labels}
 spec:
   podCIDR: 10.42.${n.id === 'n2' ? 1 : 0}.0/24
 status:
   nodeInfo:
-    kubeletVersion: ${n.k8s_version}
+    kubeletVersion: ${ver}
     operatingSystem: linux
     architecture: amd64
     capacity:
-      cpu: "${n.cpu_cores}"
-      memory: "${n.mem_gb}Gi"
-      nvidia.com/gpu: "${n.gpu_count}"
+      cpu: "${cpu}"
+      memory: "${mem}Gi"
+      nvidia.com/gpu: "${gpuCnt}"
   allocatable:
-    nvidia.com/gpu: "${n.gpu_count}"
+    nvidia.com/gpu: "${gpuCnt}"
   conditions:
   - type: Ready
     status: "${n.status === 'NotReady' ? 'False' : 'True'}"
-  gpus:            # 由 nvidia device plugin 上报
+  gpus:            # 由 nvidia device plugin 上报${n.dataSource === 'cluster' ? '（集群实测，未入台账）' : ''}
 ${gpuLines}`;
   $('#drawerTitle').textContent = n.hostname + ' · YAML';
   $('#drawerBody').textContent = yaml;
@@ -1208,6 +1933,81 @@ async function loadSystem(){
 
   await loadAudit(1);
   await loadOrphans();
+  await loadDicts();
+}
+
+/* ---------- 数据字典 ---------- */
+let editingDictId = null;
+async function loadDicts(){
+  try{
+    const d = await api('/admin/dicts');
+    const byCat = {};
+    d.items.forEach(x => (byCat[x.category] = byCat[x.category] || []).push(x));
+    const cats = Object.keys(byCat).sort();
+    $('#dictSub').textContent = d.items.length + ' 项 · ' + cats.length + ' 个分类';
+    $('#sysDicts').innerHTML = cats.length ? `<table>
+      <thead><tr><th style="width:20%">分类</th><th>编码</th><th>显示名</th><th class="num">排序</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+      <tbody>${d.items.map(x=>`<tr>
+        <td class="mono">${x.category}</td>
+        <td class="mono">${x.code}</td>
+        <td>${x.label}</td>
+        <td class="num">${x.sort}</td>
+        <td><span class="pill ${x.enabled?'p-green':'p-gray'}">${x.enabled?'启用':'停用'}</span></td>
+        <td style="text-align:right">
+          <button class="sm ghost" onclick="openDict('${x.id}')">编辑</button>
+          <button class="sm danger" style="margin-left:4px" onclick="delDict('${x.id}')">删除</button>
+        </td></tr>`).join('')}</tbody></table>` : '<div class="empty">暂无字典项</div>';
+  }catch(e){ toast(e.message, false); }
+}
+function openDict(id){
+  editingDictId = id || null;
+  $('#dictTitle').textContent = id ? '编辑字典项' : '新增字典项';
+  if(id){
+    api('/admin/dicts').then(d => {
+      const x = d.items.find(i => i.id === id);
+      if(!x) return;
+      $('#dictCategory').value = x.category;
+      $('#dictCode').value = x.code;
+      $('#dictLabel').value = x.label;
+      $('#dictSort').value = x.sort;
+      $('#dictEnabled').checked = x.enabled;
+    });
+  } else {
+    $('#dictCategory').value = '';
+    $('#dictCode').value = '';
+    $('#dictLabel').value = '';
+    $('#dictSort').value = 0;
+    $('#dictEnabled').checked = true;
+  }
+  $('#dictAlert').style.display = 'none';
+  $('#dictModal').classList.add('on');
+}
+function closeDict(){ $('#dictModal').classList.remove('on'); }
+async function saveDict(){
+  const body = {
+    category: $('#dictCategory').value.trim(),
+    code: $('#dictCode').value.trim(),
+    label: $('#dictLabel').value.trim(),
+    sort: Number($('#dictSort').value) || 0,
+    enabled: $('#dictEnabled').checked
+  };
+  try{
+    const r = editingDictId
+      ? await put('/admin/dicts/' + editingDictId, body)
+      : await post('/admin/dicts', body);
+    closeDict();
+    toast(r.message, true);
+    loadDicts();
+  }catch(e){
+    const a = $('#dictAlert'); a.textContent = e.message; a.style.display = 'block';
+  }
+}
+async function delDict(id){
+  try{
+    const r = await del('/admin/dicts/' + id);
+    toast(r.message, r.deleted > 0);
+    loadDicts();
+  }catch(e){ toast(e.message, false); }
 }
 
 /* ---------- 资源对账 ---------- */
@@ -1233,13 +2033,19 @@ async function loadOrphans(){
           </tr>`).join('')}</tbody></table>`;
   }catch(e){ toast(e.message, false); }
 }
-async function cleanOrphan(ns, pod){
-  if(!confirm('确认删除孤儿 Pod ' + pod + '？删除后会释放它占用的 GPU。')) return;
-  try{
-    const r = await del(`/admin/orphans/${ns}/${pod}`);
-    toast(r.message, r.deleted > 0);
-    loadOrphans();
-  }catch(e){ toast(e.message, false); }
+function cleanOrphan(ns, pod){
+  openConfirm({
+    title: '清理孤儿 Pod · ' + pod,
+    danger: true, okText: '确认清理',
+    rows: [['命名空间', esc(ns), '', 'warn'], ['Pod', esc(pod)],
+      ['影响', 'kubectl delete pod 等价动作：删除后它占用的 GPU 会归还卡池。']],
+    tip: '孤儿 Pod 是集群里有、平台台账里没有的对象，清理前请确认不是租户手工创建的负载。',
+    run: async () => {
+      const r = await del(`/admin/orphans/${ns}/${pod}`);
+      toast(r.message, r.deleted > 0);
+      loadOrphans();
+    }
+  });
 }
 
 /* ---------- 审计：筛选 + 分页 + 导出 ---------- */
@@ -1288,20 +2094,36 @@ async function exportAudit(){
   URL.revokeObjectURL(a.href);
   toast('已导出 CSV（可用 Excel 直接打开）', true);
 }
-async function kickSession(id){
-  if(!confirm('确认强制下线该会话？')) return;
-  try{ const r = await del('/admin/sessions/' + id); toast(r.message, r.deleted > 0); loadSystem(); }
-  catch(e){ toast(e.message, false); }
+function kickSession(id){
+  openConfirm({
+    title: '强制下线该会话',
+    danger: true, okText: '确认下线',
+    rows: [['会话', esc(id), '立即失效', 'err'],
+      ['影响', '该会话的 token 当场作废，对应用户需要重新登录。']],
+    run: async () => {
+      const r = await del('/admin/sessions/' + id);
+      toast(r.message, r.deleted > 0);
+      loadSystem();
+    }
+  });
 }
 async function unlockUser(id){
   try{ const r = await post(`/admin/users/${id}/unlock`); toast(r.message, r.changed > 0); loadSystem(); }
   catch(e){ toast(e.message, false); }
 }
-async function toggleUser(id, status){
+function toggleUser(id, status){
   const next = status === 'active' ? 'disabled' : 'active';
-  if(!confirm(next === 'disabled' ? '确认停用该账号？其在线会话会立即失效。' : '确认启用该账号？')) return;
-  try{ const r = await post(`/admin/users/${id}/status`, {status: next}); toast(r.message, r.changed > 0); loadSystem(); }
-  catch(e){ toast(e.message, false); }
+  openConfirm({
+    title: next === 'disabled' ? '停用平台账号' : '启用平台账号',
+    danger: next === 'disabled', okText: '确认' + (next === 'disabled' ? '停用' : '启用'),
+    rows: [['账号 ID', esc(id), next === 'disabled' ? '停用' : '启用', next === 'disabled' ? 'err' : 'ok'],
+      ['影响', next === 'disabled' ? '已签发的在线会话立即失效，该账号无法再登录。' : '账号恢复登录能力，锁定计数一并清零。']],
+    run: async () => {
+      const r = await post(`/admin/users/${id}/status`, {status: next});
+      toast(r.message, r.changed > 0);
+      loadSystem();
+    }
+  });
 }
 
 async function saveSetting(k){
@@ -1310,12 +2132,356 @@ async function saveSetting(k){
   catch(e){ toast(e.message, false); }
 }
 
+/* ---------- 8 算力实例（业务运营 · 代租户操作） ---------- */
+const RENEW_OPTS = [{v:'1',t:'1 小时'},{v:'6',t:'6 小时'},{v:'12',t:'12 小时'},{v:'24',t:'24 小时（1 天）'},
+  {v:'72',t:'72 小时（3 天）'},{v:'168',t:'168 小时（7 天）'},{v:'720',t:'720 小时（30 天）'}];
+const INST_ACTS = {
+  poweroff: {label:'关机', warn:true,  tip:'关机即停止计费、数据保留 7 天（到期时间不顺延，超期会被回收）。'},
+  poweron:  {label:'开机',             tip:'实例重新进入创建中 → 运行中，就绪后自动恢复按秒计费。'},
+  restart:  {label:'重启',   warn:true, tip:'Pod 重建，占用的卡与数据盘不动，中间有几十秒不可用窗口。'},
+  reset:    {label:'重置系统', danger:true, tip:'只把系统盘还原到镜像初始状态，数据盘保留；租户自己也能做这个动作，操作不可撤销。'},
+  release:  {label:'释放',   danger:true, tip:'按秒实结、预扣差额退回租户余额，占用的卡同步归还卡池，实例不可恢复。'}
+};
+let instRows = {};
+
+async function loadInstances(){
+  const st = $('#isStatus').value, tid = $('#isTenant').value;
+  let d, tns;
+  try{
+    [d, tns] = await Promise.all([
+      api(`/admin/instances?status=${encodeURIComponent(st)}&tenantId=${encodeURIComponent(tid)}`),
+      tenantCache ? Promise.resolve(tenantCache) : api('/admin/tenants')
+    ]);
+  }catch(e){ toast(e.message, false); return; }
+  tenantCache = tns;
+  const sel = $('#isTenant');
+  sel.innerHTML = '<option value="">全部租户</option>'
+    + tns.map(t => `<option value="${esc(t.id)}">${esc(t.name)}（${esc(t.id)}）</option>`).join('');
+  sel.value = tid;
+
+  instRows = {};
+  (d.items || []).forEach(i => { instRows[i.id] = i; });
+  if(!st && !tid) instIdx = buildInstIdx(d.items);
+
+  $('#isKpi').innerHTML = [
+    ['实例总数', (d.items || []).length, '按创建时间倒序 · 最多 200 条'],
+    ['运行中', d.runningCount, '正在按秒计费'],
+    ['已关机', d.stoppedCount, '停止计费 · 数据保留 7 天'],
+    ['占用卡数', d.occupiedCards, '运行中实例的 GPU 合计'],
+  ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+  $('#isTable').innerHTML = (d.items || []).length ? `<table>
+    <thead><tr><th>实例 ID</th><th>租户</th><th>规格</th><th>节点</th><th>占用卡</th><th>镜像</th><th>数据盘</th><th>状态</th><th>已用 / 单价</th><th>到期</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${d.items.map(i => {
+      const cards = String(i.gpu_ids || '').split(',').map(s => s.trim()).filter(Boolean);
+      const img = i.image_ref ? `<span class="mono" title="${esc(i.image_ref)}">${esc(String(i.image_ref).slice(0, 26))}${String(i.image_ref).length > 26 ? '…' : ''}</span>`
+        : '<span class="hint">未指定</span>';
+      return `<tr>
+        <td class="mono">${esc(i.id)}<div class="hint">${esc(i.pod_name || '无 Pod')}</div></td>
+        <td>${esc(i.tenant_name || '—')}<div class="hint mono">${esc(i.tenant_id || '')}</div></td>
+        <td>${esc(i.spec || ((i.gpu_count || 0) + ' 卡'))}</td>
+        <td class="mono">${esc(i.node_id || '—')}</td>
+        <td>${cards.length ? cards.map(c => `<span class="biz-tag">${esc(c)}</span>`).join(' ') : '<span class="hint">无卡</span>'}</td>
+        <td>${img}</td>
+        <td>${Number(i.data_disk_gb) > 0 ? esc(i.data_disk_gb) + ' GB' : '<span class="hint">未挂</span>'}</td>
+        <td>${istPill(i.status)}</td>
+        <td class="mono">${fmtSec(i.used_seconds)}<div class="hint">${i.unit_price != null ? '¥' + fmt(i.unit_price) + '/卡·时' + (i.hours ? ' · 已购 ' + esc(i.hours) + 'h' : '') : '无订单价格'}</div></td>
+        <td class="mono hint">${fmtAt(i.expire_at)}</td>
+        <td style="text-align:right;white-space:nowrap">${instOps(i)}</td>
+      </tr>`; }).join('')}</tbody></table>` : '<div class="empty">该筛选条件下没有实例</div>';
+}
+
+function instOps(i){
+  const detail = `<button class="sm ghost" onclick="instAccess('${esc(i.id)}')">详情</button>`;
+  if(i.status === 'released' || i.status === 'failed')
+    return detail + '<span class="hint" style="margin-left:6px">已结束</span>';
+  const b = [detail];
+  if(i.status === 'running'){
+    b.push(`<button class="sm warn" style="margin-left:4px" onclick="instAsk('${esc(i.id)}','poweroff')">关机</button>`);
+    b.push(`<button class="sm ghost" style="margin-left:4px" onclick="instAsk('${esc(i.id)}','restart')">重启</button>`);
+    b.push(`<button class="sm ghost" style="margin-left:4px" onclick="instRenew('${esc(i.id)}')">续费</button>`);
+    b.push(`<button class="sm danger" style="margin-left:4px" onclick="instAsk('${esc(i.id)}','reset')">重置系统</button>`);
+  }
+  if(i.status === 'stopped')
+    b.push(`<button class="sm" style="margin-left:4px" onclick="instAsk('${esc(i.id)}','poweron')">开机</button>`);
+  if(i.status !== 'releasing')
+    b.push(`<button class="sm danger" style="margin-left:4px" onclick="instAsk('${esc(i.id)}','release')">释放</button>`);
+  return b.join('');
+}
+
+function instAsk(id, act){
+  const meta = INST_ACTS[act], it = instRows[id] || {};
+  openConfirm({
+    title: '代租户' + meta.label + ' · ' + id,
+    danger: !!meta.danger, warn: !!meta.warn,
+    okText: '确认' + meta.label,
+    rows: [
+      ['实例', esc(id), (IST[it.status] || [it.status || '?'])[0], 'warn'],
+      ['租户', esc(it.tenant_name || it.tenant_id || '—'), it.tenant_id ? '登录租户' : '无租户'],
+      ['规格 / 节点', esc((it.spec || ((it.gpu_count || 0) + ' 卡')) + ' · ' + (it.node_id || '—'))],
+      ['占用卡', esc(String(it.gpu_ids || '无'))],
+      ['已用 / 到期', esc(fmtSec(it.used_seconds) + ' · ' + fmtAt(it.expire_at))],
+    ],
+    tip: meta.tip + ' 走的是与用户端完全相同的方法，会写入操作审计，执行后列表自动刷新。',
+    run: async () => {
+      const r = await post(`/admin/instances/${id}/${act}`);
+      toast(act === 'release'
+        ? `已释放 ${id} · 用量 ${r.usedSeconds || 0} 秒 · 实结 ¥${fmt(r.actualAmount)} · 退回 ¥${fmt(r.refund)}`
+        : (r.message || meta.label + '已提交'), true);
+      instIdx.at = 0;
+      await loadInstances();
+    }
+  });
+}
+
+function instRenew(id){
+  const it = instRows[id] || {};
+  const price = Number(it.unit_price) || 0, gc = Number(it.gpu_count) || 0;
+  openAsk({
+    title: '代租户续费 · ' + id,
+    fields: [{k:'hours', label:'续费时长', type:'select', value:'24', options: RENEW_OPTS}],
+    dyn: v => {
+      const h = Number(v.hours) || 0, est = price * gc * h;
+      return `<div class="biz-row"><div class="t"><b>预计预扣金额</b><span class="biz-tag ${est > 0 ? 'warn' : 'ok'}">¥ ${fmt(est)}</span></div>
+        <div class="d">估算口径：订单单价 ¥${fmt(price)}/卡·时 × ${gc} 卡 × ${h} 小时。实际以服务端计价为准（可能有包月 / 拼团价），从租户「${esc(it.tenant_name || it.tenant_id || '—')}」余额预扣，余额不足会被直接拒绝。</div></div>`;
+    },
+    tip: '到期时间从<b>当前到期点</b>顺延，不重新计时；只有运行中的实例可以续费。',
+    okText: '确认续费',
+    run: async v => {
+      const r = await post(`/admin/instances/${id}/renew`, {hours: Number(v.hours)});
+      toast(r.message || ('已续费 ' + v.hours + ' 小时'), true);
+      instIdx.at = 0;
+      await loadInstances();
+    }
+  });
+}
+
+/* ---------- 9 商务需求 ---------- */
+const LST = {new:['新提交','p-amber'],following:['跟进中','p-blue'],done:['已办结','p-green'],rejected:['已驳回','p-gray']};
+const ldPill = st => `<span class="pill ${LST[st] ? LST[st][1] : 'p-gray'}">${LST[st] ? LST[st][0] : (st || '—')}</span>`;
+let leadRows = {};
+
+async function loadLeads(){
+  const st = $('#ldStatus').value;
+  let d;
+  try{ d = await api('/admin/leads?status=' + encodeURIComponent(st)); }
+  catch(e){ toast(e.message, false); return; }
+  leadRows = {};
+  (d.items || []).forEach(l => { leadRows[l.id] = l; });
+
+  $('#ldKpi').innerHTML = [
+    ['新提交', d.newCount, '等待首次响应'],
+    ['跟进中', d.followingCount, '已受理未办结'],
+    ['当前列表', (d.items || []).length, st ? '筛选：' + LST[st][0] : '全部状态'],
+  ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+  $('#ldTable').innerHTML = (d.items || []).length ? `<table>
+    <thead><tr><th>需求编号</th><th>来源</th><th>机型</th><th>租户 / 访客</th><th>联系人</th><th>单位 / 学校</th><th>需求说明</th><th>状态</th><th>提交时间</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${d.items.map(l => `<tr>
+      <td class="mono">${esc(l.id)}</td>
+      <td>${esc(l.source || '—')}</td>
+      <td><b>${esc(l.model || '未指定机型')}</b></td>
+      <td>${esc(l.tenantName || l.tenant_name || '未登录访客')}${l.tenant_id ? `<div class="hint mono">${esc(l.tenant_id)}</div>` : '<div class="hint">无线上账号</div>'}</td>
+      <td>${esc(l.contact_name || '—')}<div class="hint mono">${esc(l.contact_phone || '未留电话')}</div></td>
+      <td>${l.org ? esc(l.org) : '<span class="hint">未填写</span>'}</td>
+      <td class="hint" style="max-width:260px">${l.note ? esc(l.note) : '—'}${l.reply ? `<div style="margin-top:4px;color:var(--blue)">▸ 回复：${esc(l.reply)}</div>` : ''}</td>
+      <td>${ldPill(l.status)}</td>
+      <td class="hint mono">${fmtAt(l.created_at)}</td>
+      <td style="text-align:right"><button class="sm ghost" onclick="leadFollow('${esc(l.id)}')">跟进处理</button></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">该状态下没有需求</div>';
+}
+
+function leadFollow(id){
+  const l = leadRows[id] || {}, guest = !l.tenant_id;
+  openAsk({
+    title: '跟进处理 · ' + id,
+    fields: [
+      {k:'status', label:'处理状态', type:'radio', value:(l.status === 'done' || l.status === 'rejected') ? l.status : 'following',
+        options:[{v:'following',t:'跟进中'},{v:'done',t:'已办结'},{v:'rejected',t:'已驳回'}]},
+      {k:'reply', label:'回复内容（写回需求，租户侧可见）', type:'textarea', rows:4, maxlen:500, value:l.reply || '',
+        ph:'例如：已锁定 4 张 RTX 6000D（重庆），明天上午前开通',
+        required: v => v.status === 'done' || v.status === 'rejected'}
+    ],
+    tip: guest
+      ? '这是一条<b>未登录访客</b>提交的需求（来源 ' + esc(l.source || '—') + '，没有租户账号），回复不会进消息中心，服务端会要求你电话回访 <span class="mono">' + esc(l.contact_phone || '—') + '</span>。'
+      : '回复非空时会以「商务」消息推送到租户「' + esc(l.tenantName || l.tenant_id) + '」的消息中心；留空则只更新状态。<b>已办结 / 已驳回必须写回复</b>，否则服务端直接拒绝。',
+    okText: '提交跟进',
+    run: async v => {
+      const r = await post(`/admin/leads/${id}/follow`, {status: v.status, reply: v.reply});
+      okMsg('#ldNote', '处理结果：' + (r.message || ('已更新为 ' + v.status)));
+      toast(r.message || '已更新', true);
+      await loadLeads();
+    }
+  });
+}
+
+/* ---------- 10 拼团管理 ---------- */
+const GST = {forming:['进行中','p-amber'],formed:['已成团','p-green'],cancelled:['已取消','p-gray'],failed:['成团失败','p-red']};
+const gstPill = st => `<span class="pill ${GST[st] ? GST[st][1] : 'p-gray'}">${GST[st] ? GST[st][0] : (st || '—')}</span>`;
+let joinRows = {}, lastCards = [];
+
+async function loadGroups(){
+  let cards, joins;
+  try{
+    [cards, joins] = await Promise.all([
+      api('/admin/group-cards'),
+      api('/admin/group-joins?status=' + encodeURIComponent($('#gjStatus').value))
+    ]);
+  }catch(e){ toast(e.message, false); return; }
+  joinRows = {};
+  (joins.items || []).forEach(j => { joinRows[j.id] = j; });
+  lastCards = cards || [];
+
+  $('#gjKpi').innerHTML = [
+    ['拼团卡', (cards || []).length, '目录与用户端同源'],
+    ['进行中拼单', joins.formingCount, '等成团的意向单'],
+    ['已成团', joins.formedCount, '已建实例并转订单'],
+  ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+
+  $('#gcTable').innerHTML = (cards || []).length ? `<table>
+    <thead><tr><th>机型</th><th>地区 / 定向</th><th>配置</th><th class="num">目标</th><th class="num">已拼</th><th class="num">剩余</th><th class="num">进行中拼单</th><th class="num">拼团价</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${cards.map(c => `<tr>
+      <td><b>${esc(c.model)}</b> <span class="hint">${esc(c.vram)}G</span><div class="hint mono">${esc(c.cardKey)}</div></td>
+      <td>${esc(c.zone || '—')}${c.school ? `<div class="hint">${esc(c.school)} 定向</div>` : ''}</td>
+      <td class="hint">${esc(c.brand || '')} ${esc(c.cpu || '')}<div>${esc(c.vcpu || '?')} 核 / ${esc(c.ram || '?')} GB 内存 / 系统盘 ${esc(c.disk || '?')}GB / 数据盘 ${esc(c.dataDisk || '—')}</div></td>
+      <td class="num">${esc(c.total)}</td>
+      <td class="num"><b>${esc(c.done)}</b><div class="hint">本次拼单 ${esc(c.joined)}</div></td>
+      <td class="num">${Number(c.left) > 0 ? esc(c.left) : '<span class="pill p-green">满员</span>'}</td>
+      <td class="num">${esc(c.formingJoins)}</td>
+      <td class="num mono">¥${fmt(c.price)}</td>
+      <td style="text-align:right;white-space:nowrap">${Number(c.formingJoins) > 0
+          ? `<button class="sm warn" onclick="groupForm('${esc(c.cardKey)}')">手动成团</button>`
+          : '<span class="hint">无进行中拼单</span>'}</td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">拼团目录为空';
+
+  $('#gjTable').innerHTML = (joins.items || []).length ? `<table>
+    <thead><tr><th>拼单 ID</th><th>机型 / 地区</th><th>租户</th><th class="num">张数</th><th class="num">预付款</th><th>状态</th><th>实例</th><th>失败原因</th><th>登记时间</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${joins.items.map(j => `<tr>
+      <td class="mono">${esc(j.id)}</td>
+      <td><b>${esc(j.model)}</b> <span class="hint">${esc(j.vram)}G</span><div class="hint">${esc(j.zone || '—')} · <span class="mono">${esc(j.card_key || '')}</span></div></td>
+      <td>${esc(j.tenantName || j.tenant_name || '—')}<div class="hint mono">${esc(j.tenant_id || '')}</div></td>
+      <td class="num">${esc(j.qty)}</td>
+      <td class="num mono">¥${fmt(j.price_yuan)}</td>
+      <td>${gstPill(j.status)}</td>
+      <td>${j.instance_id ? `<button class="sm ghost" onclick="instAccess('${esc(j.instance_id)}')">${esc(j.instance_id)}</button>` : '<span class="hint">—</span>'}</td>
+      <td class="hint" style="max-width:200px">${j.fail_reason ? esc(j.fail_reason) : '—'}</td>
+      <td class="hint mono">${fmtAt(j.created_at)}</td>
+      <td style="text-align:right;white-space:nowrap">${j.status === 'forming'
+          ? `<button class="sm danger" onclick="joinCancel('${esc(j.id)}')">代撤单</button>`
+          : '<span class="hint">—</span>'}</td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">该状态下没有拼单';
+}
+
+function groupForm(cardKey){
+  const c = (lastCards || []).find(x => x.cardKey === cardKey) || {};
+  openConfirm({
+    title: '手动成团 · ' + cardKey,
+    warn: true, okText: '确认成团',
+    rows: [
+      ['拼团卡', esc(cardKey), (c.model || '') + ' ' + (c.vram || '') + 'G', 'warn'],
+      ['进行中拼单', esc(c.formingJoins || '—') + ' 单', '立即处理'],
+      ['影响', '每个进行中拼单都会按拼团价建实例并把预付款转订单；建不出卡的单标记失败、预付款自动退回余额。'],
+    ],
+    tip: '服务端会逐单返回结果，弹窗里能看到每单成功 / 失败与生成的实例 ID，租户同时收到拼团消息。',
+    run: async () => {
+      const r = await post('/admin/group-cards/form', {cardKey});
+      await loadGroups();
+      openResult('成团结果 · ' + cardKey, r.message, (r.results || []).map(x => ({
+        t: '拼单 ' + x.joinId + ' · ' + (x.qty || 0) + ' 张卡',
+        tag: x.status === 'formed' ? '成功' : '失败',
+        tagCls: x.status === 'formed' ? 'ok' : 'err',
+        d: '租户 ' + esc(x.tenantId || '—')
+          + (x.instanceId ? ` · 实例 <span class="biz-tag ok">${esc(x.instanceId)}</span>` : '')
+          + (x.reason ? ' · 原因：' + esc(x.reason) : '')
+      })));
+    }
+  });
+}
+
+function joinCancel(id){
+  const j = joinRows[id] || {};
+  openConfirm({
+    title: '代租户撤单 · ' + id,
+    danger: true, okText: '确认撤单',
+    rows: [
+      ['拼单', esc(id), '进行中', 'warn'],
+      ['租户', esc(j.tenantName || j.tenant_name || j.tenant_id || '—')],
+      ['机型', esc((j.model || '') + ' ' + (j.vram || '') + 'G · ' + (j.zone || ''))],
+      ['预付款', '¥' + fmt(j.price_yuan) + ' × ' + esc(j.qty || 1) + ' 张，原路退回租户余额'],
+    ],
+    tip: '已成团的拼单不可撤（要去「算力实例」按秒释放）；撤单会给租户发一条拼团消息。',
+    run: async () => {
+      const r = await post(`/admin/group-joins/${id}/cancel`);
+      toast(r.message || ('已撤单，退回 ¥' + fmt(r.refund)), true);
+      await loadGroups();
+    }
+  });
+}
+
+/* ---------- 11 到货提醒 ---------- */
+const SAT = {open:['待处理','p-amber'],fulfilled:['已完结','p-green']};
+const saPill = st => `<span class="pill ${SAT[st] ? SAT[st][1] : 'p-gray'}">${SAT[st] ? SAT[st][0] : (st || '—')}</span>`;
+let saRows = {};
+
+async function loadStock(){
+  const st = $('#saStatus').value;
+  let d;
+  try{ d = await api('/admin/stock-alerts?status=' + encodeURIComponent(st)); }
+  catch(e){ toast(e.message, false); return; }
+  saRows = {};
+  (d.items || []).forEach(a => { saRows[a.id] = a; });
+  const models = [...new Set((d.items || []).map(a => a.model).filter(Boolean))];
+
+  $('#saKpi').innerHTML = [
+    ['待处理', d.openCount, 'open 状态合计'],
+    ['当前列表', (d.items || []).length, st ? '筛选：' + SAT[st][0] : '全部状态'],
+    ['涉及机型', models.length, models.slice(0, 3).join(' / ') + (models.length > 3 ? ' …' : '') || '暂无'],
+  ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2] || '—'}</div></div>`).join('');
+
+  $('#saTable').innerHTML = (d.items || []).length ? `<table>
+    <thead><tr><th>提醒 ID</th><th>租户</th><th>机型</th><th>地区</th><th class="num">阈值卡数</th><th>状态</th><th>登记时间</th><th>完结时间</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${d.items.map(a => `<tr>
+      <td class="mono">${esc(a.id)}</td>
+      <td>${esc(a.tenantName || a.tenant_name || '—')}<div class="hint mono">${esc(a.tenant_id || '')}</div></td>
+      <td><b>${esc(a.model)}</b></td>
+      <td>${a.zone ? esc(a.zone) : '<span class="hint">不限</span>'}</td>
+      <td class="num">${esc(a.qty)}</td>
+      <td>${saPill(a.status)}</td>
+      <td class="hint mono">${fmtAt(a.created_at)}</td>
+      <td class="hint mono">${fmtAt(a.fulfilled_at)}</td>
+      <td style="text-align:right;white-space:nowrap">${a.status === 'open'
+          ? `<button class="sm" onclick="saFulfill('${esc(a.id)}')">完结并通知</button>`
+          : '<span class="hint">—</span>'}</td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">该状态下没有到货提醒</div>';
+}
+
+function saFulfill(id){
+  const a = saRows[id] || {};
+  openAsk({
+    title: '完结并通知 · ' + id,
+    fields: [{k:'note', label:'备注（可选，会拼进租户通知）', type:'textarea', rows:3, maxlen:200,
+      value:'', ph:'例如：明天到货 4 张，已在预留区锁定'}],
+    tip: '完结即视为已通知：系统会给租户「' + esc(a.tenantName || a.tenant_id || '—') + '」补一条「库存」消息，不是只改状态。'
+      + '<br>卡归还卡池时系统也会自动完结<b>同机型</b>的提醒，这里用于线下已经协调好机器、但池子还没释放的情况。',
+    okText: '确认完结并通知',
+    run: async v => {
+      const r = await post(`/admin/stock-alerts/${id}/fulfill`, {note: v.note});
+      okMsg('#saNote', '处理结果：' + (r.message || '已完结并通知租户'));
+      toast(r.message || '已完结', true);
+      await loadStock();
+    }
+  });
+}
+
 /* ---------- 启动 ---------- */
 api('/runtime').then(r => {
   const b = $('#k8sBadge');
   b.textContent = r.real ? '真集群 · k3s' : '模拟运行时';
   b.className = 'pill ' + (r.real ? 'p-green' : 'p-amber');
 }).catch(() => { $('#k8sBadge').textContent = '运行时未知'; });
+
+// 侧栏底部的版本 / 节点 / 卡数单独取一次：总览接口整体失败时也不会留着写死的假数据
+api('/admin/overview').then(renderSideFoot).catch(() => renderSideFoot(null));
 
 loadOverview();
 setInterval(()=>{ if($('#page-overview').classList.contains('on')) loadOverview(); }, 8000);

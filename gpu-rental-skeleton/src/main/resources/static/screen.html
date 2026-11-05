@@ -104,7 +104,7 @@ tr:last-child td{border-bottom:none}
       <span class="live"><i class="pulse"></i>实时</span>
       <span>集群 <b id="hNode">–</b></span>
       <span>GPU <b id="hGpu">–</b></span>
-      <span>利用率 <b id="hUtil">–</b></span>
+      <span>利用率 <b id="hUtil">–</b><small id="hUtilSrc" style="color:#4f6785;font-size:10px;margin-left:3px"></small></span>
       <span id="hTime">--:--:--</span>
     </div>
   </header>
@@ -118,11 +118,11 @@ tr:last-child td{border-bottom:none}
         <div class="footerline"><span>空闲 / 占用 / 故障 / 预留</span><span id="poolSum"></span></div>
       </div>
       <div class="pnl" style="flex:1">
-        <h2>GPU 利用率趋势 <span>近 30 分钟</span></h2>
+        <h2>GPU 利用率趋势 <span id="utilSrc">近 30 分钟</span></h2>
         <div id="utilChart" class="chart"></div>
       </div>
       <div class="pnl" style="flex:1">
-        <h2>节点资源 <span>2 节点</span></h2>
+        <h2>节点资源 <span id="nodeCnt">–</span></h2>
         <div id="nodeList"></div>
       </div>
     </div>
@@ -168,7 +168,7 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
       <div class="pnl" style="flex:1">
-        <h2>功耗与温度 <span>全卡合计</span></h2>
+        <h2>功耗与温度 <span id="pwSrc">全卡合计</span></h2>
         <div id="pwChart" class="chart"></div>
         <div class="footerline"><span>平均温度</span><span id="avgTemp">–</span></div>
       </div>
@@ -181,16 +181,16 @@ const $ = s => document.querySelector(s);
 const fmt = n => (Number(n)||0).toFixed(2);
 const TOKEN = localStorage.getItem('gu_token') || '';
 const U = JSON.parse(localStorage.getItem('gu_user') || 'null');
-if(!TOKEN || !U){ location.replace('/login.html'); throw new Error('no-session'); }
+if(!TOKEN || !U){ location.replace('/login'); throw new Error('no-session'); }
 // 大屏只对平台侧开放；租户访问直接送回用户端
-if(U.role === 'tenant'){ location.replace('/portal.html'); throw new Error('forbidden'); }
+if(U.role === 'tenant'){ location.replace('/portal'); throw new Error('forbidden'); }
 
 async function api(p){
   const r = await fetch('/api'+p, {headers:{Authorization:'Bearer ' + TOKEN}});
   if(r.status === 401){
     localStorage.removeItem('gu_token');
     localStorage.removeItem('gu_user');
-    location.replace('/login.html');
+    location.replace('/login');
     throw new Error('401');
   }
   return await r.json();
@@ -208,6 +208,14 @@ function line(box, data, opts){
     <path class="ar" d="${d} L ${x(data.length-1)} ${H-P} L ${P} ${H-P} Z"/>
     <path class="ln" d="${d}" vector-effect="non-scaling-stroke"/>
   </svg>`;
+}
+
+function chartOrEmpty(box, data, opts, note){
+  if(data && data.length){
+    line(box, data, opts);
+  } else {
+    box.innerHTML = `<div style="color:#4f6785;font-size:11px;padding:14px 8px;line-height:1.7;text-align:center">${note || '暂无监控数据'}</div>`;
+  }
 }
 
 function donut(box, segs){
@@ -236,39 +244,58 @@ function gauge(box, score){
 }
 
 async function refresh(){
-  const [ov, pool, m, al, ts, ins] = await Promise.all([
-    api('/admin/overview'), api('/pool'), api('/admin/metrics?minutes=30'),
-    api('/admin/alerts'), api('/admin/tenants'), api('/admin/inspections')
+  const [ov, m, al, ts, ins, nodes] = await Promise.all([
+    api('/admin/overview'), api('/admin/metrics?minutes=30'),
+    api('/admin/alerts'), api('/admin/tenants'), api('/admin/inspections'),
+    api('/admin/nodes')
   ]);
 
+  const utilSrc = ov.gpuUtilizationSource === 'dcgm' ? 'DCGM 实测' : '出租率';
   $('#hNode').textContent = ov.nodeReady + '/' + ov.nodeTotal;
   $('#hGpu').textContent = ov.gpuTotal;
   $('#hUtil').textContent = ov.gpuUtilization + '%';
+  $('#hUtilSrc').textContent = utilSrc;
   $('#hTime').textContent = new Date().toLocaleTimeString('zh-CN',{hour12:false});
 
   $('#bigUtil').textContent = ov.gpuUtilization + '%';
-  $('#bigSub').textContent = `已分配 ${ov.gpuStatus.occupied} / 共 ${ov.gpuTotal} 卡`;
+  $('#bigSub').textContent = `已分配 ${ov.gpuStatus.occupied} / 共 ${ov.gpuTotal} 卡 · ${utilSrc}`;
   $('#kInst').innerHTML = ov.runningInstances + '<small>个</small>';
   $('#kTenant').innerHTML = ov.tenantActive + '<small>个</small>';
   $('#kRev').innerHTML = '¥' + fmt(ov.todayRevenue);
   $('#kAlert').innerHTML = ov.activeAlerts + '<small>条</small>';
 
-  // 卡池
-  const byNode = {};
-  pool.gpus.forEach(g => (byNode[g.node_id] = byNode[g.node_id] || []).push(g));
+  // 卡池：直接吃 /admin/nodes（集群实测 + 台账合并），不再用台账-only 的 /pool
   const label = {free:'空闲',occupied:'占用',fault:'故障',reserved:'预留'};
-  $('#racks').innerHTML = pool.nodes.map(n => `
-    <div style="margin-bottom:9px">
-      <div style="font-size:11px;color:#8aa4c4;margin-bottom:5px">${n.hostname} · ${n.ip}</div>
-      <div class="rack">${(byNode[n.id]||[]).sort((a,b)=>a.idx-b.idx).map(g=>`
-        <div class="cell ${g.status}" title="${g.id} ${label[g.status]}">
-          <b>${g.idx}</b><span>${g.temp_c}°</span>
-        </div>`).join('')}</div>
-    </div>`).join('');
+  const hasCluster = nodes.some(n=>n.dataSource==='cluster');
+  $('#poolSub').textContent = hasCluster ? '集群实测 + 台账' : '台账';
+  const dsChip = ds => ds==='cluster'
+    ? '<span style="font-size:9px;color:#7dd3fc;border:1px solid rgba(125,211,252,.35);border-radius:3px;padding:0 4px;margin-left:5px">集群实测</span>'
+    : '<span style="font-size:9px;color:#7f96b5;border:1px solid rgba(127,150,181,.3);border-radius:3px;padding:0 4px;margin-left:5px">台账</span>';
+  $('#racks').innerHTML = nodes.map(n=>{
+    const cards = (n.gpus||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0));
+    const host = n.hostname || n.name || n.id;
+    const body = cards.length ? cards.map(g=>{
+      const st = g.status || 'unknown';
+      const cls = {free:'free',occupied:'occupied',fault:'fault',reserved:'reserved'}[st] || '';
+      const sub = g.temp_c != null ? `${g.temp_c}°` : (g.status ? '—' : '实测');
+      const title = g.id ? `${g.id} ${label[g.status]||''}` : `集群实测：${g.model} · ${g.memGb}GB（未入台账，无状态）`;
+      return `<div class="cell ${cls}" title="${title}"><b>${g.idx||'?'}</b><span>${sub}</span></div>`;
+    }).join('') : '<div style="grid-column:1/-1;font-size:10px;color:#4f6785;padding:6px 0;text-align:center">未发现 GPU</div>';
+    return `<div style="margin-bottom:9px">
+      <div style="font-size:11px;color:#8aa4c4;margin-bottom:5px">${host}${dsChip(n.dataSource)}</div>
+      <div class="rack">${body}</div>
+    </div>`;
+  }).join('');
   $('#poolSum').textContent = `空闲 ${ov.gpuStatus.free} · 占用 ${ov.gpuStatus.occupied} · 故障 ${ov.gpuStatus.fault}`;
 
-  line($('#utilChart'), m.gpuUtil, {h:110});
-  line($('#pwChart'), m.powerW, {h:90});
+  const hasData = (m.gpuUtil||[]).length > 0;
+  const srcTxt = m.dataSource === 'prometheus' ? (hasData ? 'DCGM 实测' : 'DCGM 无数据')
+    : m.dataSource === 'host-agent' ? '本机真实 GPU 实采'
+    : '合成数据';
+  $('#utilSrc').textContent = `近 30 分钟 · ${srcTxt}`;
+  $('#pwSrc').textContent = `全卡合计 · ${srcTxt}`;
+  chartOrEmpty($('#utilChart'), m.gpuUtil, {h:110}, m.note);
+  chartOrEmpty($('#pwChart'), m.powerW, {h:90}, m.note);
 
   donut($('#donut'), [
     {v:ov.gpuStatus.free, c:'#22c55e'}, {v:ov.gpuStatus.occupied, c:'#3b82f6'},
@@ -280,14 +307,18 @@ async function refresh(){
   ].map(x=>`<div><i style="background:${x[2]}"></i>${x[0]} <b style="color:#dbe7f7;margin-left:2px">${x[1]}</b></div>`).join('');
 
   // 节点
-  const nodes = await api('/admin/nodes');
+  $('#nodeCnt').textContent = nodes.length + ' 节点';
   $('#nodeList').innerHTML = nodes.map(n=>{
-    const used = (n.gpus||[]).filter(g=>g.status==='occupied').length;
-    const pct = Math.round(used*100/Math.max((n.gpus||[]).length,1));
+    const cards = n.gpus||[];
+    const used = cards.filter(g=>g.status==='occupied').length;
+    const pct = Math.round(used*100/Math.max(cards.length,1));
+    const host = n.hostname || n.name || n.id;
+    const st = n.status || '—';
+    const color = st==='Ready' ? '#22c55e' : '#f59e0b';
     return `<div class="node" style="display:block">
       <div style="display:flex;justify-content:space-between">
-        <span>${n.hostname}</span>
-        <span style="color:${n.status==='Ready'?'#22c55e':'#f59e0b'}">${n.status} · GPU ${used}/${(n.gpus||[]).length}</span>
+        <span>${host} ${n.dataSource==='cluster' ? dsChip('cluster') : ''}</span>
+        <span style="color:${color}">${st} · GPU ${used}/${cards.length}</span>
       </div>
       <div class="bar"><div style="width:${pct}%"></div></div>
     </div>`;
@@ -317,7 +348,7 @@ async function refresh(){
        <span style="color:#4f6785">${last.summary||''}</span>`
     : '暂无巡检记录';
 
-  const temps = pool.gpus.filter(g=>g.status!=='fault').map(g=>g.temp_c||0);
+  const temps = nodes.flatMap(n=>n.gpus||[]).filter(g=>g.temp_c != null && g.status!=='fault').map(g=>g.temp_c);
   $('#avgTemp').textContent = temps.length ? Math.round(temps.reduce((a,b)=>a+b,0)/temps.length) + ' °C' : '–';
 }
 
