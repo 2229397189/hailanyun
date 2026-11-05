@@ -312,7 +312,8 @@ public class RentalService {
         // 事务提交后再碰外部系统。真实系统这一步要做 outbox / 补偿，
         // 这里直接 try-catch 补偿，逻辑上等价。
         try {
-            k8s.create("tenant-" + tenantId, podName, gpuCount, imageRef, dataDiskGb);
+            boolean realGpu = db.isRealGpuNode((String) created.get("nodeId"));
+            k8s.create("tenant-" + tenantId, podName, gpuCount, imageRef, dataDiskGb, realGpu);
         } catch (Exception e) {
             // 事务已提交（余额已扣、卡已占），这里必须补偿：退钱 + 还卡 + 订单作废
             BigDecimal prepaid = (BigDecimal) created.get("prepaid");
@@ -412,7 +413,8 @@ public class RentalService {
         }
         String ns = "tenant-" + inst.get("tenant_id");
         k8s.create(ns, (String) inst.get("pod_name"), ((Number) inst.get("gpu_count")).intValue(),
-                (String) inst.get("image_ref"), diskGbOf(inst));
+                (String) inst.get("image_ref"), diskGbOf(inst),
+                db.isRealGpuNode((String) inst.get("node_id")));
         db.setStatus(instanceId, "provisioning");
         db.notifyInstance((String) inst.get("tenant_id"), instanceId, "实例", "实例开机中",
                 "实例 " + instanceId + " 已提交开机，就绪后自动恢复计费。");
@@ -434,7 +436,8 @@ public class RentalService {
             throw new BizException("Pod 仍在删除中，请稍后重试");
         }
         k8s.create(ns, pod, ((Number) inst.get("gpu_count")).intValue(),
-                (String) inst.get("image_ref"), diskGbOf(inst));
+                (String) inst.get("image_ref"), diskGbOf(inst),
+                db.isRealGpuNode((String) inst.get("node_id")));
         db.setStatus(instanceId, "provisioning");
         db.notifyInstance((String) inst.get("tenant_id"), instanceId, "实例", "实例重启中",
                 "实例 " + instanceId + " 已提交重启，约数秒后恢复。");

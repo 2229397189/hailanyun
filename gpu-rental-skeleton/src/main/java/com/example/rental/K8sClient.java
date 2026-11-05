@@ -17,6 +17,19 @@ public interface K8sClient {
      */
     String create(String namespace, String podName, int gpuCount, String imageRef, int dataDiskGb);
 
+    /**
+     * 带「是否真实 GPU 节点」的创建。
+     *
+     * 台账里的模拟节点（没有物理卡）下单时，Pod 不能申请 nvidia.com/gpu，
+     * 否则会一直 Pending 把演示卡死；真实节点才申请并把设备挂进容器。
+     *
+     * 默认实现忽略这个参数，FakeK8s 不需要改。
+     */
+    default String create(String namespace, String podName, int gpuCount, String imageRef,
+                          int dataDiskGb, boolean realGpuNode) {
+        return create(namespace, podName, gpuCount, imageRef, dataDiskGb);
+    }
+
     boolean ready(String namespace, String podName);
 
     /**

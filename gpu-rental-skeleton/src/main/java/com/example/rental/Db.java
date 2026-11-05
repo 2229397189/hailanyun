@@ -47,6 +47,18 @@ public class Db {
         return q("SELECT * FROM gpus ORDER BY node_id, idx");
     }
 
+    /**
+     * 这个节点是不是真实硬件节点（labels 带 gpu.real=true）。
+     * 台账里的模拟节点没有物理卡，下单时不能让它申请 nvidia.com/gpu，否则 Pod 永远 Pending。
+     */
+    public boolean isRealGpuNode(String nodeId) {
+        if (nodeId == null || nodeId.isBlank()) return false;
+        Map<String, Object> n = one("SELECT labels FROM nodes WHERE id=?", nodeId);
+        if (n == null) return false;
+        Object l = n.get("labels");
+        return l != null && String.valueOf(l).contains("gpu.real=true");
+    }
+
     /** 单卡：优先放到“已经占用最多”的节点（bin-packing，尽量留整台空机给整机订单） */
     public List<String> pickSingleGpuIds(int count) {
         return pickSingleGpuIds(count, null);

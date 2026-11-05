@@ -54,6 +54,8 @@ public class RealK8s implements K8sClient, ClusterOps {
 
     private final KubernetesClient client;
     private final String image;
+    /** GPU 实例必须用带 glibc 的 CUDA 镜像：busybox 跑不了 nvidia-smi */
+    private final String gpuImage;
     private final String storageClass;
     private final long deleteWaitMs;
     private final String clusterVersion;
@@ -61,6 +63,7 @@ public class RealK8s implements K8sClient, ClusterOps {
 
     public RealK8s(@Value("${rental.k8s.kubeconfig:/kubeconfig}") String kubeconfig,
                    @Value("${rental.k8s.image:busybox:1.36}") String image,
+                   @Value("${rental.k8s.gpuImage:nvidia/cuda:12.4.0-base-ubuntu22.04}") String gpuImage,
                    @Value("${rental.k8s.storageClass:local-path}") String storageClass,
                    @Value("${rental.k8s.deleteWaitMs:6000}") long deleteWaitMs) throws Exception {
         Config cfg;
@@ -74,6 +77,7 @@ public class RealK8s implements K8sClient, ClusterOps {
         }
         this.client = new KubernetesClientBuilder().withConfig(cfg).build();
         this.image = image;
+        this.gpuImage = gpuImage;
         this.storageClass = storageClass;
         this.deleteWaitMs = deleteWaitMs;
         String version = "unknown";
@@ -91,21 +95,58 @@ public class RealK8s implements K8sClient, ClusterOps {
 
     @Override
     public String create(String namespace, String podName, int gpuCount, String imageRef, int dataDiskGb) {
+        return create(namespace, podName, gpuCount, imageRef, dataDiskGb, true);
+    }
+
+    @Override
+    public String create(String namespace, String podName, int gpuCount, String imageRef,
+                         int dataDiskGb, boolean realGpuNode) {
         ensureNamespace(namespace);
         String q = String.valueOf(gpuCount);
         List<io.fabric8.kubernetes.api.model.Volume> volumes = new ArrayList<>();
+        // 只有真实节点才申请并挂载 GPU：模拟台账节点没有物理卡，申请了会永远 Pending
+        boolean hasGpu = gpuCount > 0;
+        boolean needGpu = hasGpu && realGpuNode;
         ContainerBuilder container = new ContainerBuilder()
                 .withName("gpu")
-                .withImage(image)
+                // GPU 实例换成 CUDA 基础镜像：busybox 没有 glibc，nvidia-smi 根本起不来
+                .withImage(hasGpu ? gpuImage : image)
                 .withImagePullPolicy("IfNotPresent")
                 .withCommand("sleep", "3600")
                 // 用户选的镜像写进容器环境，exec 进 Pod 就能核对「我选的是哪个」，不是只存在数据库里
                 .addToEnv(new EnvVarBuilder().withName("TOKENARK_IMAGE")
-                        .withValue(imageRef == null ? "" : imageRef).build())
-                .withNewResources()
-                  .addToRequests("nvidia.com/gpu", new Quantity(q))
-                  .addToLimits("nvidia.com/gpu", new Quantity(q))
-                .endResources();
+                        .withValue(imageRef == null ? "" : imageRef).build());
+        if (needGpu) {
+            container.withNewResources()
+                      .addToRequests("nvidia.com/gpu", new Quantity(q))
+                      .addToLimits("nvidia.com/gpu", new Quantity(q))
+                    .endResources();
+        }
+        if (needGpu) {
+            // 本机 WSL2 直通配方：设备节点 + Windows 驱动库 + nvidia-smi + DXCore 桥接库。
+            // 生产集群由 nvidia-device-plugin 注入，不需要这一段；这里是因为 k3s 跑在 Docker 里，
+            // 拿不到 Docker Desktop 的 runtime 注入，只能显式挂。
+            container.withNewSecurityContext().withPrivileged(true).endSecurityContext();
+            container.addToEnv(new EnvVarBuilder().withName("LD_LIBRARY_PATH")
+                    .withValue("/opt/gpulib:/usr/lib/x86_64-linux-gnu").build());
+            container.addToEnv(new EnvVarBuilder().withName("NVIDIA_VISIBLE_DEVICES").withValue("all").build());
+            container.addToVolumeMounts(new VolumeMountBuilder().withName("dxg")
+                    .withMountPath("/dev/dxg").build());
+            container.addToVolumeMounts(new VolumeMountBuilder().withName("wsllib")
+                    .withMountPath("/usr/lib/wsl").withReadOnly(true).build());
+            container.addToVolumeMounts(new VolumeMountBuilder().withName("smi")
+                    .withMountPath("/usr/bin/nvidia-smi").build());
+            container.addToVolumeMounts(new VolumeMountBuilder().withName("gpulib")
+                    .withMountPath("/opt/gpulib").withReadOnly(true).build());
+            volumes.add(new VolumeBuilder().withName("dxg")
+                    .withNewHostPath().withPath("/dev/dxg").endHostPath().build());
+            volumes.add(new VolumeBuilder().withName("wsllib")
+                    .withNewHostPath().withPath("/usr/lib/wsl").endHostPath().build());
+            volumes.add(new VolumeBuilder().withName("smi")
+                    .withNewHostPath().withPath("/usr/bin/nvidia-smi").endHostPath().build());
+            volumes.add(new VolumeBuilder().withName("gpulib")
+                    .withNewHostPath().withPath("/opt/gpulib").endHostPath().build());
+        }
         if (dataDiskGb > 0) {
             String claim = dataClaim(podName);
             ensureDataClaim(namespace, claim, dataDiskGb);
@@ -121,6 +162,9 @@ public class RealK8s implements K8sClient, ClusterOps {
                   .addToLabels(MANAGED_LABEL, MANAGED_BY)
                   .addToAnnotations("rental.tokenark/image", imageRef == null ? image : imageRef)
                   .addToAnnotations("rental.tokenark/data-disk-gb", String.valueOf(dataDiskGb))
+                  // 标注这个 Pod 到底有没有真卡：passthrough=真卡直通，simulated=台账模拟，none=无卡
+                  .addToAnnotations("rental.tokenark/gpu-mode",
+                          !hasGpu ? "none" : (needGpu ? "passthrough" : "simulated"))
                 .endMetadata()
                 .withNewSpec()
                   .withRestartPolicy("Always")
@@ -129,8 +173,10 @@ public class RealK8s implements K8sClient, ClusterOps {
                 .endSpec()
                 .build();
         client.pods().inNamespace(namespace).resource(pod).create();
-        log.info("已创建 Pod {}/{}，请求 {} 张 GPU，镜像 {}，数据盘 {}G",
-                namespace, podName, gpuCount, imageRef == null ? "-" : imageRef, dataDiskGb);
+        log.info("已创建 Pod {}/{}，GPU {} 张（{}），镜像 {}，数据盘 {}G",
+                namespace, podName, gpuCount,
+                !hasGpu ? "无卡" : (needGpu ? "真卡直通" : "台账模拟-不申请 GPU"),
+                imageRef == null ? "-" : imageRef, dataDiskGb);
         return namespace + "/" + podName;
     }
 
