@@ -53,6 +53,7 @@ public class RealK8s implements K8sClient, ClusterOps {
     private static final String MANAGED_BY = "gpu-rental-platform";
 
     private final KubernetesClient client;
+    private final Db db;
     private final String image;
     /** GPU 实例必须用带 glibc 的 CUDA 镜像：busybox 跑不了 nvidia-smi */
     private final String gpuImage;
@@ -62,6 +63,7 @@ public class RealK8s implements K8sClient, ClusterOps {
     private final String masterUrl;
 
     public RealK8s(@Value("${rental.k8s.kubeconfig:/kubeconfig}") String kubeconfig,
+                   Db db,
                    @Value("${rental.k8s.image:busybox:1.36}") String image,
                    @Value("${rental.k8s.gpuImage:nvidia/cuda:12.4.0-base-ubuntu22.04}") String gpuImage,
                    @Value("${rental.k8s.storageClass:local-path}") String storageClass,
@@ -76,6 +78,7 @@ public class RealK8s implements K8sClient, ClusterOps {
             cfg = Config.fromKubeconfig(Files.readString(Path.of(kubeconfig)));
         }
         this.client = new KubernetesClientBuilder().withConfig(cfg).build();
+        this.db = db;
         this.image = image;
         this.gpuImage = gpuImage;
         this.storageClass = storageClass;
@@ -107,10 +110,12 @@ public class RealK8s implements K8sClient, ClusterOps {
         // 只有真实节点才申请并挂载 GPU：模拟台账节点没有物理卡，申请了会永远 Pending
         boolean hasGpu = gpuCount > 0;
         boolean needGpu = hasGpu && realGpuNode;
+        // 用户选的镜像要真的跑起来：按 image.map 映射成可拉取地址，没配映射才用默认镜像
+        String podImage = resolveImage(imageRef, hasGpu ? gpuImage : image);
         ContainerBuilder container = new ContainerBuilder()
                 .withName("gpu")
-                // GPU 实例换成 CUDA 基础镜像：busybox 没有 glibc，nvidia-smi 根本起不来
-                .withImage(hasGpu ? gpuImage : image)
+                // GPU 实例默认用 CUDA 基础镜像：busybox 没有 glibc，nvidia-smi 根本起不来
+                .withImage(podImage)
                 .withImagePullPolicy("IfNotPresent")
                 .withCommand("sleep", "3600")
                 // 用户选的镜像写进容器环境，exec 进 Pod 就能核对「我选的是哪个」，不是只存在数据库里
@@ -180,6 +185,32 @@ public class RealK8s implements K8sClient, ClusterOps {
                 !hasGpu ? "无卡" : (needGpu ? "真卡直通" : "台账模拟-不申请 GPU"),
                 imageRef == null ? "-" : imageRef, dataDiskGb);
         return namespace + "/" + podName;
+    }
+
+    /**
+     * 镜像映射：settings.image.map 存 JSON {"目录里的ref": "可拉取镜像地址"}。
+     * 没配映射就回落默认镜像——不做「看起来选了镜像、其实跑默认」的假动作。
+     */
+    private String resolveImage(String imageRef, String fallback) {
+        if (imageRef == null || imageRef.isBlank()) {
+            return fallback;
+        }
+        try {
+            String map = db.setting("image.map");
+            if (map == null || map.isBlank()) {
+                return fallback;
+            }
+            Map<?, ?> m = new com.fasterxml.jackson.databind.ObjectMapper().readValue(map, Map.class);
+            Object hit = m.get(imageRef);
+            if (hit != null && !String.valueOf(hit).isBlank()) {
+                return String.valueOf(hit);
+            }
+            log.warn("镜像 {} 没有在 image.map 里配映射，回落到 {}（选了不生效等于骗人，这里显式告警）", imageRef, fallback);
+            return fallback;
+        } catch (Exception e) {
+            log.warn("解析 image.map 失败（{}），回落默认镜像", e.getMessage());
+            return fallback;
+        }
     }
 
     /** 数据盘：真实 PVC，local-path 供给，Pod 删掉后 claim 还在（关机保留数据），只有释放实例才删 */

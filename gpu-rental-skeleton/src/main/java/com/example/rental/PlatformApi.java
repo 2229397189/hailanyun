@@ -310,13 +310,20 @@ public class PlatformApi {
     @PostMapping("/settings")
     public Map<String, Object> updateSetting(@RequestBody Map<String, Object> body,
                                              @RequestHeader(value = "X-User", required = false) String user) {
-        String k = String.valueOf(body.getOrDefault("k", ""));
+        String k = String.valueOf(body.getOrDefault("k", "")).trim();
         String v = String.valueOf(body.getOrDefault("v", ""));
-        int n = db.updateSetting(k, v);
-        if (n > 0) {
-            db.insertAudit(user == null ? "admin" : user, "SETTING_UPDATE", k, "新值 " + v);
+        if (k.isEmpty()) {
+            throw new RentalService.BizException("参数名不能为空");
         }
-        return Map.of("changed", n, "message", n > 0 ? "参数已更新：" + k : "参数不存在");
+        // 允许新增：镜像映射这类参数是随交付环境变的，不该逼人去改配置文件
+        int n = db.updateSetting(k, v);
+        if (n == 0) {
+            db.update("INSERT INTO settings(k, v, note) VALUES (?,?,?) ON CONFLICT (k) DO UPDATE SET v=EXCLUDED.v",
+                    k, v, "admin 新增");
+            n = 1;
+        }
+        db.insertAudit(user == null ? "admin" : user, "SETTING_UPDATE", k, "新值 " + v);
+        return Map.of("changed", n, "message", "参数已保存：" + k);
     }
 
     // ============================================================ 数据字典
