@@ -1654,4 +1654,40 @@ public class Db {
         update("INSERT INTO licenses(id, licensee, edition, max_gpus, expire_at, signature, created_at) VALUES (?,?,?,?,?,?,?)",
                 id, licensee, edition, maxGpus, expireAt, signature, new Timestamp(System.currentTimeMillis()));
     }
+
+    // ---------- 实例内的常驻任务 ----------
+
+    public void insertJob(String id, String instanceId, String tenantId, String name, String command, Integer pid) {
+        update("""
+                INSERT INTO instance_jobs(id, instance_id, tenant_id, name, command, pid, status, created_at)
+                VALUES (?,?,?,?,?,?, 'running', ?)
+                """, id, instanceId, tenantId, name, command, pid, new Timestamp(System.currentTimeMillis()));
+    }
+
+    public List<Map<String, Object>> jobs(String instanceId) {
+        return q("SELECT * FROM instance_jobs WHERE instance_id=? ORDER BY created_at DESC LIMIT 50", instanceId);
+    }
+
+    public Map<String, Object> job(String instanceId, String name) {
+        return one("SELECT * FROM instance_jobs WHERE instance_id=? AND name=? ORDER BY created_at DESC LIMIT 1",
+                instanceId, name);
+    }
+
+    public void updateJobStatus(String id, String status) {
+        update("UPDATE instance_jobs SET status=? WHERE id=?", status, id);
+    }
+
+    // ---------- 端口暴露 ----------
+
+    public void setInstancePort(String instanceId, Integer devPort, Integer nodePort) {
+        update("UPDATE instances SET dev_port=?, dev_node_port=? WHERE id=?", devPort, nodePort, instanceId);
+    }
+
+    /** 节点对外地址（k3s 跑在 Docker 里，取宿主机可达地址） */
+    public String nodeExternalHost() {
+        String v = setting("node.external_host");
+        return v == null || v.isBlank() ? "localhost" : v;
+    }
+
+
 }

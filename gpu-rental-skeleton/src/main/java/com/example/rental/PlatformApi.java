@@ -1378,6 +1378,22 @@ public class PlatformApi {
         return Map.of("id", id, "message", "已发放 Token 套餐额度 " + amount);
     }
 
+    /** 手动触发 MaaS 日志按留存天数清理（定时任务每天也会跑一次） */
+    @PostMapping("/maas/logs/purge")
+    public Map<String, Object> purgeMaasLogs(@RequestBody(required = false) Map<String, Object> body,
+                                             @RequestHeader(value = "X-User", required = false) String user) {
+        int days = body != null && body.get("days") != null
+                ? ((Number) body.get("days")).intValue() : 180;
+        if (days < 1 || days > 3650) {
+            throw new RentalService.BizException("留存天数需在 1~3650 之间");
+        }
+        Timestamp before = new Timestamp(System.currentTimeMillis() - days * 24L * 3600_000L);
+        int n = db.update("DELETE FROM maas_request_logs WHERE created_at < ?", before);
+        db.insertAudit(user == null ? "admin" : user, "MAAS_LOG_PURGE", "maas_request_logs",
+                "超过 " + days + " 天，删除 " + n + " 条");
+        return Map.of("deleted", n, "days", days, "message", "已清理 " + n + " 条超过 " + days + " 天的日志");
+    }
+
     // ============================================================ 离线授权
 
     private static final String LICENSE_SECRET = System.getenv().getOrDefault(

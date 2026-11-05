@@ -5,4 +5,4 @@ services:
     environment:
       RENTAL_K8S_MODE: real
     volumes:
-      - ${KUBECONFIG_PATH:-../k8s-demo/kubeconfig}:/kubeconfig:ro
+      - ${KUBECONFIG_PATH:-../k8s-demo/kubeconfig-container}:/kubeconfig:ro

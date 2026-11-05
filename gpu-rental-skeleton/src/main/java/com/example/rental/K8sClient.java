@@ -55,4 +55,21 @@ public interface K8sClient {
      * real 模式真正下发到集群；fake 模式只记录日志。
      */
     void createTenantNamespace(String namespace, int gpuQuota);
+
+    /**
+     * 在 Pod 内执行命令并返回标准输出（守护进程用：nohup 起进程后回显 PID）。
+     * fake 模式返回空串。
+     */
+    default String exec(String namespace, String podName, String... command) {
+        return "";
+    }
+
+    /** 把 Pod 的某个端口以 NodePort 暴露出去，返回分配到的 NodePort；0 表示失败 */
+    default int exposePort(String namespace, String podName, int port) {
+        return 0;
+    }
+
+    /** 撤销端口暴露 */
+    default void removePort(String namespace, String podName, int port) {
+    }
 }

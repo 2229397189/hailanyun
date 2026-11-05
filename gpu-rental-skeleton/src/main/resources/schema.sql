@@ -594,3 +594,22 @@ CREATE TABLE IF NOT EXISTS licenses (
   signature  VARCHAR(256) NOT NULL,
   created_at TIMESTAMP    NOT NULL
 );
+
+-- ============ 批次三：常驻任务（守护进程）/ 端口暴露 ============
+
+-- 实例内的常驻任务：nohup 起进程，日志落 /tmp/jobs/<name>.log，SSH 断开也不影响
+CREATE TABLE IF NOT EXISTS instance_jobs (
+  id          VARCHAR(32) PRIMARY KEY,
+  instance_id VARCHAR(32) NOT NULL,
+  tenant_id   VARCHAR(32),
+  name        VARCHAR(64) NOT NULL,
+  command     VARCHAR(512) NOT NULL,
+  pid         INT,
+  status      VARCHAR(16) NOT NULL DEFAULT 'running',
+  created_at  TIMESTAMP   NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_job_inst ON instance_jobs(instance_id, created_at DESC);
+
+-- 实例对外暴露的端口（NodePort），JupyterLab / WebUI / 自定义服务用
+ALTER TABLE instances ADD COLUMN IF NOT EXISTS dev_port INT;
+ALTER TABLE instances ADD COLUMN IF NOT EXISTS dev_node_port INT;

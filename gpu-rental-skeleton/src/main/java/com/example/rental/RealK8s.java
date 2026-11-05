@@ -159,6 +159,8 @@ public class RealK8s implements K8sClient, ClusterOps {
                   .withName(podName)
                   .withNamespace(namespace)
                   .addToLabels("app", "gpu-rental")
+                  // Service 只能按标签选 Pod，加一个与 Pod 同名的唯一标签
+                  .addToLabels("podname", podName)
                   .addToLabels(MANAGED_LABEL, MANAGED_BY)
                   .addToAnnotations("rental.tokenark/image", imageRef == null ? image : imageRef)
                   .addToAnnotations("rental.tokenark/data-disk-gb", String.valueOf(dataDiskGb))
@@ -330,6 +332,114 @@ public class RealK8s implements K8sClient, ClusterOps {
     @Override
     public String mode() {
         return "real";
+    }
+
+
+    // ================================================================= 执行与端口暴露
+
+    /**
+     * 在 Pod 内执行命令并收集输出。
+     * 用于「守护进程」：nohup 起进程后回显 PID，进程随 Pod 存活，不依赖 SSH 会话。
+     */
+    @Override
+    public String exec(String namespace, String podName, String... command) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        io.fabric8.kubernetes.client.dsl.ExecWatch watch = null;
+        try {
+            watch = client.pods().inNamespace(namespace).withName(podName)
+                    .writingOutput(out)
+                    .writingError(out)
+                    .usingListener(new io.fabric8.kubernetes.client.dsl.ExecListener() {
+                        @Override
+                        public void onClose(int code, String reason) {
+                            latch.countDown();
+                        }
+
+                    })
+                    .exec(command);
+            latch.await(20, java.util.concurrent.TimeUnit.SECONDS);
+            return out.toString(java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.warn("exec {}/{} 失败：{}", namespace, podName, e.getMessage());
+            return "";
+        } finally {
+            if (watch != null) {
+                try {
+                    watch.close();
+                } catch (Exception ignored) {
+                    // 关流失败不影响结果
+                }
+            }
+        }
+    }
+
+    /**
+     * 把 Pod 端口以 NodePort 暴露：端口号固定在 30080-30099（交付时 k3s 容器只映射这一段）。
+     * 返回分配到的 NodePort，0 表示无空闲端口或创建失败。
+     */
+    @Override
+    public int exposePort(String namespace, String podName, int port) {
+        String svcName = "dev-" + podName + "-" + port;
+        try {
+            io.fabric8.kubernetes.api.model.Service old =
+                    client.services().inNamespace(namespace).withName(svcName).get();
+            if (old != null && !old.getSpec().getPorts().isEmpty()
+                    && old.getSpec().getPorts().get(0).getNodePort() != null) {
+                return old.getSpec().getPorts().get(0).getNodePort();
+            }
+            java.util.Set<Integer> used = new java.util.HashSet<>();
+            for (io.fabric8.kubernetes.api.model.Service svc : client.services().inAnyNamespace().list().getItems()) {
+                if (svc.getSpec() == null || svc.getSpec().getPorts() == null) {
+                    continue;
+                }
+                for (io.fabric8.kubernetes.api.model.ServicePort sp : svc.getSpec().getPorts()) {
+                    if (sp.getNodePort() != null) {
+                        used.add(sp.getNodePort());
+                    }
+                }
+            }
+            for (int np = 30080; np <= 30099; np++) {
+                if (used.contains(np)) {
+                    continue;
+                }
+                io.fabric8.kubernetes.api.model.Service svc = new io.fabric8.kubernetes.api.model.ServiceBuilder()
+                        .withNewMetadata()
+                          .withName(svcName)
+                          .withNamespace(namespace)
+                          .addToLabels(MANAGED_LABEL, MANAGED_BY)
+                        .endMetadata()
+                        .withNewSpec()
+                          .withType("NodePort")
+                          .addToSelector("podname", podName)
+                          .addNewPort()
+                            .withName("dev")
+                            .withProtocol("TCP")
+                            .withPort(port)
+                            .withTargetPort(new io.fabric8.kubernetes.api.model.IntOrString(port))
+                            .withNodePort(np)
+                          .endPort()
+                        .endSpec()
+                        .build();
+                client.services().inNamespace(namespace).resource(svc).create();
+                log.info("已暴露 {}/{}:{} → NodePort {}", namespace, podName, port, np);
+                return np;
+            }
+            log.warn("NodePort 30080-30099 已用尽，无法暴露 {}/{}:{}", namespace, podName, port);
+            return 0;
+        } catch (Exception e) {
+            log.warn("暴露端口失败 {}/{}:{}：{}", namespace, podName, port, e.getMessage());
+            return 0;
+        }
+    }
+
+    @Override
+    public void removePort(String namespace, String podName, int port) {
+        try {
+            client.services().inNamespace(namespace).withName("dev-" + podName + "-" + port).delete();
+        } catch (Exception e) {
+            log.warn("撤销端口失败：{}", e.getMessage());
+        }
     }
 
     // ================================================================= 集群实测

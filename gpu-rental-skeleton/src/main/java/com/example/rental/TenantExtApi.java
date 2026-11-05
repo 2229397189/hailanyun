@@ -1140,4 +1140,116 @@ public class TenantExtApi {
         String tenantId = myTenant(role, myTenant, null);
         return db.q("SELECT * FROM approvals WHERE tenant_id=? ORDER BY created_at DESC LIMIT 50", tenantId);
     }
+
+    // ============================================================ 常驻任务（守护进程）
+
+    /** 在实例内起一个常驻进程：nohup 托管，日志落 /tmp/jobs/<name>.log，断开也不影响 */
+    @PostMapping("/instances/{id}/jobs")
+    public Map<String, Object> startJob(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                        @RequestAttribute(value = "authRole", required = false) String role,
+                                        @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        Map<String, Object> inst = ownInstance(id, role, myTenant);
+        if (!"running".equals(String.valueOf(inst.get("status")))) {
+            throw new RentalService.BizException("实例未运行，无法启动任务");
+        }
+        String name = String.valueOf(body.getOrDefault("name", "")).trim();
+        String command = String.valueOf(body.getOrDefault("command", "")).trim();
+        if (!name.matches("[A-Za-z0-9_-]{1,32}")) {
+            throw new RentalService.BizException("任务名需为 1-32 位字母、数字、下划线或短横线");
+        }
+        if (command.isEmpty()) {
+            throw new RentalService.BizException("命令不能为空");
+        }
+        if (command.length() > 400) {
+            throw new RentalService.BizException("命令过长（上限 400 字符）");
+        }
+        String ns = "tenant-" + inst.get("tenant_id");
+        String pod = String.valueOf(inst.get("pod_name"));
+        String log = "/tmp/jobs/" + name + ".log";
+        String out = k8s.exec(ns, pod, "sh", "-c",
+                "mkdir -p /tmp/jobs; nohup sh -c " + shq(command) + " > " + log + " 2>&1 & echo $!");
+        Integer pid = null;
+        for (String line : out.split("\n")) {
+            String t = line.trim();
+            if (t.matches("\\d{1,7}")) {
+                pid = Integer.valueOf(t);
+            }
+        }
+        if (pid == null) {
+            throw new RentalService.BizException("任务启动失败：" + (out.isBlank() ? "Pod 未响应" : out.trim()));
+        }
+        String jobId = newId("job");
+        db.insertJob(jobId, id, String.valueOf(inst.get("tenant_id")), name, command, pid);
+        return Map.of("id", jobId, "name", name, "pid", pid, "log", log,
+                "message", "任务已启动：" + name + "（PID " + pid + "），日志 " + log);
+    }
+
+    @GetMapping("/instances/{id}/jobs")
+    public List<Map<String, Object>> jobs(@PathVariable String id,
+                                          @RequestAttribute(value = "authRole", required = false) String role,
+                                          @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        ownInstance(id, role, myTenant);
+        return db.jobs(id);
+    }
+
+    @GetMapping("/instances/{id}/jobs/{name}/log")
+    public Map<String, Object> jobLog(@PathVariable String id, @PathVariable String name,
+                                      @RequestAttribute(value = "authRole", required = false) String role,
+                                      @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        Map<String, Object> inst = ownInstance(id, role, myTenant);
+        String ns = "tenant-" + inst.get("tenant_id");
+        String pod = String.valueOf(inst.get("pod_name"));
+        String out = k8s.exec(ns, pod, "sh", "-c",
+                "test -f /tmp/jobs/" + name + ".log && tail -n 200 /tmp/jobs/" + name + ".log || echo '(还没有日志)'");
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("name", name);
+        res.put("log", out);
+        return res;
+    }
+
+    private static String shq(String s) {
+        return "'" + s.replace("'", "'\\''") + "'";
+    }
+
+    // ============================================================ 端口暴露（JupyterLab / WebUI）
+
+    @PostMapping("/instances/{id}/expose")
+    public Map<String, Object> expose(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                      @RequestAttribute(value = "authRole", required = false) String role,
+                                      @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        Map<String, Object> inst = ownInstance(id, role, myTenant);
+        int port = body.get("port") == null ? 8888 : ((Number) body.get("port")).intValue();
+        if (port < 1 || port > 65535) {
+            throw new RentalService.BizException("端口需在 1~65535");
+        }
+        String ns = "tenant-" + inst.get("tenant_id");
+        String pod = String.valueOf(inst.get("pod_name"));
+        int nodePort = k8s.exposePort(ns, pod, port);
+        if (nodePort == 0) {
+            throw new RentalService.BizException("端口暴露失败：NodePort 30080-30099 已用尽或集群拒绝");
+        }
+        db.setInstancePort(id, port, nodePort);
+        String url = "http://" + db.nodeExternalHost() + ":" + nodePort;
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("instanceId", id);
+        res.put("port", port);
+        res.put("nodePort", nodePort);
+        res.put("url", url);
+        res.put("message", "已暴露：" + url);
+        return res;
+    }
+
+    @DeleteMapping("/instances/{id}/expose")
+    public Map<String, Object> unexpose(@PathVariable String id,
+                                        @RequestAttribute(value = "authRole", required = false) String role,
+                                        @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        Map<String, Object> inst = ownInstance(id, role, myTenant);
+        Object p = inst.get("dev_port");
+        if (p instanceof Number) {
+            k8s.removePort("tenant-" + inst.get("tenant_id"), String.valueOf(inst.get("pod_name")),
+                    ((Number) p).intValue());
+        }
+        db.setInstancePort(id, null, null);
+        return Map.of("message", "端口暴露已撤销");
+    }
 }
