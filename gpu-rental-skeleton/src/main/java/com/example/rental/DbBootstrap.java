@@ -86,6 +86,12 @@ public class DbBootstrap implements ApplicationRunner {
         } catch (Exception e) {
             log.warn("inspection_items.ticket_id 升级跳过：{}", e.getMessage());
         }
+        // Key 月度额度按 token 级金额算，2 位小数会把 0.0000x 抹成 0，加宽到 6 位
+        try {
+            jdbc.execute("ALTER TABLE api_keys ALTER COLUMN quota_yuan TYPE DECIMAL(14,6)");
+        } catch (Exception e) {
+            log.warn("api_keys.quota_yuan 加宽跳过：{}", e.getMessage());
+        }
         // 本机 agent 补齐整机参数：CPU 型号/核心/使用率、磁盘、系统版本、运行时长
         for (String ddl : new String[]{
                 "ALTER TABLE agent_snapshots ADD COLUMN IF NOT EXISTS os_version VARCHAR(128)",

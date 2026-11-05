@@ -50,7 +50,7 @@ public class MaaSController {
         this.db = db;
     }
 
-    private record UpstreamResult(String content, int promptTokens, int completionTokens) {
+    private record UpstreamResult(String content, int promptTokens, int completionTokens, String upstream) {
     }
 
     // ============================================================ 鉴权
@@ -126,6 +126,28 @@ public class MaaSController {
         if (key == null) {
             return error(HttpStatus.UNAUTHORIZED, "invalid_request_error", "无效的 API Key");
         }
+        // Key 级限流与月度额度：先拦，再解析请求体，省得白干
+        String keyId = String.valueOf(key.get("id"));
+        Object rpmObj = key.get("rpm");
+        if (rpmObj instanceof Number && ((Number) rpmObj).intValue() > 0) {
+            int rpm = ((Number) rpmObj).intValue();
+            int used = db.keyCallsLastMinute(keyId);
+            if (used >= rpm) {
+                logCall(key, "-", 0, 0, BigDecimal.ZERO, "error", 429, t0, null);
+                return error(HttpStatus.TOO_MANY_REQUESTS, "rate_limit_exceeded",
+                        "超过速率限制：" + rpm + " 次/分钟，请降低频率后重试");
+            }
+        }
+        Object quotaObj = key.get("quota_yuan");
+        if (quotaObj instanceof BigDecimal) {
+            BigDecimal quota = (BigDecimal) quotaObj;
+            BigDecimal used = db.keyMonthCost(keyId);
+            if (quota.signum() > 0 && used.compareTo(quota) >= 0) {
+                logCall(key, "-", 0, 0, BigDecimal.ZERO, "error", 402, t0, null);
+                return error(HttpStatus.PAYMENT_REQUIRED, "key_quota_exceeded",
+                        "该 Key 本月额度已用完：已用 ¥" + used + " / 上限 ¥" + quota);
+            }
+        }
         JsonNode body;
         try {
             body = MAPPER.readTree(raw == null ? "{}" : raw);
@@ -188,7 +210,7 @@ public class MaaSController {
         db.insertMaaSUsage(newId("mu"), tenantId, String.valueOf(key.get("id")), modelId,
                 up.promptTokens(), up.completionTokens(), actual);
         db.touchApiKey(String.valueOf(key.get("id")));
-        logCall(key, modelId, up.promptTokens(), up.completionTokens(), actual, "ok", 200, t0);
+        logCall(key, modelId, up.promptTokens(), up.completionTokens(), actual, "ok", 200, t0, up.upstream());
         log.info("MaaS 计费：tenant={} model={} prompt={} completion={} cost={}", tenantId, modelId,
                 up.promptTokens(), up.completionTokens(), actual);
 
@@ -216,40 +238,66 @@ public class MaaSController {
     // ============================================================ 回复生成
 
     /** 配置了上游就透传真实模型（取真实 usage），否则回退本地演示回复 */
+    /**
+     * 多上游路由：按「模型匹配 + 成本最低」选，失败自动切下一家，全挂才回退演示。
+     * 上游来自 llm_upstreams（可运营配置），没有配置时退回 settings.llm.base_url 单上游。
+     */
     private UpstreamResult generate(String modelId, JsonNode messages, int maxTokens, int promptTokens) {
-        String base = db.setting("llm.base_url");
-        if (base == null || base.isBlank()) {
-            return demoReply(messages, maxTokens, promptTokens);
-        }
-        String apiKey = db.setting("llm.api_key");
-        String url = base.endsWith("/chat/completions")
-                ? base : base.replaceAll("/+$", "") + "/chat/completions";
-        try {
-            ObjectNode node = MAPPER.createObjectNode();
-            node.put("model", modelId);
-            node.set("messages", messages);
-            node.put("max_tokens", maxTokens);
-            HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(60))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(node)));
-            if (apiKey != null && !apiKey.isBlank()) {
-                b.header("Authorization", "Bearer " + apiKey);
+        java.util.List<Map<String, Object>> candidates = new java.util.ArrayList<>();
+        for (Map<String, Object> u : db.enabledUpstreams()) {
+            String models = String.valueOf(u.get("models"));
+            boolean match = models.contains("*")
+                    || java.util.Arrays.stream(models.split(","))
+                        .map(String::trim).anyMatch(m -> m.equals(modelId));
+            if (match) {
+                candidates.add(u);
             }
-            HttpResponse<String> resp = HttpClient.newHttpClient().send(b.build(), HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() != 200) {
-                throw new IllegalStateException("上游返回 HTTP " + resp.statusCode());
-            }
-            JsonNode root = MAPPER.readTree(resp.body());
-            String content = root.path("choices").path(0).path("message").path("content").asText("");
-            int upPrompt = root.path("usage").path("prompt_tokens").asInt(promptTokens);
-            int upCompletion = root.path("usage").path("completion_tokens").asInt(estimateTokens(content));
-            log.info("MaaS 上游透传：model={} usage prompt={} completion={}", modelId, upPrompt, upCompletion);
-            return new UpstreamResult(content, upPrompt, upCompletion);
-        } catch (Exception e) {
-            log.warn("MaaS 上游调用失败（{}），回退本地演示回复", e.getMessage());
-            return demoReply(messages, maxTokens, promptTokens);
         }
+        String fallbackBase = db.setting("llm.base_url");
+        if (candidates.isEmpty() && fallbackBase != null && !fallbackBase.isBlank()) {
+            Map<String, Object> legacy = new java.util.LinkedHashMap<>();
+            legacy.put("name", "default");
+            legacy.put("base_url", fallbackBase);
+            legacy.put("api_key", db.setting("llm.api_key"));
+            candidates.add(legacy);
+        }
+        for (Map<String, Object> up : candidates) {
+            try {
+                UpstreamResult r = callUpstream(String.valueOf(up.get("name")), String.valueOf(up.get("base_url")),
+                        up.get("api_key") == null ? null : String.valueOf(up.get("api_key")),
+                        modelId, messages, maxTokens, promptTokens);
+                return r;
+            } catch (Exception e) {
+                log.warn("上游 {} 调用失败（{}），尝试下一家", up.get("name"), e.getMessage());
+            }
+        }
+        return demoReply(messages, maxTokens, promptTokens);
+    }
+
+    private UpstreamResult callUpstream(String name, String base, String apiKey, String modelId,
+                                        JsonNode messages, int maxTokens, int promptTokens) throws Exception {
+        String url = base.endsWith("/chat/completions") ? base : base.replaceAll("/+$", "") + "/chat/completions";
+        ObjectNode node = MAPPER.createObjectNode();
+        node.put("model", modelId);
+        node.set("messages", messages);
+        node.put("max_tokens", maxTokens);
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(60))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(node)));
+        if (apiKey != null && !apiKey.isBlank()) {
+            b.header("Authorization", "Bearer " + apiKey);
+        }
+        HttpResponse<String> resp = HttpClient.newHttpClient().send(b.build(), HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() != 200) {
+            throw new IllegalStateException("上游返回 HTTP " + resp.statusCode());
+        }
+        JsonNode root = MAPPER.readTree(resp.body());
+        String content = root.path("choices").path(0).path("message").path("content").asText("");
+        int upPrompt = root.path("usage").path("prompt_tokens").asInt(promptTokens);
+        int upCompletion = root.path("usage").path("completion_tokens").asInt(estimateTokens(content));
+        log.info("MaaS 上游透传：upstream={} model={} prompt={} completion={}", name, modelId, upPrompt, upCompletion);
+        return new UpstreamResult(content, upPrompt, upCompletion, name);
     }
 
     private UpstreamResult demoReply(JsonNode messages, int maxTokens, int promptTokens) {
@@ -258,7 +306,7 @@ public class MaaSController {
         String reply = "【演示回复】网关未配置上游大模型（系统参数 llm.base_url），本条为本地占位回复。"
                 + "已收到消息：" + truncate(user, 240);
         reply = truncate(reply, maxTokens);
-        return new UpstreamResult(reply, promptTokens, estimateTokens(reply));
+        return new UpstreamResult(reply, promptTokens, estimateTokens(reply), null);
     }
 
     // ============================================================ 工具
@@ -303,10 +351,15 @@ public class MaaSController {
     /** 请求日志：成功失败都落库，支持按租户审计与对账 */
     private void logCall(Map<String, Object> key, String modelId, int promptTokens, int completionTokens,
                          BigDecimal cost, String status, int httpStatus, long t0) {
+        logCall(key, modelId, promptTokens, completionTokens, cost, status, httpStatus, t0, null);
+    }
+
+    private void logCall(Map<String, Object> key, String modelId, int promptTokens, int completionTokens,
+                         BigDecimal cost, String status, int httpStatus, long t0, String upstream) {
         try {
             int latency = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - t0);
             db.insertMaasLog(newId("ml"), String.valueOf(key.get("tenant_id")), String.valueOf(key.get("id")),
-                    modelId, promptTokens, completionTokens, cost, status, httpStatus, latency);
+                    modelId, promptTokens, completionTokens, cost, status, httpStatus, latency, upstream);
         } catch (Exception e) {
             log.warn("写 MaaS 请求日志失败：{}", e.getMessage());
         }

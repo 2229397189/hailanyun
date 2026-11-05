@@ -1252,4 +1252,27 @@ public class TenantExtApi {
         db.setInstancePort(id, null, null);
         return Map.of("message", "端口暴露已撤销");
     }
+
+    /** 设置 Key 的月度额度与速率限制（null 表示不限制） */
+    @PostMapping("/api-keys/{id}/limits")
+    public Map<String, Object> setKeyLimits(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                            @RequestAttribute(value = "authRole", required = false) String role,
+                                            @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        String tenantId = myTenant(role, myTenant, null);
+        BigDecimal quota = body.get("quotaYuan") == null ? null
+                : new BigDecimal(String.valueOf(body.get("quotaYuan")));
+        Integer rpm = body.get("rpm") == null ? null : ((Number) body.get("rpm")).intValue();
+        if (quota != null && quota.signum() < 0) {
+            throw new RentalService.BizException("额度不能为负");
+        }
+        if (rpm != null && (rpm < 0 || rpm > 100000)) {
+            throw new RentalService.BizException("速率需在 0~100000 次/分钟");
+        }
+        int n = db.setKeyLimits(id, tenantId, quota, rpm);
+        if (n == 0) {
+            throw new RentalService.BizException("Key 不存在");
+        }
+        return Map.of("id", id, "message", "限制已更新：额度 " + (quota == null ? "不限" : quota + " 元/月")
+                + " · 速率 " + (rpm == null ? "不限" : rpm + " 次/分钟"));
+    }
 }

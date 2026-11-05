@@ -1477,4 +1477,50 @@ public class PlatformApi {
             throw new RentalService.BizException("签名失败：" + e.getMessage());
         }
     }
+
+    // ============================================================ 上游模型服务（路由/聚合）
+
+    @GetMapping("/llm-upstreams")
+    public List<Map<String, Object>> llmUpstreams() {
+        return db.upstreams();
+    }
+
+    @PostMapping("/llm-upstreams")
+    public Map<String, Object> addUpstream(@RequestBody Map<String, Object> body,
+                                           @RequestHeader(value = "X-User", required = false) String user) {
+        String name = String.valueOf(body.getOrDefault("name", "")).trim();
+        String baseUrl = String.valueOf(body.getOrDefault("baseUrl", "")).trim();
+        String models = String.valueOf(body.getOrDefault("models", "*")).trim();
+        String apiKey = body.get("apiKey") == null ? null : String.valueOf(body.get("apiKey")).trim();
+        if (name.isEmpty() || baseUrl.isEmpty()) {
+            throw new RentalService.BizException("名称与地址不能为空");
+        }
+        if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
+            throw new RentalService.BizException("地址必须是 http(s) 开头");
+        }
+        BigDecimal cost = new BigDecimal(String.valueOf(body.getOrDefault("unitCost", "1")));
+        if (cost.signum() < 0) {
+            throw new RentalService.BizException("成本不能为负");
+        }
+        int priority = body.get("priority") == null ? 100 : ((Number) body.get("priority")).intValue();
+        String id = "up" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        db.insertUpstream(id, name, baseUrl, apiKey, models.isEmpty() ? "*" : models, cost, priority);
+        db.insertAudit(user == null ? "admin" : user, "UPSTREAM_ADD", id, name + " · " + models);
+        return Map.of("id", id, "message", "上游已添加：" + name);
+    }
+
+    @PostMapping("/llm-upstreams/{id}/toggle")
+    public Map<String, Object> toggleUpstream(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        boolean enabled = !"false".equalsIgnoreCase(String.valueOf(body.getOrDefault("enabled", true)));
+        if (db.toggleUpstream(id, enabled) == 0) {
+            throw new RentalService.BizException("上游不存在");
+        }
+        return Map.of("id", id, "enabled", enabled, "message", enabled ? "已启用" : "已停用");
+    }
+
+    @DeleteMapping("/llm-upstreams/{id}")
+    public Map<String, Object> deleteUpstream(@PathVariable String id) {
+        int n = db.deleteUpstream(id);
+        return Map.of("deleted", n, "message", n > 0 ? "上游已删除" : "上游不存在");
+    }
 }

@@ -430,6 +430,13 @@
           <h3>模型上下架与分组 <span class="s">下架后 /v1/models 不再返回，调用直接 403</span></h3>
           <div id="maasModelTable"></div>
         </div>
+        <div class="card panel mb10">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">上游模型服务 <span class="s">按成本从低到高路由，失败自动切下一家</span></h3>
+            <button class="sm" onclick="addUpstreamPrompt()">新增上游</button>
+          </div>
+          <div id="upstreamTable"></div>
+        </div>
         <div class="card panel">
           <div class="between" style="margin-bottom:10px">
             <h3 style="margin:0">调用日志 <span class="s">全量留存：成功与失败都记，可按租户过滤</span></h3>
@@ -967,7 +974,7 @@ async function toggleSku(code, onSale){
 
 /* ---------- MaaS：模型上下架 / 调用日志 ---------- */
 async function loadMaas(){
-  await Promise.all([loadMaasModels(), loadMaasLogs()]);
+  await Promise.all([loadMaasModels(), loadMaasLogs(), loadUpstreams()]);
 }
 async function loadMaasModels(){
   const list = await api('/admin/maas/models');
@@ -1159,6 +1166,46 @@ function decideAp(id, decision){
     const r = await post('/admin/approvals/'+id+'/decide', {decision, remark:v.remark});
     toast(r.message, true); loadOrg();
   }});
+}
+
+
+/* ---------- 上游模型服务 ---------- */
+async function loadUpstreams(){
+  const list = await api('/admin/llm-upstreams');
+  $('#upstreamTable').innerHTML = list.length ? `<table>
+    <thead><tr><th>名称</th><th>地址</th><th>覆盖模型</th><th>成本</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(u=>`<tr>
+      <td><b>${esc(u.name)}</b></td>
+      <td class="mono" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.base_url)}</td>
+      <td>${esc(u.models)}</td>
+      <td class="mono">${u.unit_cost}</td>
+      <td><span class="pill ${u.enabled?'p-green':'p-gray'}">${u.enabled?'启用':'停用'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="sm ghost" onclick="toggleUpstream('${esc(u.id)}',${u.enabled})">${u.enabled?'停用':'启用'}</button>
+        <button class="sm danger" style="margin-left:4px" onclick="delUpstream('${esc(u.id)}')">删除</button>
+      </td></tr>`).join('')}</tbody></table>`
+    : '<div class="hint">还没有配置上游。未配置时走「系统参数 llm.base_url」，都没有则返回演示回复。</div>';
+}
+function addUpstreamPrompt(){
+  openAsk({title:'新增上游模型服务', okText:'添加', fields:[
+    {k:'name', label:'名称', value:'vllm-a', required:true},
+    {k:'baseUrl', label:'Base URL', value:'http://', required:true, ph:'http://your-llm.example.com/v1'},
+    {k:'models', label:'覆盖模型（逗号分隔，* 表示全部）', value:'*'},
+    {k:'unitCost', label:'相对成本（越小越优先）', value:'1'},
+    {k:'apiKey', label:'上游密钥（可留空）', value:''}
+  ], tip:'路由策略：模型匹配 → 成本升序 → 失败自动切换下一家。',
+  run: async v => {
+    const r = await post('/admin/llm-upstreams', v);
+    toast(r.message, true); loadUpstreams();
+  }});
+}
+async function toggleUpstream(id, enabled){
+  try{ const r = await post('/admin/llm-upstreams/'+id+'/toggle', {enabled: !enabled}); toast(r.message, true); loadUpstreams(); }
+  catch(e){ toast(e.message, false); }
+}
+async function delUpstream(id){
+  try{ const r = await api('/admin/llm-upstreams/'+id, {method:'DELETE'}); toast(r.message, true); loadUpstreams(); }
+  catch(e){ toast(e.message, false); }
 }
 
 let nodeTimer = null;

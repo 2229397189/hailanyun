@@ -1441,12 +1441,19 @@ public class Db {
     public void insertMaasLog(String id, String tenantId, String keyId, String model,
                              int promptTokens, int completionTokens, BigDecimal cost,
                              String status, int httpStatus, int latencyMs) {
+        insertMaasLog(id, tenantId, keyId, model, promptTokens, completionTokens, cost,
+                status, httpStatus, latencyMs, null);
+    }
+
+    public void insertMaasLog(String id, String tenantId, String keyId, String model,
+                             int promptTokens, int completionTokens, BigDecimal cost,
+                             String status, int httpStatus, int latencyMs, String upstream) {
         update("""
                 INSERT INTO maas_request_logs(id, tenant_id, key_id, model, prompt_tokens, completion_tokens,
-                                              cost_yuan, status, http_status, latency_ms, created_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                                              cost_yuan, status, http_status, latency_ms, upstream, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
                 """, id, tenantId, keyId, model, promptTokens, completionTokens, cost,
-                status, httpStatus, latencyMs, new Timestamp(System.currentTimeMillis()));
+                status, httpStatus, latencyMs, upstream, new Timestamp(System.currentTimeMillis()));
     }
 
     public List<Map<String, Object>> maasLogs(String tenantId, int limit) {
@@ -1690,4 +1697,67 @@ public class Db {
     }
 
 
+
+    // ---------- 上游路由 ----------
+
+    public List<Map<String, Object>> upstreams() {
+        return q("SELECT * FROM llm_upstreams ORDER BY priority, unit_cost");
+    }
+
+    public List<Map<String, Object>> enabledUpstreams() {
+        return q("SELECT * FROM llm_upstreams WHERE enabled=TRUE ORDER BY unit_cost, priority");
+    }
+
+    public Map<String, Object> upstream(String id) {
+        return one("SELECT * FROM llm_upstreams WHERE id=?", id);
+    }
+
+    public void insertUpstream(String id, String name, String baseUrl, String apiKey,
+                               String models, BigDecimal unitCost, int priority) {
+        update("""
+                INSERT INTO llm_upstreams(id, name, base_url, api_key, models, unit_cost, priority, enabled, created_at)
+                VALUES (?,?,?,?,?,?,?, TRUE, ?)
+                """, id, name, baseUrl, apiKey, models, unitCost, priority,
+                new Timestamp(System.currentTimeMillis()));
+    }
+
+    public int toggleUpstream(String id, boolean enabled) {
+        return update("UPDATE llm_upstreams SET enabled=? WHERE id=?", enabled, id);
+    }
+
+    public int deleteUpstream(String id) {
+        return update("DELETE FROM llm_upstreams WHERE id=?", id);
+    }
+
+    // ---------- API Key 额度与限流 ----------
+
+    public BigDecimal keyMonthCost(String keyId) {
+        Map<String, Object> r = one("""
+                SELECT COALESCE(SUM(cost_yuan),0) AS c FROM maas_request_logs
+                 WHERE key_id=? AND created_at >= date_trunc('month', now())
+                """, keyId);
+        return r == null ? BigDecimal.ZERO : (BigDecimal) r.get("c");
+    }
+
+    public int keyCallsLastMinute(String keyId) {
+        Map<String, Object> r = one("""
+                SELECT COUNT(*) AS n FROM maas_request_logs
+                 WHERE key_id=? AND created_at > now() - interval '60 seconds'
+                """, keyId);
+        return r == null ? 0 : ((Number) r.get("n")).intValue();
+    }
+
+    public int setKeyLimits(String id, String tenantId, BigDecimal quotaYuan, Integer rpm) {
+        return update("UPDATE api_keys SET quota_yuan=?, rpm=? WHERE id=? AND tenant_id=?",
+                quotaYuan, rpm, id, tenantId);
+    }
+
+    public List<Map<String, Object>> apiKeyRows(String tenantId) {
+        return q("""
+                SELECT k.*, COALESCE((SELECT SUM(cost_yuan) FROM maas_request_logs l
+                                       WHERE l.key_id=k.id
+                                         AND l.created_at >= date_trunc('month', now())),0) AS month_cost
+                  FROM api_keys k WHERE k.tenant_id=? ORDER BY k.created_at DESC
+                """, tenantId);
+    }
 }

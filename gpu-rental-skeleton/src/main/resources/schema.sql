@@ -613,3 +613,25 @@ CREATE INDEX IF NOT EXISTS idx_job_inst ON instance_jobs(instance_id, created_at
 -- 实例对外暴露的端口（NodePort），JupyterLab / WebUI / 自定义服务用
 ALTER TABLE instances ADD COLUMN IF NOT EXISTS dev_port INT;
 ALTER TABLE instances ADD COLUMN IF NOT EXISTS dev_node_port INT;
+
+-- ============ 批次四：模型路由 / 上游聚合 / Key 限流 ============
+
+-- 上游模型服务：一个模型可以接多家（自建 vLLM、三方 API），按成本/权重路由
+CREATE TABLE IF NOT EXISTS llm_upstreams (
+  id         VARCHAR(32) PRIMARY KEY,
+  name       VARCHAR(64)  NOT NULL,
+  base_url   VARCHAR(256) NOT NULL,
+  api_key    VARCHAR(256),
+  models     VARCHAR(512) NOT NULL,   -- 逗号分隔，* 表示全部
+  unit_cost  DECIMAL(10,6) NOT NULL DEFAULT 0,  -- 相对成本，越小越优先
+  priority   INT NOT NULL DEFAULT 100,
+  enabled    BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL
+);
+
+-- 请求日志记录命中了哪家上游，路由效果可追溯
+ALTER TABLE maas_request_logs ADD COLUMN IF NOT EXISTS upstream VARCHAR(64);
+
+-- API Key 额度与限流：月度金额上限 + 每分钟请求数
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS quota_yuan DECIMAL(14,6);
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS rpm INT;
