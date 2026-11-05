@@ -886,10 +886,6 @@ public class Db {
 
     // ---------- 子账号（复用 users 表，role='sub'） ----------
 
-    public List<Map<String, Object>> subaccounts(String tenantId) {
-        return q("SELECT id, username, display_name, status, created_at FROM users WHERE tenant_id=? AND role='sub' ORDER BY created_at DESC", tenantId);
-    }
-
     public int deleteSubaccount(String id, String tenantId) {
         return update("DELETE FROM users WHERE id=? AND tenant_id=? AND role='sub'", id, tenantId);
     }
@@ -1496,5 +1492,166 @@ public class Db {
                 ON CONFLICT (model) DO UPDATE SET status=EXCLUDED.status, grp=EXCLUDED.grp,
                      note=EXCLUDED.note, updated_at=EXCLUDED.updated_at
                 """, model, status, grp, note, new Timestamp(System.currentTimeMillis()));
+    }
+
+    // ---------- 组织架构 ----------
+
+    public List<Map<String, Object>> orgUnits() {
+        return q("SELECT * FROM org_units ORDER BY parent_id NULLS FIRST, name");
+    }
+
+    public void insertOrgUnit(String id, String name, String parentId) {
+        update("INSERT INTO org_units(id, name, parent_id, created_at) VALUES (?,?,?,?)",
+                id, name, parentId, new Timestamp(System.currentTimeMillis()));
+    }
+
+    public int deleteOrgUnit(String id) {
+        return update("DELETE FROM org_units WHERE id=? AND NOT EXISTS (SELECT 1 FROM org_units c WHERE c.parent_id=?)",
+                id, id);
+    }
+
+    public int setTenantOrg(String tenantId, String orgUnitId) {
+        return update("UPDATE tenants SET org_unit_id=? WHERE id=?", orgUnitId, tenantId);
+    }
+
+    /** 成本分摊：按组织节点汇总消费（租户直挂节点，不做递归上卷，口径简单可解释） */
+    public List<Map<String, Object>> costByOrg() {
+        return q("""
+                SELECT COALESCE(o.id, 'unassigned') AS org_id,
+                       COALESCE(o.name, '未分配') AS org_name,
+                       COUNT(DISTINCT t.id) AS tenants,
+                       COALESCE(SUM(b.amount), 0) AS amount,
+                       COALESCE(SUM(b.gpu_count * b.seconds), 0) AS gpu_seconds
+                  FROM tenants t
+                  LEFT JOIN org_units o ON o.id = t.org_unit_id
+                  LEFT JOIN billing_records b ON b.tenant_id = t.id
+                 GROUP BY COALESCE(o.id, 'unassigned'), COALESCE(o.name, '未分配')
+                 ORDER BY amount DESC
+                """);
+    }
+
+    // ---------- 审批流 ----------
+
+    public void insertApproval(String id, String tenantId, String type, String payload, String applicant) {
+        update("INSERT INTO approvals(id, tenant_id, type, payload, status, applicant, created_at) VALUES (?,?,?,?, 'pending', ?, ?)",
+                id, tenantId, type, payload, applicant, new Timestamp(System.currentTimeMillis()));
+    }
+
+    public List<Map<String, Object>> approvals(String status) {
+        if (status == null || status.isBlank()) {
+            return q("SELECT * FROM approvals ORDER BY created_at DESC LIMIT 200");
+        }
+        return q("SELECT * FROM approvals WHERE status=? ORDER BY created_at DESC LIMIT 200", status);
+    }
+
+    public Map<String, Object> approval(String id) {
+        return one("SELECT * FROM approvals WHERE id=?", id);
+    }
+
+    public int decideApproval(String id, String status, String approver, String remark) {
+        return update("UPDATE approvals SET status=?, approver=?, remark=?, decided_at=? WHERE id=? AND status='pending'",
+                status, approver, remark, new Timestamp(System.currentTimeMillis()), id);
+    }
+
+    // ---------- 资源包 / Token 套餐 ----------
+
+    public void insertPack(String id, String tenantId, String kind, String name, BigDecimal total,
+                           Timestamp expireAt, boolean autoRenew) {
+        update("""
+                INSERT INTO resource_packs(id, tenant_id, kind, name, total_amount, used_amount,
+                                           expire_at, auto_renew, status, created_at)
+                VALUES (?,?,?,?,?,0,?,?, 'active', ?)
+                """, id, tenantId, kind, name, total, expireAt, autoRenew,
+                new Timestamp(System.currentTimeMillis()));
+    }
+
+    public List<Map<String, Object>> packs(String tenantId) {
+        return q("""
+                SELECT * FROM resource_packs WHERE tenant_id=?
+                 ORDER BY CASE WHEN status='active' THEN 0 ELSE 1 END, created_at DESC
+                """, tenantId);
+    }
+
+    public List<Map<String, Object>> activePacks(String tenantId, String kind) {
+        return q("""
+                SELECT * FROM resource_packs
+                 WHERE tenant_id=? AND kind=? AND status='active'
+                   AND used_amount < total_amount
+                   AND (expire_at IS NULL OR expire_at > ?)
+                 ORDER BY created_at
+                """, tenantId, kind, new Timestamp(System.currentTimeMillis()));
+    }
+
+    /** 可用额度（未过期、未用完的池子之和） */
+    public BigDecimal packRemaining(String tenantId, String kind) {
+        BigDecimal sum = BigDecimal.ZERO;
+        for (Map<String, Object> p : activePacks(tenantId, kind)) {
+            sum = sum.add(((BigDecimal) p.get("total_amount")).subtract((BigDecimal) p.get("used_amount")));
+        }
+        return sum;
+    }
+
+    /** 从额度池里扣，返回实际抵扣金额；不够就扣光，剩下的交给余额 */
+    public BigDecimal consumePack(String tenantId, String kind, BigDecimal amount) {
+        BigDecimal left = amount;
+        BigDecimal consumed = BigDecimal.ZERO;
+        for (Map<String, Object> p : activePacks(tenantId, kind)) {
+            if (left.signum() <= 0) {
+                break;
+            }
+            BigDecimal total = (BigDecimal) p.get("total_amount");
+            BigDecimal used = (BigDecimal) p.get("used_amount");
+            BigDecimal avail = total.subtract(used);
+            if (avail.signum() <= 0) {
+                continue;
+            }
+            BigDecimal take = avail.min(left);
+            update("UPDATE resource_packs SET used_amount = used_amount + ? WHERE id=?", take, p.get("id"));
+            left = left.subtract(take);
+            consumed = consumed.add(take);
+        }
+        return consumed;
+    }
+
+    // ---------- 子账号配额 ----------
+
+    public List<Map<String, Object>> subaccounts(String tenantId) {
+        return q("""
+                SELECT id, username, display_name, status, created_at, quota_gpus, perms
+                  FROM users WHERE tenant_id=? AND role='sub' ORDER BY created_at DESC
+                """, tenantId);
+    }
+
+    public int setSubaccountPolicy(String id, String tenantId, Integer quotaGpus, String perms) {
+        return update("UPDATE users SET quota_gpus=?, perms=? WHERE id=? AND tenant_id=? AND role='sub'",
+                quotaGpus, perms, id, tenantId);
+    }
+
+    /** 子账号已占用的 GPU 数（未释放的实例才算） */
+    public int usedGpusOfUser(String username) {
+        Map<String, Object> r = one("""
+                SELECT COALESCE(SUM(gpu_count),0) AS n FROM instances
+                 WHERE created_by=? AND status NOT IN ('released','failed')
+                """, username);
+        return r == null ? 0 : ((Number) r.get("n")).intValue();
+    }
+
+    public void setInstanceCreator(String instanceId, String username) {
+        if (username == null || username.isBlank()) {
+            return;
+        }
+        update("UPDATE instances SET created_by=? WHERE id=?", username, instanceId);
+    }
+
+    // ---------- 离线授权 ----------
+
+    public Map<String, Object> latestLicense() {
+        return one("SELECT * FROM licenses ORDER BY created_at DESC LIMIT 1");
+    }
+
+    public void insertLicense(String id, String licensee, String edition, int maxGpus,
+                              Timestamp expireAt, String signature) {
+        update("INSERT INTO licenses(id, licensee, edition, max_gpus, expire_at, signature, created_at) VALUES (?,?,?,?,?,?,?)",
+                id, licensee, edition, maxGpus, expireAt, signature, new Timestamp(System.currentTimeMillis()));
     }
 }

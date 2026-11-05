@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开发者文档 · TokenArk</title>
+<style>
+  :root{--ink:#1e293b;--ink2:#475569;--ink3:#94a3b8;--line:#e8ecf3;--brand:#9333ea;--bg:#f7f8fb}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:14px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+  header b{font-size:18px}
+  header a{margin-left:auto;color:var(--brand);text-decoration:none;font-size:13px}
+  .hero{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px 26px;margin-bottom:18px}
+  .hero h1{margin:0 0 8px;font-size:24px;letter-spacing:-.01em}
+  .hero p{margin:0;color:var(--ink2)}
+  .grid{display:grid;grid-template-columns:220px 1fr;gap:18px;align-items:start}
+  nav{position:sticky;top:20px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+  nav a{display:block;padding:7px 10px;border-radius:8px;color:var(--ink2);text-decoration:none;font-size:13px}
+  nav a:hover{background:#faf5ff;color:var(--brand)}
+  section{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px}
+  h2{font-size:16px;margin:0 0 12px;padding-left:9px;border-left:3px solid var(--brand)}
+  h3{font-size:13.5px;margin:18px 0 8px;color:var(--ink2)}
+  pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;overflow:auto;
+      font:12.5px/1.7 ui-monospace,Consolas,monospace;margin:8px 0}
+  code{font-family:ui-monospace,Consolas,monospace}
+  p code,li code{background:#f4f1fb;color:#7e22ce;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #f1f4f9;vertical-align:top}
+  th{color:var(--ink3);font-weight:600;font-size:12px}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:5px;background:#f5f3ff;color:#7c3aed;font-weight:600}
+  .tag.post{background:#ecfdf5;color:#047857}
+  .note{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:9px;padding:10px 14px;font-size:12.5px}
+  ol{padding-left:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <b>TokenArk · 开发者文档</b>
+    <a href="/api/public/openapi.json" target="_blank">OpenAPI 描述（可导入 Postman）</a>
+    <a href="/console" style="margin-left:14px">控制台</a>
+  </header>
+
+  <div class="hero">
+    <h1>两种接入，一套凭据体系</h1>
+    <p>推理接口走 <code>sk-</code> 开头的 API Key（OpenAI 兼容）；实例管理走登录会话 Token。两套都支持 REST 直连，也可以直接用官方 Python SDK。</p>
+  </div>
+
+  <div class="grid">
+    <nav>
+      <a href="#quick">快速开始</a>
+      <a href="#auth">鉴权</a>
+      <a href="#infer">推理接口</a>
+      <a href="#inst">实例接口</a>
+      <a href="#sdk">Python SDK</a>
+      <a href="#tools">工具接入</a>
+      <a href="#errors">错误码</a>
+    </nav>
+
+    <div>
+      <section id="quick">
+        <h2>快速开始（3 步）</h2>
+        <ol>
+          <li>控制台 → <b>大模型 API</b> → 创建 API Key（形如 <code>sk-xxxx</code>）</li>
+          <li>把 Base URL 换成本平台：<code>https://你的域名/v1</code></li>
+          <li>用任意 OpenAI SDK 调 <code>/chat/completions</code>，模型名从 <code>/v1/models</code> 取</li>
+        </ol>
+        <pre><code>curl https://your-platform.example.com/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-chat","messages":[{"role":"user","content":"你好"}]}'</code></pre>
+        <div class="note">模型被运营下架后，<code>/v1/models</code> 不再返回，直接调用会得到 <code>403 model_offline</code>。</div>
+      </section>
+
+      <section id="auth">
+        <h2>鉴权</h2>
+        <table>
+          <thead><tr><th>用途</th><th>凭据</th><th>获取方式</th><th>请求头</th></tr></thead>
+          <tbody>
+            <tr><td>推理 <code>/v1/**</code></td><td>API Key（sk-开头）</td><td>控制台 → 大模型 API → 创建</td><td><code>Authorization: Bearer sk-...</code></td></tr>
+            <tr><td>平台 <code>/api/**</code></td><td>会话 Token</td><td><code>POST /api/auth/login</code></td><td><code>Authorization: Bearer &lt;token&gt;</code></td></tr>
+          </tbody>
+        </table>
+        <pre><code>curl -X POST https://your-platform.example.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"tenant_a","password":"******"}'
+# → {"token":"...","user":{...}}</code></pre>
+      </section>
+
+      <section id="infer">
+        <h2>推理接口</h2>
+        <table>
+          <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag">GET</span></td><td><code>/v1/models</code></td><td>可用模型 + 每百万 token 单价 + 分组</td></tr>
+            <tr><td><span class="tag post">POST</span></td><td><code>/v1/chat/completions</code></td><td>OpenAI 兼容补全，按 token 计费</td></tr>
+          </tbody>
+        </table>
+        <h3>计费顺序</h3>
+        <p>先扣 <b>Token 套餐额度</b>，扣完再扣账户余额；两者都不足返回 <code>402</code>，本次调用不计费。</p>
+        <h3>请求示例</h3>
+        <pre><code>{
+  "model": "deepseek-chat",
+  "messages": [
+    {"role": "system", "content": "你是运维助手"},
+    {"role": "user", "content": "解释一下什么是 Pod 的 Pending 状态"}
+  ],
+  "max_tokens": 512
+}</code></pre>
+      </section>
+
+      <section id="inst">
+        <h2>实例接口</h2>
+        <table>
+          <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag">GET</span></td><td><code>/api/skus</code></td><td>可售规格与实时库存</td></tr>
+            <tr><td><span class="tag post">POST</span></td><td><code>/api/orders</code></td><td>下单（幂等键 orderNo），成功后真实建 Pod</td></tr>
+            <tr><td><span class="tag">GET</span></td><td><code>/api/instances</code></td><td>实例列表与状态</td></tr>
+            <tr><td><span class="tag post">POST</span></td><td><code>/api/instances/{id}/release</code></td><td>释放并按秒结算，多退少补</td></tr>
+            <tr><td><span class="tag">GET</span></td><td><code>/api/instances/{id}/access</code></td><td>接入信息</td></tr>
+          </tbody>
+        </table>
+        <pre><code>curl -X POST https://your-platform.example.com/api/orders \
+  -H "Authorization: Bearer &lt;token&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{"sku":"1","hours":1,"dataDiskGb":50,"orderNo":"demo-001"}'</code></pre>
+      </section>
+
+      <section id="sdk">
+        <h2>Python SDK</h2>
+        <p>随平台交付，零第三方依赖（只用标准库），文件位置：<code>deploy/sdk/tokenark_sdk.py</code>。</p>
+        <pre><code>from tokenark_sdk import TokenArk
+
+# 推理
+tk = TokenArk(base_url="https://your-platform.example.com", api_key="sk-xxxx")
+print(tk.chat("deepseek-chat", "写一个快速排序"))
+
+# 实例生命周期
+s = TokenArk(base_url="https://your-platform.example.com",
+             username="tenant_a", password="******")
+inst = s.create_instance(sku="1", hours=1, data_disk_gb=50)
+print(inst["instanceId"], inst["prepaid"])
+s.release(inst["instanceId"])</code></pre>
+      </section>
+
+      <section id="tools">
+        <h2>主流工具接入</h2>
+        <h3>OpenAI 官方 SDK（Python）</h3>
+        <pre><code>from openai import OpenAI
+client = OpenAI(base_url="https://your-platform.example.com/v1", api_key="sk-xxxx")
+print(client.chat.completions.create(
+    model="deepseek-chat",
+    messages=[{"role": "user", "content": "你好"}]).choices[0].message.content)</code></pre>
+        <h3>Node.js</h3>
+        <pre><code>import OpenAI from "openai";
+const client = new OpenAI({ baseURL: "https://your-platform.example.com/v1", apiKey: "sk-xxxx" });
+const r = await client.chat.completions.create({
+  model: "deepseek-chat",
+  messages: [{ role: "user", content: "你好" }]
+});
+console.log(r.choices[0].message.content);</code></pre>
+        <h3>任意 HTTP 工具 / Postman</h3>
+        <p>直接导入 <a href="/api/public/openapi.json">openapi.json</a>，导入后填 <code>Bearer sk-xxxx</code> 即可调试。</p>
+      </section>
+
+      <section id="errors">
+        <h2>错误码</h2>
+        <table>
+          <thead><tr><th>HTTP</th><th>type</th><th>含义与处理</th></tr></thead>
+          <tbody>
+            <tr><td>401</td><td><code>invalid_request_error</code></td><td>API Key 无效或已吊销 → 重新创建</td></tr>
+            <tr><td>402</td><td><code>insufficient_quota</code></td><td>余额与套餐都不足 → 充值或购买套餐</td></tr>
+            <tr><td>403</td><td><code>model_offline</code></td><td>模型已下架 → 查 <code>/v1/models</code> 换模型</td></tr>
+            <tr><td>404</td><td><code>invalid_request_error</code></td><td>模型/实例不存在</td></tr>
+            <tr><td>400</td><td><code>invalid_request_error</code></td><td>参数不合法（messages 为空、max_tokens 越界等）</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+</div>
+</body>
+</html>

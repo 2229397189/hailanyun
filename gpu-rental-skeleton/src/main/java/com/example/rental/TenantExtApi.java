@@ -192,10 +192,19 @@ public class TenantExtApi {
         if (db.subaccounts(tenantId).size() >= 20) {
             throw new RentalService.BizException("子账号数量已达上限（20）");
         }
+        Integer quota = body.get("quotaGpus") == null ? null : ((Number) body.get("quotaGpus")).intValue();
+        if (quota != null && (quota < 0 || quota > 64)) {
+            throw new RentalService.BizException("子账号 GPU 配额需在 0~64 之间");
+        }
+        String perms = body.get("perms") == null ? null : String.valueOf(body.get("perms")).trim();
         String id = newId("u");
         db.insertUser(id, username, username, "sub", tenantId);
         db.setPasswordHash(id, encoder.encode(password));
-        db.insertAudit(actor == null ? "tenant" : actor, "SUBACCOUNT_CREATE", tenantId + "/" + username, "角色 sub");
+        if (quota != null || perms != null) {
+            db.setSubaccountPolicy(id, tenantId, quota, perms);
+        }
+        db.insertAudit(actor == null ? "tenant" : actor, "SUBACCOUNT_CREATE", tenantId + "/" + username,
+                "角色 sub · 配额 " + (quota == null ? "继承" : quota + " 卡") + " · 权限 " + (perms == null ? "默认" : perms));
         return Map.of("id", id, "message", "子账号已创建：" + username);
     }
 
@@ -1057,5 +1066,78 @@ public class TenantExtApi {
                 : "已保存 " + ks.size() + " 条公钥。演示镜像内未运行 sshd，接入真实镜像后由初始化脚本写入 /root/.ssh/authorized_keys");
         out.put("notifyPush", db.instanceNotifyOn(id));
         return out;
+    }
+
+    // ============================================================ 子账号配额与权限
+
+    /** 调整子账号配额/权限。配额为 0 表示禁用开实例，留空表示跟随主账号。 */
+    @PostMapping("/subaccounts/{id}/policy")
+    public Map<String, Object> setSubPolicy(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                            @RequestAttribute(value = "authRole", required = false) String role,
+                                            @RequestAttribute(value = "authTenant", required = false) String myTenant,
+                                            @RequestAttribute(value = "authUsername", required = false) String actor) {
+        String tenantId = myTenant(role, myTenant, null);
+        Integer quota = body.get("quotaGpus") == null ? null : ((Number) body.get("quotaGpus")).intValue();
+        if (quota != null && (quota < 0 || quota > 64)) {
+            throw new RentalService.BizException("配额需在 0~64 之间");
+        }
+        String perms = body.get("perms") == null ? null : String.valueOf(body.get("perms")).trim();
+        int n = db.setSubaccountPolicy(id, tenantId, quota, perms);
+        if (n == 0) {
+            throw new RentalService.BizException("子账号不存在");
+        }
+        db.insertAudit(actor == null ? "tenant" : actor, "SUBACCOUNT_POLICY", id,
+                "配额 " + (quota == null ? "继承" : quota) + " · 权限 " + perms);
+        return Map.of("id", id, "quotaGpus", quota == null ? "" : quota,
+                "perms", perms == null ? "" : perms, "message", "子账号策略已更新");
+    }
+
+    // ============================================================ 资源包（Token 套餐）
+
+    @GetMapping("/packs")
+    public Map<String, Object> myPacks(@RequestAttribute(value = "authRole", required = false) String role,
+                                       @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        String tenantId = myTenant(role, myTenant, null);
+        List<Map<String, Object>> list = db.packs(tenantId);
+        java.math.BigDecimal remain = java.math.BigDecimal.ZERO;
+        for (Map<String, Object> p : list) {
+            if ("active".equals(String.valueOf(p.get("status")))) {
+                remain = remain.add(((java.math.BigDecimal) p.get("total_amount"))
+                        .subtract((java.math.BigDecimal) p.get("used_amount")));
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("packs", list);
+        out.put("remaining", remain);
+        return out;
+    }
+
+    // ============================================================ 审批申请
+
+    @PostMapping("/approvals")
+    public Map<String, Object> apply(@RequestBody Map<String, Object> body,
+                                     @RequestAttribute(value = "authRole", required = false) String role,
+                                     @RequestAttribute(value = "authTenant", required = false) String myTenant,
+                                     @RequestAttribute(value = "authUsername", required = false) String actor) {
+        String tenantId = myTenant(role, myTenant, null);
+        String type = String.valueOf(body.getOrDefault("type", "")).trim();
+        if (!"quota".equals(type) && !"pack".equals(type)) {
+            throw new RentalService.BizException("type 只支持 quota / pack");
+        }
+        String payload = String.valueOf(body.getOrDefault("payload", "")).trim();
+        if (payload.isEmpty()) {
+            throw new RentalService.BizException("请填写申请内容，例如 8（配额卡数）或 token:1000");
+        }
+        String id = newId("ap");
+        db.insertApproval(id, tenantId, type, payload, actor == null ? tenantId : actor);
+        db.insertAudit(actor == null ? "tenant" : actor, "APPROVAL_APPLY", id, type + " · " + payload);
+        return Map.of("id", id, "status", "pending", "message", "申请已提交，等待平台审批");
+    }
+
+    @GetMapping("/approvals")
+    public List<Map<String, Object>> myApprovals(@RequestAttribute(value = "authRole", required = false) String role,
+                                                 @RequestAttribute(value = "authTenant", required = false) String myTenant) {
+        String tenantId = myTenant(role, myTenant, null);
+        return db.q("SELECT * FROM approvals WHERE tenant_id=? ORDER BY created_at DESC LIMIT 50", tenantId);
     }
 }

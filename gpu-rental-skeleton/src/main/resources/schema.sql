@@ -540,3 +540,57 @@ CREATE TABLE IF NOT EXISTS maas_model_states (
   note       VARCHAR(128),
   updated_at TIMESTAMP   NOT NULL
 );
+
+-- ============ 批次二：组织架构 / 审批 / 资源包 / 子账号归属 / 离线授权 ============
+
+-- 多级组织架构：部门/项目树，租户挂在叶子节点上，报表按组织汇总
+CREATE TABLE IF NOT EXISTS org_units (
+  id         VARCHAR(32) PRIMARY KEY,
+  name       VARCHAR(64) NOT NULL,
+  parent_id  VARCHAR(32),
+  created_at TIMESTAMP   NOT NULL
+);
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS org_unit_id VARCHAR(32);
+
+-- 审批流：资源开通/扩容/提额，租户提交 → 管理员审批 → 通过后自动执行
+CREATE TABLE IF NOT EXISTS approvals (
+  id          VARCHAR(32) PRIMARY KEY,
+  tenant_id   VARCHAR(32) NOT NULL,
+  type        VARCHAR(24) NOT NULL,   -- quota / pack / credit
+  payload     VARCHAR(512),
+  status      VARCHAR(16) NOT NULL,   -- pending / approved / rejected
+  applicant   VARCHAR(64),
+  approver    VARCHAR(64),
+  remark      VARCHAR(256),
+  created_at  TIMESTAMP   NOT NULL,
+  decided_at  TIMESTAMP
+);
+
+-- 资源包 / Token 套餐：预付额度池，消费优先从包里扣，扣完再走余额
+CREATE TABLE IF NOT EXISTS resource_packs (
+  id           VARCHAR(32) PRIMARY KEY,
+  tenant_id    VARCHAR(32) NOT NULL,
+  kind         VARCHAR(16) NOT NULL,  -- token（算力包见包年 SKU）
+  name         VARCHAR(64),
+  total_amount DECIMAL(14,4) NOT NULL,
+  used_amount  DECIMAL(14,4) NOT NULL DEFAULT 0,
+  expire_at    TIMESTAMP,
+  auto_renew   BOOLEAN     NOT NULL DEFAULT FALSE,
+  status       VARCHAR(16) NOT NULL DEFAULT 'active',
+  created_at   TIMESTAMP   NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pack_tenant ON resource_packs(tenant_id, kind, status);
+
+-- 子账号归属：用于子账号配额核销（谁开的实例算谁的额度）
+ALTER TABLE instances ADD COLUMN IF NOT EXISTS created_by VARCHAR(64);
+
+-- 离线授权：私有化环境的 License（HMAC 校验，过期即拒绝写操作）
+CREATE TABLE IF NOT EXISTS licenses (
+  id         VARCHAR(32) PRIMARY KEY,
+  licensee   VARCHAR(128) NOT NULL,
+  edition    VARCHAR(32)  NOT NULL,
+  max_gpus   INT          NOT NULL,
+  expire_at  TIMESTAMP    NOT NULL,
+  signature  VARCHAR(256) NOT NULL,
+  created_at TIMESTAMP    NOT NULL
+);

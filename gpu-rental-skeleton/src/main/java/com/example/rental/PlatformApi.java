@@ -16,6 +16,8 @@ import java.util.*;
 @RequestMapping("/api/admin")
 public class PlatformApi {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PlatformApi.class);
+
     private final Db db;
     private final K8sClient k8s;
     private final org.springframework.beans.factory.ObjectProvider<ClusterOps> clusterOps;
@@ -1222,5 +1224,241 @@ public class PlatformApi {
         out.put("summary", db.maasLogSummary(tenantId));
         out.put("tenantId", tenantId);
         return out;
+    }
+
+    // ============================================================ 组织架构
+
+    @GetMapping("/org-units")
+    public List<Map<String, Object>> orgUnits() {
+        return db.orgUnits();
+    }
+
+    @PostMapping("/org-units")
+    public Map<String, Object> addOrgUnit(@RequestBody Map<String, Object> body,
+                                          @RequestHeader(value = "X-User", required = false) String user) {
+        String name = String.valueOf(body.getOrDefault("name", "")).trim();
+        if (name.isEmpty()) {
+            throw new RentalService.BizException("组织名称不能为空");
+        }
+        String parentId = body.get("parentId") == null ? null : String.valueOf(body.get("parentId")).trim();
+        if (parentId != null && parentId.isEmpty()) {
+            parentId = null;
+        }
+        if (parentId != null && db.one("SELECT id FROM org_units WHERE id=?", parentId) == null) {
+            throw new RentalService.BizException("上级组织不存在");
+        }
+        String id = "org" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        db.insertOrgUnit(id, name, parentId);
+        db.insertAudit(user == null ? "admin" : user, "ORG_CREATE", id, name);
+        return Map.of("id", id, "message", "组织已创建：" + name);
+    }
+
+    @DeleteMapping("/org-units/{id}")
+    public Map<String, Object> deleteOrgUnit(@PathVariable String id,
+                                             @RequestHeader(value = "X-User", required = false) String user) {
+        int n = db.deleteOrgUnit(id);
+        if (n == 0) {
+            throw new RentalService.BizException("组织不存在或仍有下级组织，先删下级");
+        }
+        db.insertAudit(user == null ? "admin" : user, "ORG_DELETE", id, "");
+        return Map.of("deleted", n, "message", "组织已删除");
+    }
+
+    @PostMapping("/tenants/{id}/org")
+    public Map<String, Object> setTenantOrg(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                            @RequestHeader(value = "X-User", required = false) String user) {
+        if (db.tenant(id) == null) {
+            throw new RentalService.BizException("租户不存在");
+        }
+        String orgId = body.get("orgUnitId") == null ? null : String.valueOf(body.get("orgUnitId")).trim();
+        if (orgId != null && orgId.isEmpty()) {
+            orgId = null;
+        }
+        if (orgId != null && db.one("SELECT id FROM org_units WHERE id=?", orgId) == null) {
+            throw new RentalService.BizException("组织不存在");
+        }
+        db.setTenantOrg(id, orgId);
+        db.insertAudit(user == null ? "admin" : user, "TENANT_ORG", id, String.valueOf(orgId));
+        return Map.of("tenantId", id, "orgUnitId", orgId == null ? "" : orgId, "message", "归属组织已更新");
+    }
+
+    /** 成本分摊：按组织汇总消费 */
+    @GetMapping("/reports/cost-by-org")
+    public Map<String, Object> costByOrg() {
+        List<Map<String, Object>> rows = db.costByOrg();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("rows", rows);
+        BigDecimal total = rows.stream().map(r -> (BigDecimal) r.get("amount"))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        out.put("total", total);
+        return out;
+    }
+
+    // ============================================================ 审批流
+
+    @GetMapping("/approvals")
+    public List<Map<String, Object>> approvals(@RequestParam(required = false) String status) {
+        return db.approvals(status);
+    }
+
+    /** 审批：通过后按类型自动执行（配额提额 / 发放资源包） */
+    @PostMapping("/approvals/{id}/decide")
+    public Map<String, Object> decideApproval(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                              @RequestHeader(value = "X-User", required = false) String user) {
+        Map<String, Object> a = db.approval(id);
+        if (a == null) {
+            throw new RentalService.BizException("审批单不存在");
+        }
+        String decision = String.valueOf(body.getOrDefault("decision", "")).trim();
+        if (!"approved".equals(decision) && !"rejected".equals(decision)) {
+            throw new RentalService.BizException("decision 只支持 approved / rejected");
+        }
+        String remark = String.valueOf(body.getOrDefault("remark", "")).trim();
+        String actor = user == null ? "admin" : user;
+        int n = db.decideApproval(id, decision, actor, remark);
+        if (n == 0) {
+            throw new RentalService.BizException("该审批单已处理，不能重复审批");
+        }
+        if ("approved".equals(decision)) {
+            applyApproval(a);
+        }
+        db.insertNotification("nb" + UUID.randomUUID().toString().replace("-", "").substring(0, 10),
+                String.valueOf(a.get("tenant_id")), "审批", "审批" + ("approved".equals(decision) ? "通过" : "驳回"),
+                "您的申请（" + a.get("type") + "：" + a.get("payload") + "）已" +
+                        ("approved".equals(decision) ? "通过" : "驳回") + (remark.isEmpty() ? "" : "，备注：" + remark));
+        db.insertAudit(actor, "APPROVAL_" + decision.toUpperCase(), id, a.get("type") + " · " + a.get("payload"));
+        return Map.of("id", id, "status", decision, "message", "已" + ("approved".equals(decision) ? "通过" : "驳回"));
+    }
+
+    private void applyApproval(Map<String, Object> a) {
+        String type = String.valueOf(a.get("type"));
+        String tenantId = String.valueOf(a.get("tenant_id"));
+        String payload = String.valueOf(a.get("payload"));
+        if ("quota".equals(type)) {
+            try {
+                int quota = Integer.parseInt(payload.replaceAll("[^0-9]", ""));
+                db.update("UPDATE tenants SET quota_gpus=? WHERE id=?", quota, tenantId);
+                if (ops() != null) {
+                    k8s.createTenantNamespace("tenant-" + tenantId, quota);
+                }
+            } catch (Exception e) {
+                log.warn("审批执行配额失败：{}", e.getMessage());
+            }
+        } else if ("pack".equals(type)) {
+            // payload 形如 token:1000（额度）/ compute 走包年 SKU
+            String[] p = payload.split(":");
+            String kind = p.length > 1 ? p[0] : "token";
+            BigDecimal amount = new BigDecimal(p.length > 1 ? p[1] : "0");
+            db.insertPack("pk" + UUID.randomUUID().toString().replace("-", "").substring(0, 8),
+                    tenantId, kind, "审批发放", amount,
+                    new Timestamp(System.currentTimeMillis() + 365L * 24 * 3600_000L), false);
+        }
+    }
+
+    // ============================================================ 资源包（管理员发放）
+
+    @PostMapping("/packs")
+    public Map<String, Object> grantPack(@RequestBody Map<String, Object> body,
+                                         @RequestHeader(value = "X-User", required = false) String user) {
+        String tenantId = String.valueOf(body.getOrDefault("tenantId", "")).trim();
+        if (db.tenant(tenantId) == null) {
+            throw new RentalService.BizException("租户不存在");
+        }
+        BigDecimal amount = new BigDecimal(String.valueOf(body.getOrDefault("amount", "0")));
+        if (amount.signum() <= 0) {
+            throw new RentalService.BizException("额度必须大于 0");
+        }
+        String name = String.valueOf(body.getOrDefault("name", "运营发放"));
+        int days = body.get("days") == null ? 365 : ((Number) body.get("days")).intValue();
+        String id = "pk" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        db.insertPack(id, tenantId, "token", name, amount,
+                new Timestamp(System.currentTimeMillis() + days * 24L * 3600_000L),
+                Boolean.parseBoolean(String.valueOf(body.getOrDefault("autoRenew", false))));
+        db.insertAudit(user == null ? "admin" : user, "PACK_GRANT", tenantId, name + " · " + amount);
+        return Map.of("id", id, "message", "已发放 Token 套餐额度 " + amount);
+    }
+
+    // ============================================================ 离线授权
+
+    private static final String LICENSE_SECRET = System.getenv().getOrDefault(
+            "RENTAL_LICENSE_SECRET", "tokenark-offline-license-2026");
+
+    @GetMapping("/license")
+    public Map<String, Object> license() {
+        Map<String, Object> l = db.latestLicense();
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (l == null) {
+            out.put("status", "none");
+            out.put("message", "未导入 License，当前为开发模式（不限制）");
+            return out;
+        }
+        boolean valid = verifyLicense(l);
+        out.put("status", valid ? "valid" : "invalid");
+        out.put("licensee", l.get("licensee"));
+        out.put("edition", l.get("edition"));
+        out.put("maxGpus", l.get("max_gpus"));
+        out.put("expireAt", l.get("expire_at"));
+        out.put("message", valid ? "授权有效" : "授权已过期或签名不匹配");
+        return out;
+    }
+
+    /** 签发 License：签名 = HMAC-SHA256(licensee|edition|maxGpus|expireEpoch) */
+    @PostMapping("/license")
+    public Map<String, Object> issueLicense(@RequestBody Map<String, Object> body,
+                                            @RequestHeader(value = "X-User", required = false) String user) {
+        String licensee = String.valueOf(body.getOrDefault("licensee", "")).trim();
+        if (licensee.isEmpty()) {
+            throw new RentalService.BizException("被授权方不能为空");
+        }
+        String edition = String.valueOf(body.getOrDefault("edition", "standard"));
+        int maxGpus = body.get("maxGpus") == null ? 64 : ((Number) body.get("maxGpus")).intValue();
+        int days = body.get("days") == null ? 365 : ((Number) body.get("days")).intValue();
+        long expire = System.currentTimeMillis() + days * 24L * 3600_000L;
+        String sig = sign(licensee, edition, maxGpus, expire);
+        String id = "lic" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        db.insertLicense(id, licensee, edition, maxGpus, new Timestamp(expire), sig);
+        db.insertAudit(user == null ? "admin" : user, "LICENSE_ISSUE", id, licensee + " · " + days + "天");
+        return Map.of("id", id, "licensee", licensee, "edition", edition, "maxGpus", maxGpus,
+                "expireAt", new Timestamp(expire).toString(), "signature", sig,
+                "message", "License 已签发（离线环境请把这段签名随授权书一起交付）");
+    }
+
+    /** 撤销当前授权（换授权书或回到开发模式时用） */
+    @DeleteMapping("/license")
+    public Map<String, Object> revokeLicense(@RequestHeader(value = "X-User", required = false) String user) {
+        int n = db.update("DELETE FROM licenses");
+        db.insertAudit(user == null ? "admin" : user, "LICENSE_REVOKE", "-", "删除 " + n + " 条");
+        return Map.of("deleted", n, "message", "授权已撤销，当前回到开发模式");
+    }
+
+    private static boolean verifyLicense(Map<String, Object> l) {
+        try {
+            Timestamp exp = (Timestamp) l.get("expire_at");
+            if (exp == null || exp.getTime() < System.currentTimeMillis()) {
+                return false;
+            }
+            String expect = sign(String.valueOf(l.get("licensee")), String.valueOf(l.get("edition")),
+                    ((Number) l.get("max_gpus")).intValue(), exp.getTime());
+            return expect.equals(String.valueOf(l.get("signature")));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static String sign(String licensee, String edition, int maxGpus, long expire) {
+        try {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(
+                    LICENSE_SECRET.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] d = mac.doFinal((licensee + "|" + edition + "|" + maxGpus + "|" + expire)
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : d) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RentalService.BizException("签名失败：" + e.getMessage());
+        }
     }
 }

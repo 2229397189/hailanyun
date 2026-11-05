@@ -39,7 +39,8 @@
     msg: { t: '消息通知', h: '/notifications', ic: '<span class="ci">📣</span>' },
     subscribe: { t: '订阅推送', h: '/subscribe', ic: '<span class="ci">🔔</span>' },
     acc: { t: '个人资料', h: '/account', ic: '<span class="ci">👤</span>' },
-    sub: { t: '子账号', h: '/subaccounts', ic: '<span class="ci">👥</span>' }
+    sub: { t: '子账号', h: '/subaccounts', ic: '<span class="ci">👥</span>' },
+    apply: { t: '资源申请', h: '/apply', ic: '<span class="ci">📝</span>' }
   };
   var cur = PAGES[active] || PAGES.main;
 
@@ -215,7 +216,7 @@
         group('bill', '<span style="color:#ef4444">🧧</span>', '费用管理',
           ['recharge', 'coupons', 'orders', 'billing', 'flow', 'invoice']) +
         group('acct', '<span style="color:#3b82f6">🪪</span>', '账号管理',
-          ['acc', 'sub', 'msg', 'subscribe']) +
+          ['acc', 'sub', 'apply', 'msg', 'subscribe']) +
       '</nav>' +
       '<div class="foot">' +
         '<button class="fold" id="foldBtn" title="收起侧栏">' + SVG.fold + '</button>' +

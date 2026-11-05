@@ -158,23 +158,33 @@ public class MaaSController {
             return error(HttpStatus.UNAUTHORIZED, "invalid_request_error", "密钥所属租户不存在");
         }
         BigDecimal balance = (BigDecimal) tenant.get("balance_yuan");
+        // 可用额度 = 余额 + 未用完的 Token 套餐（套餐优先抵扣）
+        BigDecimal packLeft = db.packRemaining(tenantId, "token");
+        BigDecimal available = balance.add(packLeft);
         int promptTokens = estimateTokens(promptText(messages));
 
         // 预估扣费（按 max_tokens 上限），余额不足直接拒绝，不产生调用
         BigDecimal estimated = cost(model, promptTokens, maxTokens);
-        if (balance.compareTo(estimated) < 0) {
+        if (available.compareTo(estimated) < 0) {
             logCall(key, modelId, promptTokens, 0, BigDecimal.ZERO, "error", 402, t0);
             return error(HttpStatus.PAYMENT_REQUIRED, "insufficient_quota",
-                    "余额不足：预计本次调用需 ¥" + estimated + "（按 max_tokens=" + maxTokens + " 上限估算），当前余额 ¥" + balance + "，请先充值");
+                    "余额不足：预计本次调用需 ¥" + estimated + "（按 max_tokens=" + maxTokens + " 上限估算），当前可用 ¥"
+                            + available + "（余额 " + balance + " + 套餐 " + packLeft + "），请先充值或购买套餐");
         }
 
         UpstreamResult up = generate(modelId, messages, maxTokens, promptTokens);
         BigDecimal actual = cost(model, up.promptTokens(), up.completionTokens());
-        if (actual.compareTo(balance) > 0) {
+        if (actual.compareTo(available) > 0) {
+            logCall(key, modelId, up.promptTokens(), up.completionTokens(), BigDecimal.ZERO, "error", 402, t0);
             return error(HttpStatus.PAYMENT_REQUIRED, "insufficient_quota",
-                    "余额不足：本次调用需 ¥" + actual + "，当前余额 ¥" + balance + "（本次调用未计费）");
+                    "余额不足：本次调用需 ¥" + actual + "，当前可用 ¥" + available + "（本次调用未计费）");
         }
-        db.deductBalance(tenantId, actual);
+        // 先扣 Token 套餐，扣完再走余额
+        BigDecimal fromPack = db.consumePack(tenantId, "token", actual);
+        BigDecimal fromBalance = actual.subtract(fromPack);
+        if (fromBalance.signum() > 0) {
+            db.deductBalance(tenantId, fromBalance);
+        }
         db.insertMaaSUsage(newId("mu"), tenantId, String.valueOf(key.get("id")), modelId,
                 up.promptTokens(), up.completionTokens(), actual);
         db.touchApiKey(String.valueOf(key.get("id")));

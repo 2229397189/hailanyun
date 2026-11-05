@@ -39,6 +39,7 @@
       <a data-p="maas"><span class="ic">◭</span>MaaS 治理</a>
       <div class="grp">租户与运营</div>
       <a data-p="tenants"><span class="ic">◉</span>租户管理</a>
+      <a data-p="org"><span class="ic">◫</span>组织与审批</a>
       <a data-p="alerts"><span class="ic">◔</span>监控告警</a>
       <a data-p="inspections"><span class="ic">✦</span>智能巡检</a>
       <a data-p="certs" data-roles="admin"><span class="ic">☑</span>认证与优惠</a>
@@ -384,6 +385,36 @@
       </div>
 
       <!-- 6 监控告警 -->
+      <div class="page" id="page-org">
+        <div class="grid g2" style="gap:12px">
+          <div class="card panel">
+            <div class="between" style="margin-bottom:10px">
+              <h3 style="margin:0">组织架构 <span class="s">部门 / 项目树，成本按节点归集</span></h3>
+              <button class="sm" onclick="addOrgPrompt()">新建组织</button>
+            </div>
+            <div id="orgTable"></div>
+          </div>
+          <div class="card panel">
+            <h3>成本分摊 <span class="s">按组织汇总已结算消费</span></h3>
+            <div id="orgCostTable"></div>
+          </div>
+        </div>
+        <div class="card panel mt10">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">租户归属 <span class="s">把租户挂到组织节点上</span></h3>
+            <button class="sm ghost" onclick="loadOrg()">刷新</button>
+          </div>
+          <div id="orgTenantTable"></div>
+        </div>
+        <div class="card panel mt10">
+          <div class="between" style="margin-bottom:10px">
+            <h3 style="margin:0">审批单 <span class="s">通过后自动执行：配额提额下发 ResourceQuota，套餐直接发放</span></h3>
+            <button class="sm ghost" onclick="loadApprovals()">刷新</button>
+          </div>
+          <div id="approvalTable"></div>
+        </div>
+      </div>
+
       <div class="page" id="page-goods">
         <div class="card panel">
           <div class="between" style="margin-bottom:10px">
@@ -653,7 +684,8 @@ const TITLES = {overview:['集群总览','集群 / 总览'],nodes:['节点管理
   groups:['拼团管理','业务运营 / 拼团'],stock:['到货提醒','业务运营 / 到货提醒'],
   goods:['商品与规格','业务运营 / 商品'],maas:['MaaS 治理','业务运营 / 模型与调用'],
   alerts:['监控告警','运营 / 告警'],inspections:['智能巡检','运营 / 巡检'],
-  certs:['认证与优惠','运营 / 认证与优惠'],report:['经营报表','运营 / 报表'],system:['系统管理','运营 / 系统']};
+  certs:['认证与优惠','运营 / 认证与优惠'],report:['经营报表','运营 / 报表'],system:['系统管理','运营 / 系统'],
+  org:['组织与审批','运营 / 组织']};
 
 async function api(path, opt){
   opt = opt || {};
@@ -1042,6 +1074,93 @@ function openTagsDialog(t){
   }});
 }
 
+
+/* ---------- 组织架构 / 成本分摊 / 审批 ---------- */
+let ORG_CACHE = [];
+async function loadOrg(){
+  const [orgs, tenants, cost] = await Promise.all([
+    api('/admin/org-units'), api('/admin/tenants'), api('/admin/reports/cost-by-org')
+  ]);
+  ORG_CACHE = orgs;
+  const nameOf = id => (orgs.find(o => o.id === id) || {}).name || '—';
+  $('#orgTable').innerHTML = orgs.length ? `<table>
+    <thead><tr><th>组织</th><th>上级</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${orgs.map(o=>`<tr>
+      <td><b>${esc(o.name)}</b><br><span class="hint mono">${esc(o.id)}</span></td>
+      <td>${esc(nameOf(o.parent_id))}</td>
+      <td style="text-align:right"><button class="sm danger" onclick="delOrg('${esc(o.id)}')">删除</button></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="hint">还没有组织，点右上角新建</div>';
+
+  const rows = cost.rows || [];
+  $('#orgCostTable').innerHTML = rows.length ? `<table>
+    <thead><tr><th>组织</th><th>租户数</th><th>GPU 小时</th><th>消费</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td>${esc(r.org_name)}</td><td>${r.tenants}</td>
+      <td class="mono">${(Number(r.gpu_seconds)/3600).toFixed(1)}</td>
+      <td class="mono">¥${fmt(r.amount)}</td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr><th>合计</th><th></th><th></th><th class="mono">¥${fmt(cost.total)}</th></tr></tfoot>
+  </table>` : '<div class="hint">还没有账单数据</div>';
+
+  $('#orgTenantTable').innerHTML = `<table>
+    <thead><tr><th>租户</th><th>当前组织</th><th>余额</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${tenants.slice(0,40).map(t=>`<tr>
+      <td><b>${esc(t.name)}</b><br><span class="hint mono">${esc(t.id)}</span></td>
+      <td>${t.org_unit_id ? esc(nameOf(t.org_unit_id)) : '<span class="hint">未分配</span>'}</td>
+      <td class="mono">¥${fmt(t.balance_yuan)}</td>
+      <td style="text-align:right"><button class="sm ghost" onclick="assignOrg('${esc(t.id)}','${esc(t.org_unit_id||'')}')">调整</button></td>
+    </tr>`).join('')}</tbody></table>`;
+  loadApprovals();
+}
+function addOrgPrompt(){
+  const opts = [{v:'', t:'（顶级组织）'}].concat(ORG_CACHE.map(o=>({v:o.id, t:o.name})));
+  openAsk({title:'新建组织', okText:'创建', fields:[
+    {k:'name', label:'组织名称', value:'', required:true, ph:'例如 研发中心'},
+    {k:'parentId', label:'上级组织', type:'select', value:'', options:opts}
+  ], run: async v => {
+    const r = await post('/admin/org-units', {name:v.name, parentId:v.parentId||null});
+    toast(r.message, true); loadOrg();
+  }});
+}
+async function delOrg(id){
+  try{ const r = await api('/admin/org-units/'+id, {method:'DELETE'}); toast(r.message, true); loadOrg(); }
+  catch(e){ toast(e.message, false); }
+}
+function assignOrg(tenantId, cur){
+  const opts = [{v:'', t:'（不分配）'}].concat(ORG_CACHE.map(o=>({v:o.id, t:o.name})));
+  openAsk({title:'调整租户归属组织', okText:'保存', fields:[
+    {k:'orgUnitId', label:'归属组织', type:'select', value:cur||'', options:opts}
+  ], run: async v => {
+    const r = await post('/admin/tenants/'+tenantId+'/org', {orgUnitId:v.orgUnitId||null});
+    toast(r.message, true); loadOrg();
+  }});
+}
+const AST = {pending:['待审批','p-amber'],approved:['已通过','p-green'],rejected:['已驳回','p-red']};
+async function loadApprovals(){
+  const list = await api('/admin/approvals?status=pending');
+  $('#approvalTable').innerHTML = list.length ? `<table>
+    <thead><tr><th>提交时间</th><th>租户</th><th>类型</th><th>内容</th><th>申请人</th><th style="text-align:right">操作</th></tr></thead>
+    <tbody>${list.map(a=>`<tr>
+      <td class="mono">${new Date(a.created_at).toLocaleString('zh-CN',{hour12:false})}</td>
+      <td class="mono">${esc(a.tenant_id)}</td>
+      <td>${a.type==='quota'?'配额提额':'Token 套餐'}</td>
+      <td>${esc(a.payload||'')}</td>
+      <td>${esc(a.applicant||'—')}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="sm" onclick="decideAp('${esc(a.id)}','approved')">通过</button>
+        <button class="sm danger" style="margin-left:4px" onclick="decideAp('${esc(a.id)}','rejected')">驳回</button>
+      </td>
+    </tr>`).join('')}</tbody></table>` : '<div class="hint">没有待审批的申请</div>';
+}
+function decideAp(id, decision){
+  openAsk({title: decision==='approved'?'通过申请':'驳回申请', okText:'确认', fields:[
+    {k:'remark', label:'审批意见（选填）', value:''}
+  ], run: async v => {
+    const r = await post('/admin/approvals/'+id+'/decide', {decision, remark:v.remark});
+    toast(r.message, true); loadOrg();
+  }});
+}
+
 let nodeTimer = null;
 function go(p){
   document.querySelectorAll('.side a[data-p]').forEach(a => a.classList.toggle('on', a.dataset.p === p));
@@ -1059,7 +1178,7 @@ function go(p){
   const fn = {overview:loadOverview, nodes:loadNodes, workloads:loadWorkloads, resources:loadResources,
     pools:loadPools, tenants:loadTenants, instances:loadInstances, leads:loadLeads,
     groups:loadGroups, stock:loadStock, alerts:loadAlerts, inspections:loadInspections,
-    certs:loadCerts, report:loadReport, system:loadSystem, goods:loadGoods, maas:loadMaas}[p];
+    certs:loadCerts, report:loadReport, system:loadSystem, goods:loadGoods, maas:loadMaas, org:loadOrg}[p];
   if(fn) fn();
 }
 document.querySelectorAll('.side a[data-p]').forEach(a => a.onclick = () => go(a.dataset.p));

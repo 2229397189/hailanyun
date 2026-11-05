@@ -272,6 +272,50 @@ public class RealK8s implements K8sClient, ClusterOps {
     public void createTenantNamespace(String namespace, int gpuQuota) {
         ensureNamespace(namespace);
         syncResourceQuota(namespace, gpuQuota);
+        ensureNetworkIsolation(namespace);
+    }
+
+    /**
+     * 租户网络隔离（D-5 的第三层）：
+     *   - 默认拒绝所有跨命名空间的进出流量
+     *   - 允许同命名空间内互通（同租户的实例/服务）
+     *   - 放行 DNS（UDP/TCP 53），否则集群内域名解析全废
+     * 幂等：已存在同名策略就跳过。
+     */
+    private void ensureNetworkIsolation(String namespace) {
+        String name = "tenant-isolation";
+        try {
+            if (client.network().v1().networkPolicies().inNamespace(namespace).withName(name).get() != null) {
+                return;
+            }
+            io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy np =
+                    new io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder()
+                    .withNewMetadata()
+                      .withName(name)
+                      .withNamespace(namespace)
+                      .addToLabels(MANAGED_LABEL, MANAGED_BY)
+                    .endMetadata()
+                    .withNewSpec()
+                      .withNewPodSelector().endPodSelector()
+                      .addToPolicyTypes("Ingress", "Egress")
+                      .addNewIngress()
+                        .addNewFrom().withNewPodSelector().endPodSelector().endFrom()
+                      .endIngress()
+                      .addNewEgress()
+                        .addNewTo().withNewPodSelector().endPodSelector().endTo()
+                      .endEgress()
+                      .addNewEgress()
+                        .addNewPort().withProtocol("UDP").withPort(new io.fabric8.kubernetes.api.model.IntOrString(53)).endPort()
+                        .addNewPort().withProtocol("TCP").withPort(new io.fabric8.kubernetes.api.model.IntOrString(53)).endPort()
+                      .endEgress()
+                    .endSpec()
+                    .build();
+            client.network().v1().networkPolicies().inNamespace(namespace).resource(np).create();
+            log.info("已下发租户网络隔离策略 {}/{}", namespace, name);
+        } catch (Exception e) {
+            // 集群没装网络插件（如 k3s 默认 flannel 不支持 NetworkPolicy）时不能把建租户搞失败
+            log.warn("下发 NetworkPolicy 失败（{}）：{}", namespace, e.getMessage());
+        }
     }
 
     @Override

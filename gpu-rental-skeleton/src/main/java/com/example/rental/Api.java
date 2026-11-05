@@ -204,6 +204,27 @@ public class Api {
      * 商品卡的六个规格块由服务端下发，前端只负责渲染。
      * 以后接真实机型（A100/H800）只改这里，页面不用动。
      */
+    /** SKU 对应的卡数（用于子账号配额校验，与 skus() 的定义保持一致） */
+    private int skuGpuCount(String code) {
+        return switch (code) {
+            case "debug" -> 0;
+            case "whole" -> 8;
+            case "2" -> 2;
+            case "4" -> 4;
+            default -> 1;
+        };
+    }
+
+    /** 与 PlatformApi 的 License 校验同口径：过期或签名不符即无效 */
+    private boolean licenseValid(Map<String, Object> l) {
+        try {
+            java.sql.Timestamp exp = (java.sql.Timestamp) l.get("expire_at");
+            return exp != null && exp.getTime() > System.currentTimeMillis();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private Map<String, Object> sku(String code, String model, int gpuCount, int memGb, int stock,
                                     String cores, String cpu, String ram, String sysDisk, String dataDisk,
                                     String desc) {
@@ -268,8 +289,39 @@ public class Api {
         if (tenantId == null || tenantId.isBlank()) {
             throw new RentalService.BizException("缺少租户信息，请重新登录");
         }
+        // 离线授权：导入过 License 且已过期/签名不符时，禁止新开实例（存量实例不受影响）
+        Map<String, Object> lic = db.latestLicense();
+        if (lic != null && !licenseValid(lic)) {
+            throw new RentalService.BizException("平台授权已过期或签名不匹配，禁止新建实例，请联系供应商续期");
+        }
         String sku = str(body.getOrDefault("sku", "single"));
         int hours = body.get("hours") == null ? 1 : ((Number) body.get("hours")).intValue();
+        // 子账号资源维度授权：perms 里没有 order 就不许下单（可配 order,image,storage 等）
+        if ("sub".equals(role) && username != null) {
+            Map<String, Object> su = db.userByUsername(username);
+            Object perms = su == null ? null : su.get("perms");
+            if (perms != null) {
+                String p = String.valueOf(perms);
+                if (!p.isBlank() && !java.util.Arrays.stream(p.split("[,，\\s]+"))
+                        .anyMatch(x -> "order".equalsIgnoreCase(x) || "*".equals(x))) {
+                    throw new RentalService.BizException("当前子账号未被授予「创建实例」权限，请联系主账号管理员");
+                }
+            }
+        }
+        // 子账号配额：子账号独立限额，超额直接拒（主账号不设限，走租户配额）
+        int wantGpus = Math.max(0, skuGpuCount(sku));
+        if ("sub".equals(role) && username != null && wantGpus > 0) {
+            Map<String, Object> su = db.userByUsername(username);
+            Object q = su == null ? null : su.get("quota_gpus");
+            if (q instanceof Number) {
+                int quota = ((Number) q).intValue();
+                int used = db.usedGpusOfUser(username);
+                if (used + wantGpus > quota) {
+                    throw new RentalService.BizException("子账号 GPU 配额不足：已用 " + used + " 卡 / 上限 "
+                            + quota + " 卡，本次需要 " + wantGpus + " 卡");
+                }
+            }
+        }
         String idemKey = str(body.getOrDefault("orderNo", ""));
         String image = str(body.getOrDefault("image", "")).trim();
         // 只当标识用（存库 + 写进 Pod 注解/环境变量），不拼镜像地址，所以不做命名空间强校验，
@@ -283,6 +335,10 @@ public class Api {
         }
         Map<String, Object> out = rental.createOrder(tenantId, sku, hours, idemKey,
                 image.isEmpty() ? null : image, dataDisk);
+        // 记录是谁开的：子账号配额按这个字段核销，主账号也留痕
+        if (out.get("instanceId") != null) {
+            db.setInstanceCreator(String.valueOf(out.get("instanceId")), username);
+        }
         if (username != null && !"tenant".equals(role) && !"sub".equals(role)) {
             db.insertAudit(username, "ORDER_CREATE", tenantId,
                     "管理端代下单 sku=" + sku + " " + hours + " 小时" + (image.isEmpty() ? "" : " 镜像 " + image));

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>资源申请 · TokenArk 创元方舟</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css?v18">
+<link rel="stylesheet" href="/console.css?v18">
+</head>
+<body data-active="apply">
+
+<div class="console">
+  <aside class="cs" id="cside"></aside>
+  <div class="cmain">
+    <div class="ctopbar"></div>
+    <div class="cbody">
+      <div class="msg" id="msg"></div>
+
+      <div class="card panel mb10">
+        <h3>资源申请 <span class="s">配额提额 / Token 套餐，提交后由平台审批，通过即自动生效</span></h3>
+        <div class="grid g2" style="gap:12px">
+          <div class="field">
+            <label>申请类型</label>
+            <select id="type">
+              <option value="quota">GPU 配额提额</option>
+              <option value="pack">Token 套餐额度</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>申请内容（提额填卡数，套餐填 token:额度）</label>
+            <input id="payload" placeholder="例如 8  或  token:1000">
+          </div>
+        </div>
+        <div class="field">
+          <label>申请说明（选填）</label>
+          <input id="note" placeholder="例如：下周有训练任务，需要 8 卡">
+        </div>
+        <button onclick="submitApply()">提交申请</button>
+        <div class="hint mt10">审批通过后：配额提额会同时更新租户配额并下发 K8s ResourceQuota；套餐会直接发放到你的额度池，推理调用优先抵扣。</div>
+      </div>
+
+      <div class="card panel mb10">
+        <h3>我的 Token 套餐 <span class="s" id="packSub"></span></h3>
+        <div id="packList"></div>
+      </div>
+
+      <div class="card panel">
+        <h3>申请记录 <span class="s">最近 50 条</span></h3>
+        <div id="applyList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/console-nav.js?v18"></script>
+<script>
+const $ = s => document.querySelector(s);
+const TOKEN = localStorage.getItem('gu_token') || '';
+if (!TOKEN || !localStorage.getItem('gu_user')) location.replace('/login');
+
+async function api(p, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opt.headers || {});
+  const r = await fetch('/api' + p, opt);
+  if (r.status === 401) { location.replace('/login'); throw new Error('401'); }
+  const t = await r.text();
+  let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) { j = { message: t }; }
+  if (!r.ok) throw new Error(j.message || ('HTTP ' + r.status));
+  return j;
+}
+function toast(msg, ok) {
+  const el = $('#msg');
+  el.textContent = msg;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3200);
+}
+const fmt = n => Number(n || 0).toFixed(2);
+
+async function submitApply() {
+  const type = $('#type').value;
+  const payload = $('#payload').value.trim();
+  const note = $('#note').value.trim();
+  if (!payload) { toast('请填写申请内容', false); return; }
+  try {
+    const r = await api('/approvals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, payload: note ? payload + ' # ' + note : payload })
+    });
+    toast(r.message, true);
+    $('#payload').value = ''; $('#note').value = '';
+    loadAll();
+  } catch (e) { toast(e.message, false); }
+}
+
+async function loadPacks() {
+  const r = await api('/packs');
+  const packs = r.packs || [];
+  $('#packSub').textContent = '剩余合计 ' + fmt(r.remaining) + ' 额度';
+  $('#packList').innerHTML = packs.length ? `<table>
+    <thead><tr><th>名称</th><th>类型</th><th>总额度</th><th>已用</th><th>剩余</th><th>到期</th><th>状态</th></tr></thead>
+    <tbody>${packs.map(p => `<tr>
+      <td>${esc(p.name || '—')}</td>
+      <td>${p.kind === 'token' ? 'Token 套餐' : p.kind}</td>
+      <td class="mono">${fmt(p.total_amount)}</td>
+      <td class="mono">${fmt(p.used_amount)}</td>
+      <td class="mono"><b>${fmt(Number(p.total_amount) - Number(p.used_amount))}</b></td>
+      <td class="mono">${p.expire_at ? new Date(p.expire_at).toLocaleDateString('zh-CN') : '—'}</td>
+      <td>${p.status === 'active' ? '生效中' : p.status}</td>
+    </tr>`).join('')}</tbody></table>`
+    : '<div class="hint">还没有套餐额度。可以在上面提交申请，或联系运营发放。</div>';
+}
+
+const ST = { pending: ['待审批', '#d97706'], approved: ['已通过', '#16a34a'], rejected: ['已驳回', '#dc2626'] };
+async function loadApply() {
+  const list = await api('/approvals');
+  $('#applyList').innerHTML = list.length ? `<table>
+    <thead><tr><th>提交时间</th><th>类型</th><th>内容</th><th>状态</th><th>审批人</th><th>备注</th></tr></thead>
+    <tbody>${list.map(a => {
+      const s = ST[a.status] || [a.status, '#64748b'];
+      return `<tr>
+        <td class="mono">${new Date(a.created_at).toLocaleString('zh-CN', { hour12: false })}</td>
+        <td>${a.type === 'quota' ? '配额提额' : 'Token 套餐'}</td>
+        <td>${esc(a.payload || '')}</td>
+        <td><span style="color:${s[1]};font-weight:600">${s[0]}</span></td>
+        <td>${esc(a.approver || '—')}</td>
+        <td>${esc(a.remark || '—')}</td>
+      </tr>`;
+    }).join('')}</tbody></table>` : '<div class="hint">还没有提交过申请</div>';
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function loadAll() { loadPacks().catch(e => toast(e.message, false)); loadApply().catch(e => toast(e.message, false)); }
+loadAll();
+</script>
+</body>
+</html>
