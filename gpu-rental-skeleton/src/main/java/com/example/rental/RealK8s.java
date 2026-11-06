@@ -484,6 +484,62 @@ public class RealK8s implements K8sClient, ClusterOps {
         }
     }
 
+    /**
+     * 克隆数据盘：起一个临时 Pod 同时挂源/目标 PVC，cp -a 完整拷贝后销毁。
+     * 两个 PVC 都是 local-path（同一节点），可以挂进同一个 Pod。
+     */
+    @Override
+    public boolean cloneData(String namespace, String srcPodName, String dstPodName) {
+        String src = dataClaim(srcPodName);
+        String dst = dataClaim(dstPodName);
+        try {
+            if (client.persistentVolumeClaims().inNamespace(namespace).withName(src).get() == null
+                    || client.persistentVolumeClaims().inNamespace(namespace).withName(dst).get() == null) {
+                log.warn("克隆数据盘失败：源或目标 PVC 不存在 {}/{}", src, dst);
+                return false;
+            }
+            String job = "clone-" + dstPodName;
+            client.pods().inNamespace(namespace).withName(job).delete();
+            io.fabric8.kubernetes.api.model.Pod pod = new io.fabric8.kubernetes.api.model.PodBuilder()
+                    .withNewMetadata().withName(job).withNamespace(namespace)
+                      .addToLabels(MANAGED_LABEL, MANAGED_BY).endMetadata()
+                    .withNewSpec().withRestartPolicy("Never")
+                      .addNewContainer().withName("copy").withImage(image)
+                        .withCommand("sh", "-c", "cp -a /src/. /dst/ && echo CLONE_DONE")
+                        .addNewVolumeMount().withName("src").withMountPath("/src").endVolumeMount()
+                        .addNewVolumeMount().withName("dst").withMountPath("/dst").endVolumeMount()
+                      .endContainer()
+                      .addNewVolume().withName("src").withNewPersistentVolumeClaim()
+                        .withClaimName(src).endPersistentVolumeClaim().endVolume()
+                      .addNewVolume().withName("dst").withNewPersistentVolumeClaim()
+                        .withClaimName(dst).endPersistentVolumeClaim().endVolume()
+                    .endSpec().build();
+            client.pods().inNamespace(namespace).resource(pod).create();
+            for (int i = 0; i < 90; i++) {
+                io.fabric8.kubernetes.api.model.Pod cur =
+                        client.pods().inNamespace(namespace).withName(job).get();
+                if (cur != null && cur.getStatus() != null) {
+                    String phase = String.valueOf(cur.getStatus().getPhase());
+                    if ("Succeeded".equals(phase)) {
+                        client.pods().inNamespace(namespace).withName(job).delete();
+                        log.info("克隆数据盘完成 {} → {}", src, dst);
+                        return true;
+                    }
+                    if ("Failed".equals(phase)) {
+                        break;
+                    }
+                }
+                Thread.sleep(1000);
+            }
+            client.pods().inNamespace(namespace).withName(job).delete();
+            log.warn("克隆数据盘超时或失败 {} → {}", src, dst);
+            return false;
+        } catch (Exception e) {
+            log.warn("克隆数据盘异常：{}", e.getMessage());
+            return false;
+        }
+    }
+
     // ================================================================= 集群实测
 
     @Override

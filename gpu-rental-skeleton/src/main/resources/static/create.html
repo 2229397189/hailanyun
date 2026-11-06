@@ -222,6 +222,10 @@
       <div class="k">发行版:</div>
       <div class="v"><div class="ck-chips" id="famChips"></div></div>
     </div>
+    <div class="ck-row" style="border-bottom:none;padding-top:0">
+      <div class="k"></div>
+      <div class="v"><div id="famTip" style="font-size:11.5px;color:#8a94a3;margin-top:-4px"></div></div>
+    </div>
     <div class="ck-row" style="border-bottom:none">
       <div class="k">版本:</div>
       <div class="v"><select class="ck-select" id="verSel" onchange="onVerChange()"></select></div>
@@ -580,6 +584,10 @@ function renderImg() {
     verSel.innerHTML = vs.map(v =>
       '<option value="' + Biz.esc(v.ref) + '" ' + (S.ref === v.ref ? 'selected' : '') + '>' + Biz.esc(v.label) + '</option>').join('');
     if (vs.length && !vs.find(v => v.ref === S.ref)) { S.ref = vs[0].ref; verSel.value = S.ref; }
+    const famTip = $('#famTip');
+    if (famTip) famTip.innerHTML = (fam && fam.imported)
+      ? '<span style="color:#2b6be6">已导入集群镜像库，下单后可直接使用 SSH / Jupyter / 远程桌面</span>'
+      : '<span style="color:#b45306">该镜像需导入客户私有镜像仓库；当前环境未导入时，实例将使用基础运行环境</span>';
   } else {
     famRow.style.display = 'none';
     const rows = S.imgTab === 'mine' ? S.myImgs : S.communityImgs;

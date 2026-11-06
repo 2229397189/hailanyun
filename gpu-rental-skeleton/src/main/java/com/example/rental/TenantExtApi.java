@@ -681,10 +681,14 @@ public class TenantExtApi {
     /** 克隆：按原规格与剩余时长开新实例 */
     @PostMapping("/instances/{id}/clone")
     public Map<String, Object> cloneInstance(@PathVariable String id,
+                                             @RequestBody(required = false) Map<String, Object> body,
                                              @RequestAttribute(value = "authRole", required = false) String role,
                                              @RequestAttribute(value = "authTenant", required = false) String myTenant) {
         Map<String, Object> inst = ownInstance(id, role, myTenant);
-        return rental.cloneInstance(id, String.valueOf(inst.get("tenant_id")));
+        Map<String, Object> b = body == null ? Map.of() : body;
+        boolean withData = !"false".equalsIgnoreCase(String.valueOf(b.getOrDefault("withData", true)));
+        boolean withPorts = !"false".equalsIgnoreCase(String.valueOf(b.getOrDefault("withPorts", true)));
+        return rental.cloneInstance(id, String.valueOf(inst.get("tenant_id")), withData, withPorts);
     }
 
     /** 升降配：新规格下单占卡 → 旧实例按秒结算释放 */

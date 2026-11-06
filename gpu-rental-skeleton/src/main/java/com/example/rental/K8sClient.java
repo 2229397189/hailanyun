@@ -72,4 +72,9 @@ public interface K8sClient {
     /** 撤销端口暴露 */
     default void removePort(String namespace, String podName, int port) {
     }
+
+    /** 把源实例数据盘内容完整拷贝到目标实例数据盘（克隆用），返回是否成功 */
+    default boolean cloneData(String namespace, String srcPodName, String dstPodName) {
+        return false;
+    }
 }

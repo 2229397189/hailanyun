@@ -354,13 +354,42 @@ async function resetInst(id) {
   } catch (e) { Biz.toast('重置失败：' + e.message, 'err'); }
 }
 
-async function cloneInst(id) {
-  if (!confirm('确认克隆？将按当前规格与剩余时长开通一台新实例（需余额充足）。')) return;
+function cloneInst(id) {
+  const box = $('#accModal').firstElementChild;
+  if (box) box.style.width = '520px';
+  if ($('#accTitle')) $('#accTitle').textContent = '克隆实例 · ' + id;
+  $('#accBody').innerHTML = `
+    <div style="font-size:12.5px;line-height:1.9;color:#33404f">
+      <div style="margin-bottom:10px">按原规格、原镜像与剩余时长创建一台<b>新实例</b>，原实例不受影响，新实例单独计费。</div>
+      <label style="display:block;margin:8px 0"><input type="checkbox" id="cloneData" checked>
+        <b>复制数据盘</b> — 把 /data 下所有文件完整拷贝到新实例</label>
+      <label style="display:block;margin:8px 0"><input type="checkbox" id="clonePorts" checked>
+        <b>复制端口配置</b> — 按用途重新分配对外端口（不能与原实例共用）</label>
+      <div class="hint" style="margin:10px 0">数据盘通过临时容器双挂 PVC 真实拷贝；需要余额充足。</div>
+      <div id="cloneErr" style="color:#e5484d;font-size:12px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="sm ghost" onclick="closeAcc()">取消</button>
+        <button class="sm" onclick="doClone('${id}')">开始克隆</button>
+      </div>
+    </div>`;
+  $('#accModal').style.display = 'flex';
+}
+async function doClone(id) {
+  const btn = $('#accBody button:last-child');
+  if (btn) btn.disabled = true;
   try {
-    const j = await post('/instances/' + id + '/clone');
-    Biz.toast(j.message + '（新实例 ' + j.instanceId + '）', 'ok');
+    const j = await post('/instances/' + id + '/clone', {
+      withData: $('#cloneData').checked,
+      withPorts: $('#clonePorts').checked
+    });
+    closeAcc();
+    Biz.toast(j.message, 'ok');
     load();
-  } catch (e) { Biz.toast('克隆失败：' + e.message, 'err'); }
+  } catch (e) {
+    if (btn) btn.disabled = false;
+    const el = $('#cloneErr');
+    if (el) el.textContent = '克隆失败：' + e.message;
+  }
 }
 
 function resizeInst(id) {

@@ -170,6 +170,24 @@ public class CatalogApi {
     @GetMapping("/images")
     public List<Map<String, Object>> images() {
         List<Map<String, Object>> out = new ArrayList<>();
+        // 已导入到集群镜像库、开箱即可 SSH/Jupyter/桌面的开发机镜像，放首位作为默认项
+        Map<String, Object> devVer = new LinkedHashMap<>();
+        devVer.put("ref", "devbox");
+        devVer.put("label", "DevBox 1.0 · Jupyter 6.4 + OpenSSH + noVNC");
+        devVer.put("framework", "1.0");
+        devVer.put("cuda", "可选");
+        devVer.put("python", "3.11");
+        devVer.put("os", "Debian12");
+        devVer.put("variant", "DevBox");
+        devVer.put("gpuRequired", false);
+        devVer.put("imported", true);
+        Map<String, Object> dev = new LinkedHashMap<>();
+        dev.put("name", "开发机（推荐）");
+        dev.put("color", "#2b6be6");
+        dev.put("versions", List.of(devVer));
+        dev.put("imported", true);
+        out.add(dev);
+        // 以下为目录展示项：需客户侧私有镜像仓库导入后才能真实运行
         out.add(family("PyTorch", "#ee4c2c", new String[][]{
                 {"2.12.1", "13.0", "3.12", "Ubuntu22", "Devel"},
                 {"2.5.1", "12.4", "3.11", "Ubuntu22", "Devel"},

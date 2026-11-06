@@ -470,6 +470,15 @@ public class RentalService {
 
     /** 克隆：按原规格与剩余时长开新实例（新订单、新计费），原实例不动 */
     public Map<String, Object> cloneInstance(String instanceId, String tenantId) {
+        return cloneInstance(instanceId, tenantId, true, true);
+    }
+
+    /**
+     * 完整克隆：按原规格、原镜像、剩余时长开新实例，并可选复制数据盘内容与端口暴露配置。
+     * 数据盘用临时 Pod 双挂 PVC 真实 cp -a；端口按用途重新分配 NodePort（不能复用源端口）。
+     */
+    public Map<String, Object> cloneInstance(String instanceId, String tenantId,
+                                             boolean withData, boolean withPorts) {
         Map<String, Object> inst = db.instance(instanceId);
         if (inst == null) {
             throw new BizException("实例不存在: " + instanceId);
@@ -477,13 +486,52 @@ public class RentalService {
         Map<String, Object> order = db.orderById((String) inst.get("order_id"));
         String sku = order == null ? "1" : String.valueOf(order.get("sku"));
         int gpuCount = ((Number) inst.get("gpu_count")).intValue();
-        if ("whole".equals(sku) == false && gpuCount > 1) {
+        if (!"whole".equals(sku) && gpuCount > 1) {
             sku = String.valueOf(gpuCount);
         }
         long remainMs = ((Timestamp) inst.get("expire_at")).getTime() - System.currentTimeMillis();
         int hours = Math.max(1, Math.min(720, (int) Math.ceil(remainMs / 3600_000.0)));
-        return createOrder(tenantId, sku, hours, "clone-" + instanceId + "-" + System.currentTimeMillis(),
+        Map<String, Object> created = createOrder(tenantId, sku, hours,
+                "clone-" + instanceId + "-" + System.currentTimeMillis(),
                 (String) inst.get("image_ref"), diskGbOf(inst));
+
+        String newId = String.valueOf(created.get("instanceId"));
+        String newPod = "gpu-pod-" + newId;
+        String ns = "tenant-" + tenantId;
+        boolean dataCopied = false;
+        int portsCopied = 0;
+
+        if (withData && diskGbOf(inst) > 0) {
+            dataCopied = k8s.cloneData(ns, String.valueOf(inst.get("pod_name")), newPod);
+        }
+        if (withPorts) {
+            for (Map<String, Object> p : db.instancePorts(instanceId)) {
+                int port = ((Number) p.get("port")).intValue();
+                int np = k8s.exposePort(ns, newPod, port);
+                if (np > 0) {
+                    db.upsertInstancePort(newId, port, np);
+                    portsCopied++;
+                }
+            }
+        }
+        if (portsCopied > 0 && db.instancePorts(instanceId).stream()
+                .anyMatch(p -> ((Number) p.get("port")).intValue() == 8888)) {
+            db.setInstancePort(newId, 8888,
+                    db.instancePorts(newId).stream()
+                            .filter(p -> ((Number) p.get("port")).intValue() == 8888)
+                            .map(p -> ((Number) p.get("node_port")).intValue()).findFirst().orElse(0));
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>(created);
+        out.put("sourceInstanceId", instanceId);
+        out.put("clonedData", dataCopied);
+        out.put("clonedPorts", portsCopied);
+        out.put("message", "克隆完成：新实例 " + newId
+                + "（数据盘" + (withData ? (dataCopied ? "已复制" : "复制失败") : "不复制")
+                + "，端口" + (withPorts ? "复制 " + portsCopied + " 个" : "不复制") + "），原实例不受影响");
+        db.notifyInstance(tenantId, newId, "实例", "克隆实例已创建",
+                "由实例 " + instanceId + " 克隆而来，" + out.get("message"));
+        return out;
     }
 
     /** 升降配：先按新规格下单占卡，成功后再结算释放旧实例（旧实例删除失败会留给巡检重试，不会丢卡） */
