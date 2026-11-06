@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TokenArk 创元方舟 · 管理控制台</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
 </head>
 <body>
 <div class="layout">
@@ -14,7 +14,7 @@
       <span class="mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
-          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#cfe0fb" stroke-width="4.8" stroke-linecap="round"/>
         </svg>
       </span>
       <div>
@@ -1279,7 +1279,7 @@ async function loadOverview(){
 
   donut($('#donut'), [
     {n:'空闲', v:ov.gpuStatus.free, c:'#15a24d'},
-    {n:'占用', v:ov.gpuStatus.occupied, c:'#2563eb'},
+    {n:'占用', v:ov.gpuStatus.occupied, c:'#2b6be6'},
     {n:'故障', v:ov.gpuStatus.fault, c:'#dc2828'},
     {n:'预留', v:ov.gpuStatus.reserved, c:'#8b98ab'},
   ]);
@@ -1452,7 +1452,7 @@ function pctOf(used, total){
 }
 function meterTile(label, valueText, pct, sub){
   const p = pct == null ? 0 : pct;
-  const color = p >= 90 ? '#ef4444' : p >= 70 ? '#f59e0b' : '#22c55e';
+  const color = p >= 90 ? '#e5484d' : p >= 70 ? '#f59e0b' : '#22c55e';
   return `<div style="flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:#fcfdff">
     <div style="font-size:11px;color:#94a3b8">${label}</div>
     <div style="font-size:17px;font-weight:800;margin:2px 0 7px">${valueText}</div>

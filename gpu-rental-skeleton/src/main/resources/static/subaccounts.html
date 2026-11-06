@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>子账号管理 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 </head>
 <body data-active="sub">
 
@@ -20,16 +20,16 @@
       <div class="hint" style="margin-bottom:12px">为团队成员分配子账号，共享租户资源与额度（上限 20 个）。</div>
 
       <div class="card" style="overflow:hidden">
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f4f0f9">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f0f4f9">
           <input id="newName" placeholder="用户名（4-16 位字母/数字/下划线）"
-                 style="flex:1;height:32px;border:1px solid #eee9f8;border-radius:8px;padding:0 12px;font-size:12px">
+                 style="flex:1;height:32px;border:1px solid #e9eff8;border-radius:8px;padding:0 12px;font-size:12px">
           <input id="newPwd" type="password" placeholder="初始密码（含大小写/数字/符号）"
-                 style="flex:1;height:32px;border:1px solid #eee9f8;border-radius:8px;padding:0 12px;font-size:12px">
+                 style="flex:1;height:32px;border:1px solid #e9eff8;border-radius:8px;padding:0 12px;font-size:12px">
           <button class="sm pink-btn" onclick="add()">新建子账号</button>
           <span class="hint" style="margin-left:auto">共 <b id="cnt">0</b> 个</span>
         </div>
         <div style="display:flex;align-items:center;gap:16px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
-             font-size:11px;color:#98a1b3">
+             font-size:11px;color:#8a94a3">
           <span style="flex:1">账号</span><span style="width:110px">角色</span>
           <span style="width:110px">状态</span><span style="width:150px">创建时间</span>
           <span style="width:70px;text-align:right">操作</span>
@@ -40,7 +40,7 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';

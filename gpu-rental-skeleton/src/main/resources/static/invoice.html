@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>发票管理 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 <style>
 .invbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.inv-sum{background:#fbf9ff;border:1px dashed #e6dcfa;border-radius:10px;padding:11px 14px;font-size:12.5px;
+.inv-sum{background:#fbf9ff;border:1px dashed #dce8fa;border-radius:10px;padding:11px 14px;font-size:12.5px;
   display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.inv-sum b{font-size:17px;color:#7c3aed}
+.inv-sum b{font-size:17px;color:#2b6be6}
 .off{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;font-size:10.5px;
   background:#f4f4f7;color:#9aa2b1;border:1px dashed #e2e2ea}
 </style>
@@ -66,8 +66,8 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
-<script src="/biz.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
+<script src="/biz.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -123,7 +123,7 @@ function render() {
         '<td class="hint">' + (i.issued_at ? time(i.issued_at) : '—') + '</td>' +
         '<td class="mono">' + Biz.esc(i.id) + '</td>' +
         '<td>' + (i.status === 'draft'
-          ? '<button class="sm" style="background:#7c3aed;color:#fff;border:none" onclick="issue(\'' +
+          ? '<button class="sm" style="background:#2b6be6;color:#fff;border:none" onclick="issue(\'' +
               Biz.esc(i.id) + '\')">开具</button>'
           : '<button class="ghost sm" onclick="copyId(\'' + Biz.esc(i.id) + '\')">复制发票号</button>') +
         '</td></tr>';
@@ -204,7 +204,7 @@ function issue(id) {
     okText: '确认开具',
     html: '<div class="biz-sum"><span class="hint">账期</span><b style="font-size:13.5px">' +
       Biz.esc(inv.period || id) + '</b></div>' +
-      '<div class="biz-sum" style="margin-top:8px"><span class="hint">金额</span><b style="font-size:18px;color:#7c3aed">¥' +
+      '<div class="biz-sum" style="margin-top:8px"><span class="hint">金额</span><b style="font-size:18px;color:#2b6be6">¥' +
       fmt(inv.amount) + '</b></div>' +
       '<div class="tip" style="margin:12px 0 0">开具后状态变为「已开具」，不可重复开具、不可作废（演示环境为电子票，不产生真实税票）。</div>',
     onOk: async (box, close) => {

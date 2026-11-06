@@ -5,33 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>登录 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
 <style>
-.field .eye{position:absolute;right:12px;bottom:12px;font-size:11px;color:#98a1b3;cursor:pointer;
+.field .eye{position:absolute;right:12px;bottom:12px;font-size:11px;color:#8a94a3;cursor:pointer;
   user-select:none;padding:2px 5px}
 .field{position:relative}
-.row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;font-size:12.5px;color:#5b6478}
-.row label{display:flex;align-items:center;gap:6px;cursor:pointer;margin:0;font-size:12.5px;color:#5b6478}
-.row input[type=checkbox]{width:14px;height:14px;accent-color:#7c3aed;cursor:pointer}
-.demo{margin-top:22px;padding-top:16px;border-top:1px dashed #efeaf9}
-.demo summary{font-size:11.5px;color:#98a1b3;cursor:pointer;outline:none}
+.row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;font-size:12.5px;color:#5c6776}
+.row label{display:flex;align-items:center;gap:6px;cursor:pointer;margin:0;font-size:12.5px;color:#5c6776}
+.row input[type=checkbox]{width:14px;height:14px;accent-color:#2b6be6;cursor:pointer}
+.demo{margin-top:22px;padding-top:16px;border-top:1px dashed #e3e8f0}
+.demo summary{font-size:11.5px;color:#8a94a3;cursor:pointer;outline:none}
 .demo table{width:100%;margin-top:9px;font-size:11.5px;border-collapse:collapse}
-.demo td{padding:4px 2px;color:#5b6478;border:none}
-.demo code{background:#faf7ff;padding:1px 5px;border-radius:3px;font-size:11px;color:#6d28d9}
+.demo td{padding:4px 2px;color:#5c6776;border:none}
+.demo code{background:#f5f8ff;padding:1px 5px;border-radius:3px;font-size:11px;color:#1d54c4}
 /* 登录 / 注册切换：注册是真接口（POST /api/auth/register），不是占位页 */
-.ltabs{display:flex;gap:22px;border-bottom:1px solid #f0ecf8;margin-bottom:18px}
-.ltabs button{background:none;border:0;padding:0 0 11px;font-size:15px;font-weight:650;color:#98a1b3;
+.ltabs{display:flex;gap:22px;border-bottom:1px solid #ecf1f8;margin-bottom:18px}
+.ltabs button{background:none;border:0;padding:0 0 11px;font-size:15px;font-weight:650;color:#8a94a3;
   cursor:pointer;position:relative;font-family:inherit}
 .ltabs button.on{color:#1c1533}
 .ltabs button.on::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;
-  background:linear-gradient(90deg,#7c3aed,#d946ef)}
-.lswap{font-size:12px;color:#5b6478;text-align:center;margin-top:14px}
-.lswap a{color:#7c3aed;cursor:pointer;font-weight:600}
-.invite-banner{background:#faf7ff;border:1px solid #efe6ff;border-radius:10px;padding:9px 12px;
-  font-size:12px;color:#6d28d9;margin-bottom:14px}
-.pwdmeter{height:4px;border-radius:3px;background:#f0ecf8;overflow:hidden;margin-top:6px}
+  background:linear-gradient(90deg,#2b6be6,#7fb0ff)}
+.lswap{font-size:12px;color:#5c6776;text-align:center;margin-top:14px}
+.lswap a{color:#2b6be6;cursor:pointer;font-weight:600}
+.invite-banner{background:#f5f8ff;border:1px solid #d9e6fb;border-radius:10px;padding:9px 12px;
+  font-size:12px;color:#1d54c4;margin-bottom:14px}
+.pwdmeter{height:4px;border-radius:3px;background:#ecf1f8;overflow:hidden;margin-top:6px}
 .pwdmeter i{display:block;height:100%;width:0;background:#dc2626;transition:width .2s,background .2s}
-.pwdhint{font-size:11px;color:#98a1b3;margin-top:5px}
+.pwdhint{font-size:11px;color:#8a94a3;margin-top:5px}
 </style>
 </head>
 <body>
@@ -42,7 +42,7 @@
       <span class="brand-mark" style="width:38px;height:38px;border-radius:11px">
         <svg width="20" height="20" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
-          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#cfe0fb" stroke-width="4.8" stroke-linecap="round"/>
         </svg>
       </span>
       <div>
@@ -56,15 +56,15 @@
       <p>面向私有化环境的 K8s 原生 GPU 管理与租赁系统。集群纳管、配额调度、实例交付、计量计费一体化。</p>
       <ul style="list-style:none;padding:0;margin:24px 0 0">
         <li style="font-size:12.5px;color:#6b6480;margin-bottom:10px;padding-left:20px;position:relative">
-          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#7c3aed,#d946ef)"></span>
+          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#2b6be6,#7fb0ff)"></span>
           多租户隔离与 GPU 配额硬限制
         </li>
         <li style="font-size:12.5px;color:#6b6480;margin-bottom:10px;padding-left:20px;position:relative">
-          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#7c3aed,#d946ef)"></span>
+          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#2b6be6,#7fb0ff)"></span>
           实例全生命周期自动下发与回收
         </li>
         <li style="font-size:12.5px;color:#6b6480;margin-bottom:10px;padding-left:20px;position:relative">
-          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#7c3aed,#d946ef)"></span>
+          <span style="position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:2px;background:linear-gradient(135deg,#2b6be6,#7fb0ff)"></span>
           操作审计与在线会话管理
         </li>
       </ul>
@@ -101,8 +101,8 @@
           <label><input type="checkbox" id="remember"> 7 天内免登录</label>
           <span id="capsHint" style="color:#d97706;display:none">大写锁定已开启</span>
         </div>
-        <div class="hint" style="font-size:11px;color:#98a1b3;margin-bottom:8px">
-          登录即代表同意《<a href="/about#terms" style="color:#7c3aed">用户服务协议</a>》，
+        <div class="hint" style="font-size:11px;color:#8a94a3;margin-bottom:8px">
+          登录即代表同意《<a href="/about#terms" style="color:#2b6be6">用户服务协议</a>》，
           禁止利用平台算力从事虚拟货币「挖矿」等违规活动。
         </div>
         <button class="btn-primary btn-login" id="submit" type="submit">登 录</button>
@@ -120,7 +120,7 @@
           <tr><td>幻核互动娱乐</td><td><code>tenant_c</code></td><td><code>Hly@2026</code></td></tr>
           <tr><td>极光量化科技</td><td><code>tenant_d</code></td><td><code>Hly@2026</code></td></tr>
           <tr><td>蓝湾医疗影像</td><td><code>tenant_e</code></td><td><code>Hly@2026</code></td></tr>
-          <tr><td colspan="3" style="color:#98a1b3;padding-top:6px">连续 5 次密码错误将锁定 10 分钟</td></tr>
+          <tr><td colspan="3" style="color:#8a94a3;padding-top:6px">连续 5 次密码错误将锁定 10 分钟</td></tr>
         </table>
       </details>
       </div>
@@ -154,8 +154,8 @@
             <label for="rInvite">邀请码（选填）</label>
             <input id="rInvite" type="text" maxlength="16" placeholder="填了才有首充赠券，邀请人同时返券">
           </div>
-          <div class="hint" style="font-size:11px;color:#98a1b3;margin-bottom:8px">
-            注册即代表同意《<a href="/about#terms" style="color:#7c3aed">用户服务协议</a>》，
+          <div class="hint" style="font-size:11px;color:#8a94a3;margin-bottom:8px">
+            注册即代表同意《<a href="/about#terms" style="color:#2b6be6">用户服务协议</a>》，
             禁止利用平台算力从事虚拟货币「挖矿」等违规活动。
           </div>
           <button class="btn-primary btn-login" id="regSubmit" type="submit">注册并登录</button>

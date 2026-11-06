@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>文件存储 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 </head>
 <body data-active="store">
 
@@ -41,18 +41,18 @@
       </div>
 
       <div class="card" style="overflow:hidden">
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f4f0f9">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f4f9">
           <input id="newName" placeholder="文件 / 文件夹名称"
-                 style="flex:1;height:32px;border:1px solid #eee9f8;border-radius:8px;padding:0 12px;font-size:12px"
+                 style="flex:1;height:32px;border:1px solid #e9eff8;border-radius:8px;padding:0 12px;font-size:12px"
                  onkeydown="if(event.key==='Enter')newFolder()">
           <span class="hint" style="white-space:nowrap">大小 GB</span>
           <input id="newSize" type="number" min="0" step="0.1" value="0" placeholder="0"
-                 style="width:64px;height:32px;border:1px solid #eee9f8;border-radius:8px;padding:0 8px;font-size:12px">
+                 style="width:64px;height:32px;border:1px solid #e9eff8;border-radius:8px;padding:0 8px;font-size:12px">
           <button class="ghost sm" onclick="newFolder()">新建文件夹</button>
           <button class="sm pink-btn" onclick="uploadFile()">上传</button>
         </div>
         <div style="display:flex;align-items:center;gap:16px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
-             font-size:11px;color:#98a1b3">
+             font-size:11px;color:#8a94a3">
           <span style="flex:1">名称</span><span style="width:120px">大小</span>
           <span style="width:170px">更新时间</span><span style="width:80px;text-align:right">操作</span>
         </div>
@@ -61,13 +61,13 @@
 
       <div class="card" style="overflow:hidden;margin-top:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
-             border-bottom:1px solid #f4f0f9">
+             border-bottom:1px solid #f0f4f9">
           <b style="font-size:13px">数据集库</b>
           <span class="hint">预置公共数据集，可在「实例列表 → 数据集」一键挂载到实例
             <code class="mono">/root/datasets</code>（演示环境登记台账，真实集群为 PVC 挂载）</span>
         </div>
         <div style="display:flex;align-items:center;gap:16px;padding:9px 16px;border-bottom:1px solid #f8f5fc;
-             font-size:11px;color:#98a1b3">
+             font-size:11px;color:#8a94a3">
           <span style="flex:1">数据集</span><span style="width:90px">类别</span>
           <span style="width:90px">大小</span><span style="width:130px">样本数</span>
           <span style="width:170px">来源</span>
@@ -78,7 +78,7 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';

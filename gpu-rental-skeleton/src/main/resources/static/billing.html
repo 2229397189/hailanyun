@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>消费账单 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 <style>
 .billbar{display:flex;gap:10px;align-items:center;margin:2px 0 6px;flex-wrap:wrap}
-.billbar .seg{display:inline-flex;border:1px solid #ece7f6;border-radius:9px;overflow:hidden}
-.billbar .seg button{border:none;background:#fff;padding:6px 13px;font-size:12px;color:#5b6478;cursor:pointer;border-radius:0}
-.billbar .seg button.on{background:#7c3aed;color:#fff;font-weight:600}
+.billbar .seg{display:inline-flex;border:1px solid #e7edf6;border-radius:9px;overflow:hidden}
+.billbar .seg button{border:none;background:#fff;padding:6px 13px;font-size:12px;color:#5c6776;cursor:pointer;border-radius:0}
+.billbar .seg button.on{background:#2b6be6;color:#fff;font-weight:600}
 .chartbox{border:1px solid #f1eef8;border-radius:12px;padding:14px 12px 8px;background:#fcfbff;margin-bottom:14px}
 .chartbox svg{width:100%;height:180px;display:block}
 .chartbox .cl{font-size:10px;fill:#9aa2b1}
-.chartbox .cv{font-size:10px;fill:#6d28d9;font-weight:600}
+.chartbox .cv{font-size:10px;fill:#1d54c4;font-weight:600}
 .legend{display:flex;justify-content:space-between;font-size:10.5px;color:#9aa2b1;padding:2px 4px 0}
 </style>
 </head>
@@ -75,8 +75,8 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
-<script src="/biz.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
+<script src="/biz.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -139,13 +139,13 @@ function renderChart() {
   $('#chart').innerHTML =
     '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
       '<defs><linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ec4899"/>' +
+        '<stop offset="0%" stop-color="#5f93ff"/><stop offset="100%" stop-color="#5f93ff"/>' +
       '</linearGradient></defs>' +
       [0.25, 0.5, 0.75, 1].map(f =>
         '<line x1="' + PAD + '" x2="' + (W - PAD) + '" y1="' + (H - PAD - (H - PAD - 34) * f) +
-        '" y2="' + (H - PAD - (H - PAD - 34) * f) + '" stroke="#f0eaf9" stroke-width="1"/>').join('') +
+        '" y2="' + (H - PAD - (H - PAD - 34) * f) + '" stroke="#eaf0f9" stroke-width="1"/>').join('') +
       '<line x1="' + PAD + '" x2="' + (W - PAD) + '" y1="' + (H - PAD) + '" y2="' + (H - PAD) +
-      '" stroke="#e6dcfa" stroke-width="1"/>' + bars + '</svg>' +
+      '" stroke="#dce8fa" stroke-width="1"/>' + bars + '</svg>' +
     '<div class="legend"><span>纵轴单位：元（每柱顶部已标注实际金额）</span><span>合计 ¥' +
       fmt(DAILY.reduce((a, r) => a + Number(r.amount || 0), 0)) + '</span></div>';
 

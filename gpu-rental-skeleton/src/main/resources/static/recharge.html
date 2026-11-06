@@ -5,23 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>在线充值 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 <style>
 .recharge{max-width:720px;margin:0 auto}
 .amt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.amt{border:1px solid #eee9f8;border-radius:11px;padding:14px;text-align:center;cursor:pointer;
+.amt{border:1px solid #e9eff8;border-radius:11px;padding:14px;text-align:center;cursor:pointer;
   font-size:14px;font-weight:600;color:#374151;transition:.15s;position:relative;background:#fff}
-.amt:hover{border-color:#d9c6ff}
-.amt.on{border-color:#a855f7;background:#faf5ff;color:#6d28d9;box-shadow:0 0 0 3px rgba(168,85,247,.12)}
-.amt.on::after{content:"✓";position:absolute;right:9px;top:7px;font-size:10px;color:#a855f7}
+.amt:hover{border-color:#b8d4ff}
+.amt.on{border-color:#5f93ff;background:#f5f8ff;color:#1d54c4;box-shadow:0 0 0 3px rgba(95,147,255,.12)}
+.amt.on::after{content:"✓";position:absolute;right:9px;top:7px;font-size:10px;color:#5f93ff}
 .pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.pay{display:flex;align-items:center;gap:9px;border:1px solid #eee9f8;border-radius:10px;
+.pay{display:flex;align-items:center;gap:9px;border:1px solid #e9eff8;border-radius:10px;
   padding:12px;font-size:12.5px;cursor:pointer;background:#fff}
-.pay.on{border-color:#a855f7;background:#faf5ff}
+.pay.on{border-color:#5f93ff;background:#f5f8ff}
 .pay i{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;
   font-size:11px;font-style:normal;color:#fff}
-.summary{display:flex;justify-content:space-between;font-size:12.5px;padding:9px 0;color:#5b6478}
+.summary{display:flex;justify-content:space-between;font-size:12.5px;padding:9px 0;color:#5c6776}
 .summary b{color:#111}
 .pay-btn{width:100%;height:44px;border-radius:11px;font-size:14px;font-weight:600;margin-top:6px}
 </style>
@@ -46,14 +46,14 @@
           <h3 style="margin-top:18px">订单信息</h3>
           <div style="background:#fbfbfe;border:1px solid #f3f1f9;border-radius:11px;padding:6px 14px">
             <div class="summary"><span>账户总余额</span><b id="bal">¥0.00</b></div>
-            <div class="summary"><span>充值金额</span><b id="amt" style="color:#7c3aed">¥50.00</b></div>
+            <div class="summary"><span>充值金额</span><b id="amt" style="color:#2b6be6">¥50.00</b></div>
             <div class="summary"><span>充值后余额</span><b id="after">¥50.00</b></div>
           </div>
 
           <h3 style="margin-top:18px">支付方式</h3>
           <div class="pay-grid">
             <div class="pay on" data-pay="微信支付" onclick="pickPay(this)"><i style="background:#22c55e">微</i>微信支付</div>
-            <div class="pay" data-pay="支付宝" onclick="pickPay(this)"><i style="background:#3b82f6">支</i>支付宝</div>
+            <div class="pay" data-pay="支付宝" onclick="pickPay(this)"><i style="background:#2b6be6">支</i>支付宝</div>
             <div class="pay" data-pay="对公汇款" onclick="pickPay(this)"><i style="background:#8b5cf6">公</i>对公汇款</div>
           </div>
 
@@ -72,7 +72,7 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const fmt = n => (Number(n) || 0).toFixed(2);

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>算力市场 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/ref.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/ref.css?v19">
 </head>
 <body>
 
@@ -16,7 +16,7 @@
       <span class="brand-mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
-          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#cfe0fb" stroke-width="4.8" stroke-linecap="round"/>
         </svg>
       </span>
       <span>
@@ -168,9 +168,9 @@
       <label>续费时长</label>
       <select id="renewHours" onchange="calcRenew()"></select>
     </div>
-    <div class="between" style="padding:12px 14px;background:#fbf8ff;border:1px solid #f1e8ff;border-radius:11px">
+    <div class="between" style="padding:12px 14px;background:#f5f8ff;border:1px solid #e8f1ff;border-radius:11px">
       <span class="hint">续费预扣 <span id="renewTag" style="color:#16a34a;font-size:11px"></span></span>
-      <b style="font-size:20px;color:#7c3aed" id="renewTotal">¥0.00</b>
+      <b style="font-size:20px;color:#2b6be6" id="renewTotal">¥0.00</b>
     </div>
     <div class="tip" style="margin-top:10px">续费从当前到期时间顺延，预扣进入该实例预扣池，释放时按实际秒数统一结算，多退少补。</div>
     <div class="foot">
@@ -537,17 +537,17 @@ function subscribeAlert(model) {
     title: 'GPU 到货提醒', okText: '创建提醒',
     html:
       '<div class="biz-sum" style="display:flex;gap:0;margin-bottom:14px">' +
-        '<div style="flex:1;padding:10px 14px;border:1px solid #eee6fb;border-radius:10px 0 0 10px">' +
-          '<div style="font-size:11px;color:#c084a6">📍 地区</div><b style="font-size:14px">' + Biz.esc(zone || '默认') + '</b></div>' +
-        '<div style="flex:1;padding:10px 14px;border:1px solid #eee6fb;border-top:1px solid #eee6fb;border-bottom:1px solid #eee6fb">' +
-          '<div style="font-size:11px;color:#c084a6">▦ 型号</div><b style="font-size:14px">' + Biz.esc(model) + '</b></div>' +
-        '<div style="flex:1;padding:10px 14px;border:1px solid #eee6fb;border-radius:0 10px 10px 0">' +
-          '<div style="font-size:11px;color:#c084a6">≣ 数量阈值</div>' +
+        '<div style="flex:1;padding:10px 14px;border:1px solid #e6eefb;border-radius:10px 0 0 10px">' +
+          '<div style="font-size:11px;color:#5681c0">📍 地区</div><b style="font-size:14px">' + Biz.esc(zone || '默认') + '</b></div>' +
+        '<div style="flex:1;padding:10px 14px;border:1px solid #e6eefb;border-top:1px solid #e6eefb;border-bottom:1px solid #e6eefb">' +
+          '<div style="font-size:11px;color:#5681c0">▦ 型号</div><b style="font-size:14px">' + Biz.esc(model) + '</b></div>' +
+        '<div style="flex:1;padding:10px 14px;border:1px solid #e6eefb;border-radius:0 10px 10px 0">' +
+          '<div style="font-size:11px;color:#5681c0">≣ 数量阈值</div>' +
           '<b style="font-size:14px"><input id="alQty" type="number" min="1" max="64" value="1" ' +
-          'style="width:56px;height:26px;border:1px solid #e6dcfa;border-radius:6px;padding:0 6px;font-size:13px"> 卡</b></div>' +
+          'style="width:56px;height:26px;border:1px solid #dce8fa;border-radius:6px;padding:0 6px;font-size:13px"> 卡</b></div>' +
       '</div>' +
       '<div style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:10px;padding:10px 14px;font-size:12.5px">' +
-        '当前未绑定微信服务号，推荐 <a href="/account" style="color:#a21caf;text-decoration:underline">绑定微信</a> 后及时接收消息提醒。</div>',
+        '当前未绑定微信服务号，推荐 <a href="/account" style="color:#426eaf;text-decoration:underline">绑定微信</a> 后及时接收消息提醒。</div>',
     onOk: async (box, close) => {
       const qty = Math.max(1, Math.min(64, Math.floor(Number(box.querySelector('#alQty').value) || 1)));
       box.busy(true);
@@ -796,7 +796,7 @@ async function loadBilling() {
       return `<div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px">
         <span class="hint" style="font-size:10.5px;height:14px">${v > 0 ? '¥' + fmt(v) : ''}</span>
         <div style="width:100%;max-width:92px;height:${h}px;border-radius:6px 6px 0 0;
-          background:${v > 0 ? 'linear-gradient(180deg,#c084fc,#7c3aed)' : '#f4f0fd'}"></div>
+          background:${v > 0 ? 'linear-gradient(180deg,#7fb0ff,#2b6be6)' : '#eef1f6'}"></div>
         <span class="hint" style="font-size:10.5px;height:14px">${k.slice(5)}</span>
       </div>`;
     }).join('');
@@ -839,6 +839,6 @@ async function submitPwd() {
 /* ---------------- 启动 ---------------- */
 route();
 </script>
-<script src="/biz.js?v17"></script>
-<script src="/nav.js?v17"></script></body>
+<script src="/biz.js?v19"></script>
+<script src="/nav.js?v19"></script></body>
 </html>

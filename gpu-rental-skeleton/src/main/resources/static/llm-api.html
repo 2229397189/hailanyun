@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大模型 API · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 </head>
 <body data-active="llm">
 
@@ -18,13 +18,13 @@
       <div class="msg" id="msg"></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em">大模型 API</h2>
-        <a class="hint" href="/index" style="color:#c026d3">返回使用 ›</a>
+        <a class="hint" href="/index" style="color:#1d54c4">返回使用 ›</a>
       </div>
       <div class="hint" style="margin-bottom:12px">模型额度统一管理，调用费用只从模型余额扣除。</div>
 
       <div class="card panel">
         <h3 style="justify-content:flex-start;gap:8px">
-          <span style="width:22px;height:22px;border-radius:6px;background:#fdf2fb;color:#c026d3;
+          <span style="width:22px;height:22px;border-radius:6px;background:#f2f6fd;color:#1d54c4;
                 display:inline-flex;align-items:center;justify-content:center;font-size:11px">✦</span>
           模型额度
           <span class="hint" style="font-weight:400;margin-left:4px">使用前请确保已充值，代金券不可抵扣</span>
@@ -32,13 +32,13 @@
         <div style="display:flex;align-items:center;margin-top:8px">
           <div style="flex:1;text-align:center">
             <div class="hint">可用余额</div>
-            <div style="font-size:26px;font-weight:750;color:#c026d3;margin-top:6px" id="mbal">¥ 0</div>
+            <div style="font-size:26px;font-weight:750;color:#1d54c4;margin-top:6px" id="mbal">¥ 0</div>
             <div class="hint" style="font-size:10px;margin-top:4px">不含代金券</div>
           </div>
-          <div style="width:1px;height:54px;background:#f3eef9"></div>
+          <div style="width:1px;height:54px;background:#eef2f9"></div>
           <div style="flex:1;text-align:center">
             <div class="hint">模型余额</div>
-            <div style="font-size:26px;font-weight:750;color:#c026d3;margin-top:6px" id="ubal">¥ 0</div>
+            <div style="font-size:26px;font-weight:750;color:#1d54c4;margin-top:6px" id="ubal">¥ 0</div>
             <div class="hint" style="font-size:10px;margin-top:4px">模型调用计费</div>
           </div>
           <div style="flex:1;text-align:right">
@@ -56,7 +56,7 @@
         </div>
         <div style="display:flex;gap:8px;margin-bottom:12px">
           <input id="newName" placeholder="密钥名称（例如：本地调试）"
-                 style="flex:1;height:34px;border:1px solid #eee9f8;border-radius:8px;padding:0 12px;font-size:12.5px"
+                 style="flex:1;height:34px;border:1px solid #e9eff8;border-radius:8px;padding:0 12px;font-size:12.5px"
                  onkeydown="if(event.key==='Enter')createKey()">
           <button class="sm pink-btn" onclick="createKey()">新建密钥</button>
         </div>
@@ -79,7 +79,7 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';

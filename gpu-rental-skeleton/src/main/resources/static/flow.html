@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>收支明细 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 <style>
 .flowbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .in{color:#16a34a;font-weight:650}
 .out{color:#dc2626;font-weight:650}
-.src-tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;background:#f4f1fb;color:#6d28d9}
+.src-tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;background:#f4f1fb;color:#1d54c4}
 .note{background:#fffaf0;border:1px solid #f6e7c1;border-radius:10px;padding:10px 13px;font-size:11.5px;
   color:#8a6d1b;line-height:1.8;margin-bottom:14px}
 </style>
@@ -67,7 +67,7 @@
             <span data-f="in">收入</span>
             <span data-f="out">支出</span>
           </div>
-          <select id="srcBar" style="height:30px;border:1px solid #ece7f6;border-radius:8px;padding:0 8px;font-size:12px">
+          <select id="srcBar" style="height:30px;border:1px solid #e7edf6;border-radius:8px;padding:0 8px;font-size:12px">
             <option value="all">全部来源</option>
             <option value="recharge">充值到账</option>
             <option value="coupon">券兑换入账</option>
@@ -84,8 +84,8 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
-<script src="/biz.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
+<script src="/biz.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';

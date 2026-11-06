@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>我的券包 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 <style>
-.cp{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #f0e5ff;border-radius:12px;
+.cp{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #e5efff;border-radius:12px;
   background:linear-gradient(100deg,#fbf9ff,#fff);margin-bottom:10px}
 .cp.used{opacity:.62;background:#fbfbfd;border-color:#eeeef0}
-.cp .amt{width:96px;flex:0 0 auto;text-align:center;border-right:1px dashed #e6dcfa}
-.cp .amt b{font-size:24px;font-weight:800;color:#7c3aed;line-height:1.1;display:block}
+.cp .amt{width:96px;flex:0 0 auto;text-align:center;border-right:1px dashed #dce8fa}
+.cp .amt b{font-size:24px;font-weight:800;color:#2b6be6;line-height:1.1;display:block}
 .cp .amt b i{font-style:normal;font-size:13px;font-weight:700;margin-right:2px}
 .cp .amt span{font-size:10.5px;color:#9aa2b1}
 .cp .info{flex:1;min-width:0}
@@ -63,8 +63,8 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
-<script src="/biz.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
+<script src="/biz.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -102,7 +102,7 @@ function day(v) { return v ? new Date(v).toLocaleDateString('zh-CN') : '长期�
 function card(c) {
   const b = bucket(c);
   const right = b === 'unused'
-    ? '<button class="sm" style="background:#7c3aed;color:#fff;border:none" onclick="redeem(\'' +
+    ? '<button class="sm" style="background:#2b6be6;color:#fff;border:none" onclick="redeem(\'' +
         Biz.esc(c.id) + '\')">兑换</button>'
     : '<span class="pill ' + (b === 'redeemed' ? 'p-green' : 'p-gray') + '">' +
         (b === 'redeemed' ? '已兑换' : '已过期') + '</span>';
@@ -128,7 +128,7 @@ function render() {
       '<span>新人注册、邀请好友首充、平台运营活动都会往这里发券</span>' +
       '<a href="/account" style="display:inline-flex;align-items:center;margin-top:14px;height:32px;' +
       'padding:0 18px;border-radius:7px;font-size:12px;color:#fff;' +
-      'background:linear-gradient(100deg,#7c3aed,#a855f7)">去邀请好友</a></div>';
+      'background:linear-gradient(100deg,#2b6be6,#5f93ff)">去邀请好友</a></div>';
     return;
   }
   const TITLES = [
@@ -166,7 +166,7 @@ function redeem(id) {
     html: '<div class="biz-sum"><span class="hint">券名</span><b style="font-size:13.5px">' +
       Biz.esc(c.title || id) + '</b></div>' +
       '<div class="biz-sum" style="margin-top:8px"><span class="hint">券面金额</span>' +
-      '<b style="font-size:18px;color:#7c3aed">¥' + fmt(c.amount_yuan) + '</b></div>' +
+      '<b style="font-size:18px;color:#2b6be6">¥' + fmt(c.amount_yuan) + '</b></div>' +
       '<div class="tip" style="margin:12px 0 0">兑换后金额直接充入账户余额，不可撤销、不找零。</div>',
     onOk: async (box, close) => {
       box.busy(true);

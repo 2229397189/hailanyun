@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>订阅推送 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 <style>
 .ch{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #f1eef8;border-radius:11px;
   background:#fcfbff;margin-bottom:9px}
 .ch .logo{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-  font-size:14px;flex:0 0 auto;background:#f6ecf5;color:#c026d3}
+  font-size:14px;flex:0 0 auto;background:#ecf0f6;color:#1d54c4}
 .ch .tx{flex:1;min-width:0}
 .ch .tx b{font-size:12.5px;display:block}
 .ch.off{background:#fbfbfd;border-color:#eeeef0;opacity:.85}
@@ -37,7 +37,7 @@
           <button class="ghost sm" style="margin-left:auto" onclick="load()">刷新</button>
         </h3>
         <div style="background:#f6f7fb;border:1px solid #eceaf4;border-radius:9px;
-             padding:9px 12px;font-size:11.5px;color:#5b6478;margin-bottom:12px">
+             padding:9px 12px;font-size:11.5px;color:#5c6776;margin-bottom:12px">
           关闭只影响消息推送，不影响计费、开关机与释放。重新打开会立刻收到一条确认消息。已释放实例不再推送，因此不在下面列出。
         </div>
         <div id="subs"><div class="empty">加载中…</div></div>
@@ -66,8 +66,8 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
-<script src="/biz.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
+<script src="/biz.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -126,7 +126,7 @@ function renderSubs() {
       '<span>创建实例后即可按实例控制消息推送</span>' +
       '<a href="/instances" style="display:inline-flex;align-items:center;margin-top:14px;height:32px;' +
       'padding:0 18px;border-radius:7px;font-size:12px;color:#fff;' +
-      'background:linear-gradient(100deg,#7c3aed,#a855f7)">去实例列表</a></div>';
+      'background:linear-gradient(100deg,#2b6be6,#5f93ff)">去实例列表</a></div>';
     return;
   }
   $('#subs').innerHTML = live.map(i =>
@@ -171,7 +171,7 @@ async function renderRecent() {
             Tf.md(m.created_at) + '</span>' +
         '</div>').join('') +
         '<div class="hint" style="margin-top:10px">共 ' + (r.total || items.length) + ' 条，其中未读 ' +
-          (r.unread || 0) + ' 条 · <a href="/notifications" style="color:#7c3aed">到消息通知查看全部</a></div>'
+          (r.unread || 0) + ' 条 · <a href="/notifications" style="color:#2b6be6">到消息通知查看全部</a></div>'
       : '<div class="empty-state"><div class="ic">📭</div><b>还没有推送过消息</b>' +
         '<span>实例开关机、续费、释放、账单与商务回复都会推送到这里</span></div>';
   } catch (e) {

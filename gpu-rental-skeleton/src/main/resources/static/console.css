@@ -23,8 +23,8 @@ body{background:#fff}
 .cs a{display:flex;align-items:center;gap:9px;height:36px;padding:0 12px 0 6px;border-radius:8px;
   font-size:15px;color:#3f4759;font-weight:500;margin:0 8px 8px 0;transition:background .15s,color .15s;
   text-decoration:none;cursor:pointer;line-height:1.4;user-select:none}
-.cs a:hover{background:#fbf3f9;color:#c026d3}
-.cs a.on{background:#f8eaf6;color:#d6358f;font-weight:600}
+.cs a:hover{background:#eef4fd;color:#1d54c4}
+.cs a.on{background:#e3edfd;color:#1d54c4;font-weight:600}
 .cs a .ic{width:22px;height:22px;flex:0 0 22px;display:flex;align-items:center;justify-content:center;
   font-size:17px;line-height:1}
 .cs a .ic svg{width:21px;height:21px}
@@ -32,10 +32,10 @@ body{background:#fff}
 .cs .chev svg{width:17px;height:17px;transition:transform .22s ease}
 .cs .grp.open .chev svg{transform:rotate(180deg)}
 .cs .gsub{margin:-4px 0 8px;padding-left:14px}
-.cs .gsub a{font-size:14.5px;height:32px;margin-bottom:2px;color:#5b6478}
+.cs .gsub a{font-size:14.5px;height:32px;margin-bottom:2px;color:#5c6776}
 .cs .gsub a .ic{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#dfe3ea}
-.cs .gsub a.on{color:#d6358f}
-.cs .gsub a.on .ic{background:#d6358f}
+.cs .gsub a.on{color:#1d54c4}
+.cs .gsub a.on .ic{background:#1d54c4}
 .cs .foot{display:flex;align-items:center;justify-content:space-between;padding:10px;border-top:1px solid #f4f4f7}
 .cs .fold{width:32px;height:30px;padding:0;border:none;border-radius:8px;background:#f4f5f7;color:#6b7280;
   display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:none;font-family:inherit}
@@ -66,7 +66,7 @@ body{background:#fff}
   display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:none;font-family:inherit}
 .ctool:hover{background:#f5f6f8;transform:none;filter:none}
 .ctool svg{width:20px;height:20px}
-.ctool.pink{color:#d6358f}
+.ctool.pink{color:#1d54c4}
 .ctool.dark{color:#374151}
 
 /* 标签栏：30px 高，标签页 26px 且底边贴合分隔线 */
@@ -80,15 +80,15 @@ body{background:#fff}
   text-decoration:none;flex:0 0 auto}
 .ctabb .ti{font-size:15px;line-height:1;display:flex}
 .ctabb .ti svg{width:15px;height:15px}
-.ctabb:hover{color:#c026d3}
-.ctabb.on{background:#f8eaf6;color:#d6358f;font-weight:600}
+.ctabb:hover{color:#1d54c4}
+.ctabb.on{background:#e3edfd;color:#1d54c4;font-weight:600}
 .ctabb .x{display:inline-flex;width:15px;height:15px;border-radius:4px;align-items:center;justify-content:center;
   color:#c3c8d4;margin-left:1px}
-.ctabb .x:hover{background:#f0d8ec;color:#d6358f}
+.ctabb .x:hover{background:#d9e6fb;color:#1d54c4}
 .ctabb .x svg{width:11px;height:11px}
 .ctabmore{width:40px;height:100%;flex:0 0 40px;padding:0;border:none;border-left:1px solid #eeeef0;background:#fff;
   color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:none;font-family:inherit}
-.ctabmore:hover{background:#fafafb;color:#d6358f;transform:none;filter:none}
+.ctabmore:hover{background:#fafafb;color:#1d54c4;transform:none;filter:none}
 .ctabmore svg{width:17px;height:17px}
 
 /* 内容区 */
@@ -102,9 +102,9 @@ body{background:#fff}
   justify-content:space-between;gap:14px;margin-bottom:16px;line-height:1.4}
 .ccard h3 .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .ccard h3 .hd .em{font-size:20px;line-height:1}
-.link-sm{font-size:15px;color:#d6358f;cursor:pointer;font-weight:500;display:inline-flex;
+.link-sm{font-size:15px;color:#1d54c4;cursor:pointer;font-weight:500;display:inline-flex;
   align-items:center;gap:6px;white-space:nowrap}
-.link-sm:hover{color:#be1e7f}
+.link-sm:hover{color:#567fbe}
 .link-sm svg{width:17px;height:17px}
 
 /* KPI 瓦片：374×100，15px 间距，底色 #fafafc */
@@ -112,9 +112,9 @@ body{background:#fff}
 .dtile{background:#fafafc;border:1px solid #f0f0f4;border-radius:12px;padding:12px 18px 10px;min-height:100px}
 .dtile .k{display:flex;align-items:center;gap:8px;font-size:16px;color:#374151;font-weight:500;
   margin-bottom:8px}
-.dtile .k .act{margin-left:auto;font-size:14px;color:#d6358f;font-weight:500;display:inline-flex;
+.dtile .k .act{margin-left:auto;font-size:14px;color:#1d54c4;font-weight:500;display:inline-flex;
   align-items:center;gap:5px;cursor:pointer}
-.dtile .k .act:hover{color:#be1e7f}
+.dtile .k .act:hover{color:#567fbe}
 .dtile .k .act svg{width:15px;height:15px}
 .dtile .v{font-size:26px;font-weight:800;color:#111827;line-height:1.15;letter-spacing:-.02em}
 .dtile .v i{font-style:normal;font-size:20px;font-weight:800;margin-right:4px}
@@ -122,12 +122,12 @@ body{background:#fff}
 .dti{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;
   flex:0 0 40px;margin-left:4px}
 .dti svg{width:21px;height:21px}
-.dti.p{background:#f6ecf5;color:#c026d3}
+.dti.p{background:#ecf0f6;color:#1d54c4}
 .dti.g{background:#e8f7ef;color:#22c55e}
 .dti.a{background:#faf1e3;color:#d97706}
 .dti.r{background:#fbe7eb;color:#f43f5e}
-.dtile.tint-p{background:#fcf8fc;border-color:#f2e6f2}
-.dtile.tint-p .v{color:#c026d3}
+.dtile.tint-p{background:#fcf8fc;border-color:#e6ebf2}
+.dtile.tint-p .v{color:#1d54c4}
 .dtile.tint-a{background:#fffdf3;border-color:#f7efdb}
 .dtile.tint-a .v{color:#d97706}
 .q{width:16px;height:16px;border-radius:50%;border:1.4px solid #cbd5e1;color:#94a3b8;font-size:10px;
@@ -139,20 +139,20 @@ body{background:#fff}
   border-radius:12px;padding:22px 26px;box-shadow:0 1px 2px rgba(16,24,40,.03);min-height:110px}
 .dwelcome .ava{position:relative;width:56px;height:56px;flex:0 0 56px;border-radius:50%;overflow:visible;
   display:flex;align-items:center;justify-content:center;font-size:28px;
-  background:linear-gradient(135deg,#ffe9f4,#f3e8ff);box-shadow:inset 0 0 0 1px #f6e0ee}
+  background:linear-gradient(135deg,#e9f2ff,#e6effe);box-shadow:inset 0 0 0 1px #e0e9f6}
 .dwelcome .ava img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 .dwelcome .ava .dot{position:absolute;right:-1px;bottom:1px;width:15px;height:15px;border-radius:50%;
   background:#22c55e;border:2.5px solid #fff}
 .dwelcome .wtxt{min-width:0}
 .dwelcome h1{font-size:20px;font-weight:700;color:#1f2937;line-height:1.5;letter-spacing:-.01em}
-.dwelcome h1 em{font-style:normal;background:linear-gradient(92deg,#ec4899,#c026d3);
+.dwelcome h1 em{font-style:normal;background:linear-gradient(92deg,#5f93ff,#1d54c4);
   -webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
 .dwelcome .sub{font-size:14px;color:#6b7280;margin-top:3px}
 .fortune{margin-left:auto;padding-left:26px;border-left:1px dashed #e5e7eb;white-space:nowrap}
 .fortune .t{font-size:13px;color:#9aa2b1}
 .fortune .b{font-size:14px;color:#6b7280;margin-top:7px;display:flex;align-items:center;gap:8px}
 .fortune .b .ball{font-size:17px;line-height:1}
-.fortune .b i{font-style:normal;font-weight:700;color:#10b981}
+.fortune .b i{font-style:normal;font-weight:700;color:#0f9d76}
 .fortune .b .dash{color:#cbd5e1;letter-spacing:-.05em}
 
 /* ---------------- 帮助文档 ---------------- */
@@ -160,7 +160,7 @@ body{background:#fff}
 .hrow:hover{background:#faf9fc}
 .hrow .hi{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:0 0 44px}
 .hrow .hi svg{width:21px;height:21px}
-.hrow .hi.b{background:#e0edff;color:#3b82f6}
+.hrow .hi.b{background:#e0edff;color:#2b6be6}
 .hrow .hi.g{background:#dcfce7;color:#16a34a}
 .hrow .hi.c{background:#cffafe;color:#06b6d4}
 .hrow b{display:block;font-size:16px;font-weight:600;color:#1f2937;line-height:1.45}
@@ -193,7 +193,7 @@ body{background:#fff}
 
 /* ---------------- 悬浮客服 ---------------- */
 .float2{position:fixed;right:22px;bottom:26px;z-index:60;width:52px;height:52px;padding:0;border-radius:50%;
-  background:linear-gradient(135deg,#38bdf8,#2563eb);color:#fff;display:flex;align-items:center;
+  background:linear-gradient(135deg,#38bdf8,#2b6be6);color:#fff;display:flex;align-items:center;
   justify-content:center;box-shadow:0 12px 28px -10px rgba(37,99,235,.6);border:none;cursor:pointer}
 .float2 svg{width:26px;height:26px}
 .float2:hover{transform:translateY(-2px);filter:none}
@@ -219,7 +219,7 @@ body{background:#fff}
   box-shadow:0 12px 32px -8px rgba(16,24,40,.2);padding:16px;font-size:14px;color:#1f2937}
 .ud-id{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid #f0f0f4}
 .ud-ava{width:44px;height:44px;flex:0 0 44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:19px;font-weight:700;color:#fff;background:linear-gradient(135deg,#7c3aed,#d946ef)}
+  font-size:19px;font-weight:700;color:#fff;background:linear-gradient(135deg,#2b6be6,#7fb0ff)}
 .ud-nm{min-width:0}
 .ud-name{font-size:15px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .ud-badge{font-size:11px;font-weight:500;color:#b42318;background:#fee4e2;border-radius:5px;padding:1px 6px}
@@ -239,7 +239,7 @@ body{background:#fff}
 .ud-themes button{width:38px;height:38px;border-radius:10px;border:1px solid #e6e6ea;background:#fff;
   font-size:17px;cursor:pointer;font-family:inherit;box-shadow:none;display:flex;align-items:center;justify-content:center}
 .ud-themes button:hover{background:#fafafb;transform:none;filter:none}
-.ud-themes button.on{border-color:#d6358f;background:#fdf2f8;box-shadow:0 0 0 1px #d6358f}
+.ud-themes button.on{border-color:#1d54c4;background:#f2f6fd;box-shadow:0 0 0 1px #1d54c4}
 .ud-out{margin-top:14px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#374151;
   cursor:pointer;padding:6px 2px;border-radius:8px}
 .ud-out:hover{color:#d92d20;background:#fef3f2}
@@ -253,17 +253,17 @@ html[data-theme=dark] .topnav{background:rgba(15,17,21,.86);border-bottom-color:
 html[data-theme=dark] .topnav .navlinks{color:#c3c9d6}
 html[data-theme=dark] .cs{background:#15171d;border-right-color:#262a33}
 html[data-theme=dark] .cs a{color:#a9b0c0}
-html[data-theme=dark] .cs a:hover{background:#221d2c;color:#f472b6}
-html[data-theme=dark] .cs a.on{background:#2a1f33;color:#f472b6}
+html[data-theme=dark] .cs a:hover{background:#221d2c;color:#7fb0ff}
+html[data-theme=dark] .cs a.on{background:#2a1f33;color:#7fb0ff}
 html[data-theme=dark] .cs .gsub a{color:#8b93a5}
 html[data-theme=dark] .cs .foot{border-top-color:#262a33}
 html[data-theme=dark] .cs .fold{background:#1c202a;color:#9aa2b1}
 html[data-theme=dark] .ctopbar,html[data-theme=dark] .ctabrow,html[data-theme=dark] .ctabmore{background:#15171d;border-color:#262a33}
 html[data-theme=dark] .ctopbar .crumb{color:#e6e8ee}
 html[data-theme=dark] .ctopbar .burger,html[data-theme=dark] .ctool{color:#a9b0c0}
-html[data-theme=dark] .ctool.pink{color:#f472b6}
+html[data-theme=dark] .ctool.pink{color:#7fb0ff}
 html[data-theme=dark] .ctabb{background:#15171d;color:#8b93a5}
-html[data-theme=dark] .ctabb.on{background:#2a1f33;color:#f472b6}
+html[data-theme=dark] .ctabb.on{background:#2a1f33;color:#7fb0ff}
 html[data-theme=dark] .ccard,html[data-theme=dark] .dwelcome{background:#171a21;border-color:#262a33}
 html[data-theme=dark] .ccard h3,html[data-theme=dark] .dwelcome h1,html[data-theme=dark] .inv-hero{color:#e6e8ee}
 html[data-theme=dark] .dwelcome .sub,html[data-theme=dark] .notes,html[data-theme=dark] .hrow span,
@@ -282,7 +282,24 @@ html[data-theme=dark] .ud-name{color:#e6e8ee}
 html[data-theme=dark] .ud-bal-num{color:#fff}
 html[data-theme=dark] .ud-id,html[data-theme=dark] .ud-bal,html[data-theme=dark] .ud-sec{border-color:#262a33}
 html[data-theme=dark] .ud-themes button{background:#1c202a;border-color:#2a2f3a}
-html[data-theme=dark] .ud-themes button.on{background:#2a1f33;border-color:#d6358f}
+html[data-theme=dark] .ud-themes button.on{background:#2a1f33;border-color:#1d54c4}
 html[data-theme=dark] .ud-btn{background:#1c202a;border-color:#2a2f3a;color:#e6e8ee}
 html[data-theme=dark] .ud-out{color:#c3c9d6}
 html[data-theme=dark] .ud-out:hover{background:#2a1f1e;color:#f87171}
+
+/* 官网同款：深蓝侧栏（最后加载，覆盖上方旧粉紫） */
+.cs{background:var(--navy)!important;border-right-color:#1d3a60!important}
+.cs a{color:#c2cfdf!important}
+.cs a:hover{background:rgba(255,255,255,.07)!important;color:#fff!important}
+.cs a.on{background:rgba(43,107,230,.26)!important;color:#fff!important}
+.cs .grp,.cs .foot{color:#7f9cc0!important;border-color:rgba(255,255,255,.09)!important}
+.cs .gsub a{color:#a9bed7!important}
+.cs .gsub a.on,.cs .gsub a.on .ic{color:#fff!important}
+.cs .gsub a.on .ic{background:#5f93ff!important}
+.cs .fold{background:rgba(255,255,255,.09)!important;color:#c2cfdf!important}
+.cs .fold:hover{background:rgba(255,255,255,.16)!important;color:#fff!important}
+.cmain,.cbody{background:#f5f7fa!important}
+.ctabb:hover,.ctabb.on{color:var(--blue)!important}
+.ctabb.on{background:#edf3fe!important}
+.ctool.pink{color:var(--blue)!important}
+body{background:#f5f7fa!important}

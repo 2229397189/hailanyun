@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>消息通知 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 </head>
 <body data-active="msg">
 
@@ -26,7 +26,7 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -60,12 +60,12 @@ function render() {
     <div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px dashed #f3f1f9;align-items:flex-start;
          cursor:${m.is_read ? 'default' : 'pointer'}" onclick="markOne('${m.id}')">
       <span style="width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;
-            justify-content:center;background:#f6efff;color:#a855f7">◔</span>
+            justify-content:center;background:#edf3fe;color:#5f93ff">◔</span>
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px">
           <b style="font-size:13px">${m.title}</b>
           <span class="pill p-gray">${m.type}</span>
-          ${m.is_read ? '' : '<span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span>'}
+          ${m.is_read ? '' : '<span style="width:6px;height:6px;border-radius:50%;background:#e5484d"></span>'}
         </div>
         <div class="hint" style="margin-top:4px">${m.body}</div>
       </div>

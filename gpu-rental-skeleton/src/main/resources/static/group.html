@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>多人拼团 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/ref.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/ref.css?v19">
 </head>
 <body>
 
@@ -16,7 +16,7 @@
       <span class="brand-mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
-          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#cfe0fb" stroke-width="4.8" stroke-linecap="round"/>
         </svg>
       </span>
       <span>
@@ -90,16 +90,16 @@
   </section>
 </main>
 
-<footer style="border-top:1px solid #f3eefc;background:#fff">
+<footer style="border-top:1px solid #eef4fc;background:#fff">
   <div class="wrap" style="padding:26px 24px;display:flex;justify-content:space-between;gap:20px;
-       flex-wrap:wrap;font-size:12px;color:#98a1b3">
-    <div><div style="font-weight:700;color:#0f172a;font-size:13px">TokenArk 创元方舟</div>
+       flex-wrap:wrap;font-size:12px;color:#8a94a3">
+    <div><div style="font-weight:700;color:#141414;font-size:13px">TokenArk 创元方舟</div>
       <div style="margin-top:6px">GPU 算力运营平台 · 私有化交付</div></div>
     <div>© 2026 TokenArk · 演示环境</div>
   </div>
 </footer>
 
-<script src="/biz.js?v17"></script>
+<script src="/biz.js?v19"></script>
 <script>
 /* 机型、库存、成团进度全部来自 /api/catalog/group */
 let DATA = [];
@@ -206,7 +206,7 @@ function join(cardKey) {
   const model = d.model + ' ' + (d.vram || '') + 'G';
   const subtitle = d.model + ' · ' + qty + '张卡 · ' + d.zone;
   const prepay = Number(d.price) * qty;
-  const star = '<span style="color:#ef4444">*</span> ';
+  const star = '<span style="color:#e5484d">*</span> ';
 
   Biz.modal({
     title: '加入拼团',
@@ -218,7 +218,7 @@ function join(cardKey) {
     html:
       '<div style="color:#6b7280;font-size:13px;margin:-10px 0 3px">' + Biz.esc(subtitle) + '</div>' +
       '<div style="color:#9aa1b2;font-size:12px;margin:0 0 14px">填写信息即可加入拼团</div>' +
-      (logged ? '<div class="tip" style="margin:0 0 12px">提交后立即从余额预扣拼团价 <b style="color:#7c3aed">¥' +
+      (logged ? '<div class="tip" style="margin:0 0 12px">提交后立即从余额预扣拼团价 <b style="color:#2b6be6">¥' +
         prepay.toLocaleString('en-US') + '</b>（成团前可在「我的拼团」全额退款）。</div>' : '') +
       '<div class="field"><label>' + star + '姓名</label>' +
         '<input id="jpName" maxlength="32" placeholder="请输入您的姓名" value="' +
@@ -229,7 +229,7 @@ function join(cardKey) {
         '<input id="jpOrg" maxlength="64" placeholder="请输入您的单位/学校名称"></div>' +
       '<div class="field"><label>备注信息（选填）</label>' +
         '<textarea id="jpNote" rows="3" maxlength="200" placeholder="有什么想说的吗?" style="width:100%;' +
-        'border:1px solid #e6dcfa;border-radius:10px;padding:9px 11px;font-size:12.5px;font-family:inherit;resize:vertical"></textarea>' +
+        'border:1px solid #dce8fa;border-radius:10px;padding:9px 11px;font-size:12.5px;font-family:inherit;resize:vertical"></textarea>' +
         '<div style="text-align:right;font-size:11px;color:#9aa1b2;margin-top:4px"><span id="jpCount">0</span> / 200</div></div>',
     ready: box => {
       const ta = box.querySelector('#jpNote');
@@ -353,8 +353,8 @@ function myJoins() {
     }
   }
   function mineRow(j) {
-    const st = { forming: ['值机中', '#a855f7'], formed: ['已成团', '#10b981'],
-                 cancelled: ['已取消', '#98a1b3'], failed: ['成团失败', '#ef4444'] }[j.status] || [j.status, '#98a1b3'];
+    const st = { forming: ['值机中', '#5f93ff'], formed: ['已成团', '#0f9d76'],
+                 cancelled: ['已取消', '#8a94a3'], failed: ['成团失败', '#e5484d'] }[j.status] || [j.status, '#8a94a3'];
     return '<div class="biz-row">' +
       '<div class="t"><b>' + Biz.esc(j.model) + ' ' + j.vram + 'G · ' + Biz.esc(j.zone) + ' × ' + j.qty + ' 张</b>' +
         '<span class="biz-tag" style="color:' + st[1] + ';border-color:' + st[1] + '33;background:' + st[1] + '12">' + st[0] + '</span></div>' +
@@ -408,6 +408,6 @@ async function load() {
 }
 load();
 </script>
-<script src="/nav.js?v17"></script>
+<script src="/nav.js?v19"></script>
 </body>
 </html>

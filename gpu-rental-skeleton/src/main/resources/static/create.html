@@ -5,64 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>创建实例 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
-<link rel="stylesheet" href="/ref.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
+<link rel="stylesheet" href="/ref.css?v19">
 <style>
   .ck-page { max-width: 1280px; margin: 0 auto; padding: 18px 24px 140px; }
   .ck-crumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 14px; }
   .ck-crumb a { color: #64748b; text-decoration: none; }
-  .ck-crumb a:hover { color: #7c3aed; }
-  .ck-crumb .cur { color: #0f172a; font-weight: 600; }
+  .ck-crumb a:hover { color: #2b6be6; }
+  .ck-crumb .cur { color: #141414; font-weight: 600; }
   .ck-warn { display: flex; align-items: center; gap: 6px; color: #dc2626; font-size: 12.5px; margin-left: 12px; }
-  .ck-card { background: #fff; border: 1px solid #eee6fb; border-radius: 14px; padding: 20px 24px; margin-bottom: 16px;
-    box-shadow: 0 6px 20px rgba(124,58,237,.04); }
+  .ck-card { background: #fff; border: 1px solid #e6eefb; border-radius: 14px; padding: 20px 24px; margin-bottom: 16px;
+    box-shadow: 0 6px 20px rgba(43,107,230,.04); }
   .ck-hcard { display: flex; align-items: center; gap: 20px; }
   .ck-logo { width: 78px; height: 78px; border-radius: 12px; background: #f4f1fb; display: flex; align-items: center;
     justify-content: center; flex: none; }
   .ck-logo img { width: 52px; height: 52px; object-fit: contain; }
   .ck-hmain { flex: 1; min-width: 0; }
-  .ck-hname { font-size: 20px; font-weight: 800; color: #0f172a; }
+  .ck-hname { font-size: 20px; font-weight: 800; color: #141414; }
   .ck-halloc { font-size: 12px; color: #94a3b8; margin: 4px 0 12px; }
   .ck-specgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; font-size: 13px; color: #334155; }
-  .ck-specgrid b { color: #0f172a; font-weight: 700; }
+  .ck-specgrid b { color: #141414; font-weight: 700; }
   .ck-specgrid .lbl { color: #64748b; margin-right: 6px; }
-  .ck-hright { text-align: right; flex: none; border-left: 1px dashed #e6dcfa; padding-left: 24px; }
-  .ck-hzone { display: inline-flex; align-items: center; gap: 4px; background: #f6f2fe; color: #7c3aed;
+  .ck-hright { text-align: right; flex: none; border-left: 1px dashed #dce8fa; padding-left: 24px; }
+  .ck-hzone { display: inline-flex; align-items: center; gap: 4px; background: #f2f7fe; color: #2b6be6;
     border-radius: 999px; padding: 4px 12px; font-size: 12px; margin-bottom: 10px; }
-  .ck-hprice { font-size: 26px; font-weight: 800; color: #a21caf; }
+  .ck-hprice { font-size: 26px; font-weight: 800; color: #426eaf; }
   .ck-hprice .u { font-size: 12px; color: #94a3b8; font-weight: 500; margin-left: 2px; }
-  .ck-hprice-lbl { font-size: 12px; color: #a21caf; margin-bottom: 2px; }
+  .ck-hprice-lbl { font-size: 12px; color: #426eaf; margin-bottom: 2px; }
   .ck-h3p { display: flex; gap: 10px; margin-top: 12px; }
-  .ck-h3p > div { border: 1px solid #eee6fb; border-radius: 9px; padding: 6px 12px; text-align: center; min-width: 58px; }
+  .ck-h3p > div { border: 1px solid #e6eefb; border-radius: 9px; padding: 6px 12px; text-align: center; min-width: 58px; }
   .ck-h3p em { display: block; font-style: normal; font-size: 11px; color: #94a3b8; }
-  .ck-h3p b { font-size: 13px; color: #0f172a; }
-  .ck-row { display: flex; gap: 18px; padding: 16px 0; border-bottom: 1px solid #f4f0f9; align-items: flex-start; }
+  .ck-h3p b { font-size: 13px; color: #141414; }
+  .ck-row { display: flex; gap: 18px; padding: 16px 0; border-bottom: 1px solid #f0f4f9; align-items: flex-start; }
   .ck-row:last-child { border-bottom: none; }
   .ck-row > .k { width: 84px; flex: none; font-size: 13px; color: #475569; font-weight: 600; padding-top: 6px; }
   .ck-row > .v { flex: 1; min-width: 0; }
-  .ck-tabs { display: inline-flex; gap: 0; border: 1px solid #e6dcfa; border-radius: 9px; overflow: hidden; }
+  .ck-tabs { display: inline-flex; gap: 0; border: 1px solid #dce8fa; border-radius: 9px; overflow: hidden; }
   .ck-tabs button { border: none; background: #fff; padding: 7px 16px; font-size: 13px; color: #475569; cursor: pointer;
-    border-right: 1px solid #eee6fb; }
+    border-right: 1px solid #e6eefb; }
   .ck-tabs button:last-child { border-right: none; }
-  .ck-tabs button.on { background: #fdf2f8; color: #a21caf; font-weight: 700; box-shadow: inset 0 0 0 1px #f5d0fe; }
+  .ck-tabs button.on { background: #f2f6fd; color: #426eaf; font-weight: 700; box-shadow: inset 0 0 0 1px #d0e2fe; }
   .ck-tabs button:disabled { color: #cbd5e1; cursor: not-allowed; }
-  .ck-link { color: #a21caf; font-size: 13px; margin-left: 14px; cursor: pointer; text-decoration: none; }
+  .ck-link { color: #426eaf; font-size: 13px; margin-left: 14px; cursor: pointer; text-decoration: none; }
   .ck-hint { font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.6; }
   .ck-chips { display: inline-flex; gap: 8px; flex-wrap: wrap; }
-  .ck-chips button { border: 1px solid #e6dcfa; background: #fff; border-radius: 8px; padding: 6px 16px; font-size: 13px;
+  .ck-chips button { border: 1px solid #dce8fa; background: #fff; border-radius: 8px; padding: 6px 16px; font-size: 13px;
     color: #475569; cursor: pointer; }
-  .ck-chips button.on { border-color: #f0abfc; background: #fdf2f8; color: #a21caf; font-weight: 700; }
+  .ck-chips button.on { border-color: #b5d2fc; background: #f2f6fd; color: #426eaf; font-weight: 700; }
   .ck-chips button:disabled { color: #cbd5e1; background: #f8fafc; cursor: not-allowed; }
   .ck-chips button .oos { color: #dc2626; font-size: 11px; margin-left: 4px; }
-  .ck-select { height: 38px; min-width: 320px; max-width: 520px; width: 100%; border: 1px solid #e6dcfa; border-radius: 9px;
-    padding: 0 12px; font-size: 13px; color: #0f172a; background: #fff; }
+  .ck-select { height: 38px; min-width: 320px; max-width: 520px; width: 100%; border: 1px solid #dce8fa; border-radius: 9px;
+    padding: 0 12px; font-size: 13px; color: #141414; background: #fff; }
   .ck-cap { display: inline-flex; align-items: baseline; gap: 8px; font-size: 13px; color: #475569; }
-  .ck-cap b { color: #a21caf; font-size: 16px; }
+  .ck-cap b { color: #426eaf; font-size: 16px; }
   .ck-cap .free { color: #94a3b8; font-size: 12px; }
   .ck-check { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: #334155; }
   .ck-check input { width: 15px; height: 15px; }
-  .ck-num { width: 90px; height: 30px; border: 1px solid #e6dcfa; border-radius: 8px; padding: 0 8px; font-size: 13px;
+  .ck-num { width: 90px; height: 30px; border: 1px solid #dce8fa; border-radius: 8px; padding: 0 8px; font-size: 13px;
     margin-left: 6px; }
   .ck-num:disabled { background: #f8fafc; color: #cbd5e1; }
   .ck-price-note { color: #94a3b8; font-size: 12px; margin-left: 8px; }
@@ -73,24 +73,24 @@
   .ck-pill.no { background: #fef2f2; color: #dc2626; }
   .ck-q { color: #94a3b8; cursor: help; font-size: 11px; }
   .ck-coupon-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-  .ck-coupon { display: flex; align-items: center; justify-content: space-between; border: 1px solid #eee6fb;
-    border-radius: 10px; padding: 10px 14px; background: #fbf8ff; }
-  .ck-coupon .amt { color: #a21caf; font-weight: 800; font-size: 16px; }
-  .ck-coupon .ttl { font-size: 13px; color: #0f172a; font-weight: 600; }
+  .ck-coupon { display: flex; align-items: center; justify-content: space-between; border: 1px solid #e6eefb;
+    border-radius: 10px; padding: 10px 14px; background: #f5f8ff; }
+  .ck-coupon .amt { color: #426eaf; font-weight: 800; font-size: 16px; }
+  .ck-coupon .ttl { font-size: 13px; color: #141414; font-weight: 600; }
   .ck-coupon .exp { font-size: 11px; color: #94a3b8; }
-  .ck-coupon button { border: 1px solid #f0abfc; background: #fff; color: #a21caf; border-radius: 8px; padding: 5px 14px;
+  .ck-coupon button { border: 1px solid #b5d2fc; background: #fff; color: #426eaf; border-radius: 8px; padding: 5px 14px;
     font-size: 12px; cursor: pointer; }
   .ck-coupon button:disabled { border-color: #e2e8f0; color: #cbd5e1; cursor: not-allowed; }
   .ck-empty { color: #94a3b8; font-size: 13px; padding: 8px 0; }
   /* 底部粘性栏 */
-  .ck-bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #eee6fb;
+  .ck-bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #e6eefb;
     box-shadow: 0 -6px 24px rgba(15,23,42,.06); z-index: 40; }
   .ck-bar-in { max-width: 1280px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
-  .ck-sum { display: flex; gap: 0; background: #fdf2f8; border: 1px solid #f5d0fe; border-radius: 10px; overflow: hidden; }
-  .ck-sum > div { padding: 6px 16px; border-right: 1px solid #f5d0fe; }
+  .ck-sum { display: flex; gap: 0; background: #f2f6fd; border: 1px solid #d0e2fe; border-radius: 10px; overflow: hidden; }
+  .ck-sum > div { padding: 6px 16px; border-right: 1px solid #d0e2fe; }
   .ck-sum > div:last-child { border-right: none; }
-  .ck-sum .t { font-size: 11px; color: #c084a6; }
-  .ck-sum .b { font-size: 13px; color: #0f172a; font-weight: 700; }
+  .ck-sum .t { font-size: 11px; color: #5681c0; }
+  .ck-sum .b { font-size: 13px; color: #141414; font-weight: 700; }
   .ck-bar-right { margin-left: auto; display: flex; align-items: center; gap: 18px; }
   .ck-fee { text-align: right; }
   .ck-fee .l { font-size: 12px; color: #64748b; }
@@ -98,12 +98,12 @@
   .ck-fee .v .u { font-size: 12px; color: #94a3b8; font-weight: 500; }
   .ck-bal { font-size: 12px; color: #64748b; }
   .ck-bal .low { color: #dc2626; }
-  .ck-bal a { color: #a21caf; }
+  .ck-bal a { color: #426eaf; }
   .ck-detail-link { font-size: 12px; color: #64748b; cursor: pointer; }
   .ck-btn { height: 42px; padding: 0 26px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; }
-  .ck-btn.ghost { background: #fff; border: 1px solid #e6dcfa; color: #475569; }
-  .ck-btn.go { background: linear-gradient(90deg,#c026d3,#7c3aed); color: #fff; }
-  .ck-btn.go:disabled { background: #f5d0fe; color: #fff; cursor: not-allowed; }
+  .ck-btn.ghost { background: #fff; border: 1px solid #dce8fa; color: #475569; }
+  .ck-btn.go { background: linear-gradient(90deg,#1d54c4,#2b6be6); color: #fff; }
+  .ck-btn.go:disabled { background: #d0e2fe; color: #fff; cursor: not-allowed; }
   .ck-lead-note { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 10px; padding: 12px 16px;
     font-size: 13px; margin-top: 8px; line-height: 1.6; }
 </style>
@@ -116,7 +116,7 @@
       <span class="brand-mark">
         <svg width="17" height="17" viewBox="0 0 40 40" fill="none" aria-hidden="true">
           <path d="M9.5 32 A16 16 0 0 1 16.5 4.5" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
-          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#e9d5ff" stroke-width="4.8" stroke-linecap="round"/>
+          <path d="M22.5 4.5 A16 16 0 0 1 31.5 32" stroke="#cfe0fb" stroke-width="4.8" stroke-linecap="round"/>
         </svg>
       </span>
       <span>
@@ -245,7 +245,7 @@
   </div>
 </div>
 
-<script src="/biz.js?v17"></script>
+<script src="/biz.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const fmt = n => (Number(n) || 0).toFixed(2);
@@ -689,14 +689,14 @@ function costDetail() {
       line('主机费用', '¥' + fmt(cm.hostFee)) +
       (cm.student ? line('学生认证', '本租户已通过认证，单价已按 9 折计入上方') : '') +
       (extraGb() > 0 ? line('数据盘扩容', extraGb() + ' GB × ¥' + S.diskRate + '/GB/日 × ' + fmt(cm.days) + ' 日 = ¥' + fmt(cm.diskFee)) : '') +
-      '<div class="ck-coupon" style="background:#fdf2f8;border-color:#f5d0fe"><div class="ttl">合计预付</div>' +
+      '<div class="ck-coupon" style="background:#f2f6fd;border-color:#d0e2fe"><div class="ttl">合计预付</div>' +
       '<div class="amt">¥' + fmt(cm.total) + '</div></div>' +
       '</div>' +
       '<div class="ck-hint">实际预扣以服务端下单结算为准，释放时按实际秒数多退少补。</div>',
     onOk: (b, c) => c()
   });
 }
-function line(k, v) { return '<div class="ck-coupon" style="background:#fff"><div class="ttl" style="font-weight:500;color:#64748b">' + k + '</div><div style="font-size:13px;color:#0f172a">' + v + '</div></div>'; }
+function line(k, v) { return '<div class="ck-coupon" style="background:#fff"><div class="ttl" style="font-weight:500;color:#64748b">' + k + '</div><div style="font-size:13px;color:#141414">' + v + '</div></div>'; }
 
 // ---------- 到货提醒 modal（与算力市场一致）----------
 function alertStock(model, zone, qty) {
@@ -710,7 +710,7 @@ function alertStock(model, zone, qty) {
         '<div><div class="t">数量阈值</div><div class="b"><input type="number" id="alQty" class="ck-num" min="1" max="64" value="' + (qty || 1) + '" style="margin-left:0;width:64px"> 卡</div></div>' +
       '</div>' +
       '<div class="ck-lead-note" style="background:#fef2f2;border-color:#fecaca;color:#dc2626">' +
-        '当前未绑定微信服务号，推荐 <a href="/account" style="color:#a21caf;text-decoration:underline">绑定微信</a> 后及时接收消息提醒。</div>',
+        '当前未绑定微信服务号，推荐 <a href="/account" style="color:#426eaf;text-decoration:underline">绑定微信</a> 后及时接收消息提醒。</div>',
     onOk: async (box, close) => {
       const q = Math.max(1, Math.min(64, Math.floor(Number(box.querySelector('#alQty').value) || 1)));
       box.busy(true);

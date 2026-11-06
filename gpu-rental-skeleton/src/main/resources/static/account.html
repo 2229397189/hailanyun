@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>账号管理 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v17">
-<link rel="stylesheet" href="/console.css?v17">
+<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/console.css?v19">
 </head>
 <body data-active="acc">
 
@@ -20,7 +20,7 @@
         <div class="card panel">
           <h3>个人资料</h3>
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
-            <span style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#ec4899);
+            <span style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#5f93ff,#5f93ff);
                  color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700"
                  id="ava">U</span>
             <div>
@@ -87,19 +87,19 @@
       <div class="card panel" style="margin-top:14px">
         <h3>安全设置</h3>
         <div class="help-row" style="display:flex;gap:11px;padding:12px 0;border-bottom:1px dashed #f3f1f9">
-          <span style="width:30px;height:30px;border-radius:9px;background:#e8f9f1;color:#10b981;
+          <span style="width:30px;height:30px;border-radius:9px;background:#e6f6f1;color:#0f9d76;
                 display:flex;align-items:center;justify-content:center">◈</span>
           <div><b style="font-size:12.5px;display:block">登录保护</b>
             <span class="hint">连续 5 次密码错误锁定 10 分钟，失败次数与锁定时间落库</span></div>
         </div>
         <div class="help-row" style="display:flex;gap:11px;padding:12px 0;border-bottom:1px dashed #f3f1f9">
-          <span style="width:30px;height:30px;border-radius:9px;background:#eaf2fe;color:#3b82f6;
+          <span style="width:30px;height:30px;border-radius:9px;background:#edf3fe;color:#2b6be6;
                 display:flex;align-items:center;justify-content:center">◉</span>
           <div><b style="font-size:12.5px;display:block">会话时长</b>
             <span class="hint">默认 8 小时；勾选「7 天内免登录」后为 7 天</span></div>
         </div>
         <div class="help-row" style="display:flex;gap:11px;padding:12px 0">
-          <span style="width:30px;height:30px;border-radius:9px;background:#f3ecff;color:#7c3aed;
+          <span style="width:30px;height:30px;border-radius:9px;background:#ecf4ff;color:#2b6be6;
                 display:flex;align-items:center;justify-content:center">⚙</span>
           <div><b style="font-size:12.5px;display:block">密码存储</b>
             <span class="hint">BCrypt 哈希，数据库中不保存明文</span></div>
@@ -109,8 +109,8 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v17"></script>
-<script src="/biz.js?v17"></script>
+<script src="/console-nav.js?v19"></script>
+<script src="/biz.js?v19"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -200,13 +200,13 @@ async function loadCerts() {
   try {
     const cs = await api('/coupons');
     $('#couponList').innerHTML = cs.length ? cs.map(c => `
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px dashed #f0e5ff;
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px dashed #e5efff;
            border-radius:10px;background:#fbf9ff;margin-bottom:8px">
-        <b style="color:#7c3aed;font-size:17px">¥${Number(c.amount_yuan).toFixed(2)}</b>
+        <b style="color:#2b6be6;font-size:17px">¥${Number(c.amount_yuan).toFixed(2)}</b>
         <div style="flex:1"><b style="font-size:12.5px">${c.title}</b>
           <div class="hint">${c.expire_at ? '有效期至 ' + new Date(c.expire_at).toLocaleDateString('zh-CN') : '长期有效'}</div></div>
         ${c.status === 'unused'
-          ? '<button class="sm" style="background:#7c3aed;color:#fff;border:none" onclick="redeem(\'' + c.id + '\')">兑换</button>'
+          ? '<button class="sm" style="background:#2b6be6;color:#fff;border:none" onclick="redeem(\'' + c.id + '\')">兑换</button>'
           : '<span class="pill p-gray">' + (c.status === 'redeemed' ? '已兑换' : '已过期') + '</span>'}
       </div>`).join('') : '<span class="hint">暂无优惠券</span>';
   } catch (e) { console.error(e); }
@@ -234,7 +234,7 @@ async function loadLeads() {
     const ls = await api('/leads');
     box.innerHTML = ls.length ? ls.map(l => {
       const st = LEAD_ST[l.status] || [l.status, 'p-gray'];
-      return '<div style="padding:11px 12px;border:1px solid #f0eaf9;border-radius:10px;margin-bottom:8px">' +
+      return '<div style="padding:11px 12px;border:1px solid #eaf0f9;border-radius:10px;margin-bottom:8px">' +
         '<div style="display:flex;align-items:center;gap:8px">' +
           '<b style="font-size:12.5px">' + Biz.esc(l.source) + (l.model ? ' · ' + Biz.esc(l.model) : '') + '</b>' +
           '<span class="pill ' + st[1] + '">' + st[0] + '</span>' +
