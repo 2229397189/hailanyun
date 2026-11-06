@@ -267,7 +267,8 @@ function render() {
     if (i.status === 'running') {
       act = b('关机', 'poweroff') + b('重启', 'restart') + b('续费', 'openRenew') + b('克隆', 'cloneInst')
         + b('重置', 'resetInst') + b('升降配', 'resizeInst') + b('定时关机', 'schedInst') + b('远程桌面', 'accessInst')
-        + b('存镜像', 'saveImage') + b('数据集', 'datasetInst') + b('释放', 'rel', 'danger');
+        + b('存镜像', 'saveImage') + b('数据集', 'datasetInst') + b('端口', 'exposePort')
+        + b('释放', 'rel', 'danger');
     } else if (i.status === 'stopped') {
       act = b('开机', 'poweron') + b('释放', 'rel', 'danger');
     } else if (i.status !== 'released') {
@@ -284,10 +285,28 @@ function render() {
       <span style="width:130px">${specOf(i)}</span>
       <span style="width:90px">${i.node_id === 'n2' ? '可用区 B' : '可用区 A'}</span>
       <span style="width:190px" class="hint mono" title="${Biz.esc(i.image_ref || '')}">${imgOf(i)}</span>
+      <span style="width:120px" class="hint">${i.dev_node_port ? `<a href="http://localhost:${i.dev_node_port}" target="_blank" style="color:#9333ea">:${i.dev_node_port}</a>` : '—'}</span>
       <span style="width:150px" class="hint">${created}</span>
       <span style="width:480px;text-align:right;white-space:nowrap">${act}</span>
     </div>`;
   }).join('');
+}
+
+
+/* 自定义端口暴露（A-11）：Pod 里跑的服务直接对外，NodePort 由平台分配 */
+async function exposePort(id) {
+  const cur = (ALL.find(x => x.id === id) || {}).dev_port;
+  const tip = '要对外暴露的端口：\n8888 = Jupyter Notebook，6080 = 远程桌面，8080 = 自建 Web 服务';
+  const p = window.prompt(tip, cur || 8888);
+  if (!p) return;
+  const port = Number(p);
+  if (!port || port < 1 || port > 65535) { Biz.toast('端口不合法', 'err'); return; }
+  try {
+    const r = await post('/instances/' + id + '/expose', { port });
+    Biz.toast(r.message || '已暴露', 'ok');
+    if (r.url) window.open(r.url, '_blank');
+    load();
+  } catch (e) { Biz.toast('暴露失败：' + e.message, 'err'); }
 }
 
 async function rel(id) {
@@ -462,14 +481,26 @@ async function datasetInst(id) {
 async function accessInst(id) {
   let a;
   try { a = await api('/instances/' + id + '/access'); } catch (e) { Biz.toast('接入信息加载失败：' + e.message, 'err'); return; }
+  const ports = a.exposed || [];
+  const portRows = ports.length ? `<table style="width:100%;border-collapse:collapse;font-size:11.5px;margin:6px 0 10px">
+      <tr style="color:#94a3b8;text-align:left"><th style="padding:4px 6px">用途</th><th style="padding:4px 6px">容器端口</th><th style="padding:4px 6px">访问地址</th></tr>
+      ${ports.map(p => `<tr>
+        <td style="padding:4px 6px;border-top:1px solid #f1f5f9">${Biz.esc(p.kind)}</td>
+        <td style="padding:4px 6px;border-top:1px solid #f1f5f9" class="mono">${p.port}</td>
+        <td style="padding:4px 6px;border-top:1px solid #f1f5f9">${p.kind === 'SSH'
+          ? '<code class="mono">' + Biz.esc(p.url) + '</code>'
+          : '<a href="' + p.url + '" target="_blank" style="color:#9333ea">' + p.url + '</a>'}</td>
+      </tr>`).join('')}
+    </table>` : '<div style="color:#d97706;margin:6px 0 10px">还没有开放端口。点列表里的「端口」按钮，可开放 22（SSH）、8888（Jupyter Notebook）、6080（远程桌面）。</div>';
   $('#accBody').innerHTML = `
     <div style="font-size:12px;color:#64748b;line-height:1.9">
-      <b style="color:#1f2937">SSH 连接</b><br><code class="mono">${a.ssh}</code><br><br>
-      <b style="color:#1f2937">JupyterLab</b><br><code class="mono">${a.jupyter}</code><br><br>
-      <b style="color:#1f2937">VSCode Web / TensorBoard</b><br>
-      <code class="mono">${a.vscode}</code> · <code class="mono">${a.tensorboard}</code><br><br>
-      <b style="color:#1f2937">远程桌面（GUI）</b><br>
-      ${a.novnc ? '<code class="mono">' + a.novnc + '</code>' : '<span style="color:#d97706">' + a.novncNote + '</span>'}<br><br>
+      <b style="color:#1f2937">已开放端口</b>
+      ${portRows}
+      ${a.ssh ? `<b style="color:#1f2937">SSH 登录</b><br><code class="mono">${Biz.esc(a.ssh)}</code>
+        <button class="ghost sm" style="margin-left:8px" onclick="copyText('${Biz.esc(a.ssh)}')">复制</button><br>
+        <span style="color:#94a3b8;font-size:11px">开发镜像默认 root / tokenark，登录后请先改密码</span><br><br>` : ''}
+      <b style="color:#1f2937">使用步骤</b><br>
+      <ol style="margin:6px 0 12px 18px;font-size:11.5px">${(a.howTo || []).map(x => `<li>${Biz.esc(x)}</li>`).join('')}</ol>
       <b style="color:#1f2937">守护进程（SSH 断开任务继续跑）</b><br><code class="mono">${a.daemonGuide}</code><br><br>
       <b style="color:#1f2937">学术加速</b><br>${a.acceleratorNote}<br><br>
       <b style="color:#1f2937">SSH 公钥</b><br>${Biz.esc(a.sshKeyNote)}<br>

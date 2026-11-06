@@ -635,3 +635,12 @@ ALTER TABLE maas_request_logs ADD COLUMN IF NOT EXISTS upstream VARCHAR(64);
 -- API Key 额度与限流：月度金额上限 + 每分钟请求数
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS quota_yuan DECIMAL(14,6);
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS rpm INT;
+
+-- 一个实例可同时暴露多个端口（Jupyter 8888 + SSH 22 + 桌面 6080）
+CREATE TABLE IF NOT EXISTS instance_ports (
+  instance_id VARCHAR(32) NOT NULL,
+  port        INT         NOT NULL,
+  node_port   INT         NOT NULL,
+  created_at  TIMESTAMP   NOT NULL,
+  PRIMARY KEY (instance_id, port)
+);

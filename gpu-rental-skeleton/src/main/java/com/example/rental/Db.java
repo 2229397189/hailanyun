@@ -1760,4 +1760,28 @@ public class Db {
                   FROM api_keys k WHERE k.tenant_id=? ORDER BY k.created_at DESC
                 """, tenantId);
     }
+
+    // ---------- 实例端口（可多个） ----------
+
+    public List<Map<String, Object>> instancePorts(String instanceId) {
+        return q("SELECT * FROM instance_ports WHERE instance_id=? ORDER BY port", instanceId);
+    }
+
+    public void upsertInstancePort(String instanceId, int port, int nodePort) {
+        update("""
+                INSERT INTO instance_ports(instance_id, port, node_port, created_at) VALUES (?,?,?,?)
+                ON CONFLICT (instance_id, port) DO UPDATE SET node_port=EXCLUDED.node_port
+                """, instanceId, port, nodePort, new Timestamp(System.currentTimeMillis()));
+    }
+
+    public int deleteInstancePort(String instanceId, Integer port) {
+        if (port == null) {
+            return update("DELETE FROM instance_ports WHERE instance_id=?", instanceId);
+        }
+        return update("DELETE FROM instance_ports WHERE instance_id=? AND port=?", instanceId, port);
+    }
+
+    public void deleteAllInstancePorts(String instanceId) {
+        update("DELETE FROM instance_ports WHERE instance_id=?", instanceId);
+    }
 }

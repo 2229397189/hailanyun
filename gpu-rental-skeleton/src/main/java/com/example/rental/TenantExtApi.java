@@ -1027,24 +1027,61 @@ public class TenantExtApi {
                                               @RequestAttribute(value = "authRole", required = false) String role,
                                               @RequestAttribute(value = "authTenant", required = false) String myTenant) {
         Map<String, Object> inst = ownInstance(id, role, myTenant);
+        List<Map<String, Object>> ports = db.instancePorts(id);
+        List<Map<String, Object>> exposed = new ArrayList<>();
+        String ssh = null;
+        String jupyter = null;
+        String desktop = null;
+        for (Map<String, Object> p : ports) {
+            int port = ((Number) p.get("port")).intValue();
+            int np = ((Number) p.get("node_port")).intValue();
+            String url = urlOf(port, np);
+            String kind;
+            if (port == 22) {
+                kind = "SSH";
+                ssh = "ssh -p " + np + " root@localhost";
+            } else if (port == 8888) {
+                kind = "Jupyter Notebook";
+                jupyter = url;
+            } else if (port == 6080) {
+                kind = "远程桌面";
+                desktop = url;
+            } else {
+                kind = "自定义服务";
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("port", port);
+            row.put("nodePort", np);
+            row.put("kind", kind);
+            row.put("url", url);
+            exposed.add(row);
+        }
         Map<String, Object> out = new LinkedHashMap<>();
-        String ip = "10.0.0.11";
-        String sshPort = "3" + Math.abs(id.hashCode() % 10000);
-        out.put("ssh", "ssh root@" + ip + " -p " + sshPort);
-        out.put("jupyter", "http://" + ip + ":" + (30000 + Math.abs(id.hashCode() % 999)) + "/lab");
-        out.put("vscode", "http://" + ip + ":" + (31000 + Math.abs(id.hashCode() % 999)) + "/");
-        out.put("tensorboard", "http://" + ip + ":" + (32000 + Math.abs(id.hashCode() % 999)) + "/");
-        out.put("daemonGuide", "SSH 断开后任务继续运行：nohup python train.py > train.log 2>&1 & 或 tmux new -s train");
-        String novnc = db.setting("console.novnc_url");
-        out.put("novnc", (novnc == null || novnc.isBlank())
-                ? "" : novnc.replace("{ip}", ip).replace("{id}", id));
-        out.put("novncNote", (novnc == null || novnc.isBlank())
-                ? "远程桌面需真实集群部署 noVNC 组件，当前演示环境未接入" : "远程桌面入口");
-        out.put("accelerator", db.setting("academic.accelerator"));
-        out.put("acceleratorNote", "学术加速：pip/conda 与 GitHub/HuggingFace 走镜像通道（"
-                + db.setting("academic.accelerator") + "），实例内已配置环境变量");
-        out.put("note", "演示环境：连接命令按实例分配端口展示，真实开放需集群 Ingress/端口转发组件");
         out.put("status", inst.get("status"));
+        out.put("host", "localhost");
+        out.put("exposed", exposed);
+        out.put("ssh", ssh);
+        out.put("jupyter", jupyter);
+        out.put("desktop", desktop);
+        List<String> howTo = new ArrayList<>();
+        if (exposed.isEmpty()) {
+            howTo.add("该实例尚未暴露任何端口。点「端口」按钮暴露：22=SSH，8888=Jupyter Notebook，6080=远程桌面。");
+        } else {
+            if (ssh != null) {
+                howTo.add("SSH 登录：" + ssh + "（开发镜像默认 root / tokenark，登录后请立即改密码）");
+            }
+            if (jupyter != null) {
+                howTo.add("浏览器打开 Jupyter Notebook：" + jupyter + "（可直接新建 .ipynb 跑 Python，进程日志在 /tmp/jobs/jupyter.log）");
+            }
+            if (desktop != null) {
+                howTo.add("浏览器打开远程桌面：" + desktop);
+            }
+        }
+        howTo.add("常驻任务：POST /api/instances/" + id + "/jobs，命令用 nohup 托管，断开不影响，日志在 /tmp/jobs/<名称>.log");
+        out.put("howTo", howTo);
+        out.put("daemonGuide", "nohup python train.py > train.log 2>&1 &  或  tmux new -s train");
+        out.put("accelerator", db.setting("academic.accelerator"));
+out.put("status", inst.get("status"));
 
         // 公钥：租户名下的 authorized_keys 台账，接入页直接给出可粘贴内容，便于排查免密登录
         List<Map<String, Object>> keys = db.mySshKeys(String.valueOf(inst.get("tenant_id")));
@@ -1222,57 +1259,75 @@ public class TenantExtApi {
         if (port < 1 || port > 65535) {
             throw new RentalService.BizException("端口需在 1~65535");
         }
+        for (Map<String, Object> p : db.instancePorts(id)) {
+            if (((Number) p.get("port")).intValue() == port) {
+                int np = ((Number) p.get("node_port")).intValue();
+                Map<String, Object> again = new LinkedHashMap<>();
+                again.put("port", port);
+                again.put("nodePort", np);
+                again.put("url", urlOf(port, np));
+                again.put("reused", true);
+                again.put("message", "该端口已暴露：" + urlOf(port, np));
+                return again;
+            }
+        }
         String ns = "tenant-" + inst.get("tenant_id");
         String pod = String.valueOf(inst.get("pod_name"));
         int nodePort = k8s.exposePort(ns, pod, port);
         if (nodePort == 0) {
             throw new RentalService.BizException("端口暴露失败：NodePort 30080-30099 已用尽或集群拒绝");
         }
-        db.setInstancePort(id, port, nodePort);
-        String url = "http://" + db.nodeExternalHost() + ":" + nodePort;
+        db.upsertInstancePort(id, port, nodePort);
+        if (port == 8888) {
+            db.setInstancePort(id, port, nodePort);
+        }
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("instanceId", id);
         res.put("port", port);
         res.put("nodePort", nodePort);
-        res.put("url", url);
-        res.put("message", "已暴露：" + url);
+        res.put("url", urlOf(port, nodePort));
+        res.put("message", "已暴露：" + urlOf(port, nodePort));
         return res;
     }
 
     @DeleteMapping("/instances/{id}/expose")
     public Map<String, Object> unexpose(@PathVariable String id,
+                                        @RequestParam(required = false) Integer port,
                                         @RequestAttribute(value = "authRole", required = false) String role,
                                         @RequestAttribute(value = "authTenant", required = false) String myTenant) {
         Map<String, Object> inst = ownInstance(id, role, myTenant);
-        Object p = inst.get("dev_port");
-        if (p instanceof Number) {
-            k8s.removePort("tenant-" + inst.get("tenant_id"), String.valueOf(inst.get("pod_name")),
-                    ((Number) p).intValue());
+        String ns = "tenant-" + inst.get("tenant_id");
+        String pod = String.valueOf(inst.get("pod_name"));
+        List<Map<String, Object>> list = db.instancePorts(id);
+        int removed = 0;
+        for (Map<String, Object> p : list) {
+            int lp = ((Number) p.get("port")).intValue();
+            if (port != null && lp != port) {
+                continue;
+            }
+            k8s.removePort(ns, pod, lp);
+            removed++;
         }
-        db.setInstancePort(id, null, null);
-        return Map.of("message", "端口暴露已撤销");
+        db.deleteInstancePort(id, port);
+        if (port == null) {
+            db.setInstancePort(id, null, null);
+        }
+        return Map.of("removed", removed, "message", "已撤销 " + removed + " 个端口暴露");
     }
 
-    /** 设置 Key 的月度额度与速率限制（null 表示不限制） */
-    @PostMapping("/api-keys/{id}/limits")
-    public Map<String, Object> setKeyLimits(@PathVariable String id, @RequestBody Map<String, Object> body,
-                                            @RequestAttribute(value = "authRole", required = false) String role,
-                                            @RequestAttribute(value = "authTenant", required = false) String myTenant) {
-        String tenantId = myTenant(role, myTenant, null);
-        BigDecimal quota = body.get("quotaYuan") == null ? null
-                : new BigDecimal(String.valueOf(body.get("quotaYuan")));
-        Integer rpm = body.get("rpm") == null ? null : ((Number) body.get("rpm")).intValue();
-        if (quota != null && quota.signum() < 0) {
-            throw new RentalService.BizException("额度不能为负");
+    /** 端口到可访问地址：Jupyter Notebook 给 /tree，桌面给 /vnc.html */
+    private static String urlOf(int port, int nodePort) {
+        if (port == 22) {
+            return "ssh -p " + nodePort + " root@localhost";
         }
-        if (rpm != null && (rpm < 0 || rpm > 100000)) {
-            throw new RentalService.BizException("速率需在 0~100000 次/分钟");
+        String base = "http://localhost:" + nodePort;
+        if (port == 8888) {
+            // 镜像里装的是 Jupyter Notebook 6.4（Debian 官方包），入口是 /tree
+            return base + "/tree";
         }
-        int n = db.setKeyLimits(id, tenantId, quota, rpm);
-        if (n == 0) {
-            throw new RentalService.BizException("Key 不存在");
+        if (port == 6080) {
+            return base + "/vnc.html";
         }
-        return Map.of("id", id, "message", "限制已更新：额度 " + (quota == null ? "不限" : quota + " 元/月")
-                + " · 速率 " + (rpm == null ? "不限" : rpm + " 次/分钟"));
+        return base + "/";
     }
 }
