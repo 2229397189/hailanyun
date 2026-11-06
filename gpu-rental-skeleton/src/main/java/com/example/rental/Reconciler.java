@@ -103,10 +103,15 @@ public class Reconciler {
         }
     }
 
-    /** 重置系统：重置动作秒级完成，恢复到运行（真实集群为镜像快照回滚，此处按生命周期模拟） */
+    /** 重置后必须等重建的 Pod 真的 Ready 才恢复 running，避免状态先于容器就绪 */
     private void finishResetting() {
         for (Map<String, Object> inst : db.instancesByStatus("resetting")) {
-            db.markRunning((String) inst.get("id"));
+            String pod = (String) inst.get("pod_name");
+            String ns = "tenant-" + inst.get("tenant_id");
+            if (pod != null && k8s.ready(ns, pod)) {
+                db.markRunning((String) inst.get("id"));
+                log.info("实例 {} 系统重置完成，容器已就绪", inst.get("id"));
+            }
         }
     }
 

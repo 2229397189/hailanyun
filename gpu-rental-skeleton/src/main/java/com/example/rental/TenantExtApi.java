@@ -1178,6 +1178,42 @@ out.put("status", inst.get("status"));
         return db.q("SELECT * FROM approvals WHERE tenant_id=? ORDER BY created_at DESC LIMIT 50", tenantId);
     }
 
+    // ============================================================ 交互式终端（真实 exec）
+
+    /**
+     * 在实例容器内执行命令并返回真实 stdout/stderr。
+     * 等价于 kubectl exec -n <ns> <pod> -- sh -c <command>，供 Web 终端使用。
+     * 所有命令写审计；仅运行中的实例可执行。
+     */
+    @PostMapping("/instances/{id}/exec")
+    public Map<String, Object> execCommand(@PathVariable String id, @RequestBody Map<String, Object> body,
+                                           @RequestAttribute(value = "authRole", required = false) String role,
+                                           @RequestAttribute(value = "authTenant", required = false) String myTenant,
+                                           @RequestAttribute(value = "authUsername", required = false) String actor) {
+        Map<String, Object> inst = ownInstance(id, role, myTenant);
+        if (!"running".equals(String.valueOf(inst.get("status")))) {
+            throw new RentalService.BizException("仅运行中的实例可以执行命令，当前状态 " + inst.get("status"));
+        }
+        String command = String.valueOf(body.getOrDefault("command", "")).trim();
+        if (command.isEmpty()) {
+            throw new RentalService.BizException("命令不能为空");
+        }
+        if (command.length() > 2000) {
+            throw new RentalService.BizException("命令过长（上限 2000 字符）");
+        }
+        String ns = "tenant-" + inst.get("tenant_id");
+        String pod = String.valueOf(inst.get("pod_name"));
+        long t0 = System.currentTimeMillis();
+        String out = k8s.exec(ns, pod, "sh", "-c", command);
+        db.insertAudit(actor == null ? "tenant" : actor, "INSTANCE_EXEC", id, command);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("instanceId", id);
+        res.put("command", command);
+        res.put("output", out == null ? "" : out);
+        res.put("latencyMs", System.currentTimeMillis() - t0);
+        return res;
+    }
+
     // ============================================================ 常驻任务（守护进程）
 
     /** 在实例内起一个常驻进程：nohup 托管，日志落 /tmp/jobs/<name>.log，断开也不影响 */

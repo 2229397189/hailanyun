@@ -444,7 +444,7 @@ public class RentalService {
         return Map.of("status", "provisioning", "message", "实例重启中，就绪后自动恢复运行");
     }
 
-    /** 重置系统：系统盘还原为镜像初始状态（真实集群需镜像快照组件，此处按生命周期模拟） */
+    /** 重置系统：删 Pod 用原镜像重建（容器文件系统即系统盘，重建=还原），数据盘 PVC 同名保留 */
     public Map<String, Object> resetSystem(String instanceId) {
         Map<String, Object> inst = db.instance(instanceId);
         if (inst == null) {
@@ -453,10 +453,19 @@ public class RentalService {
         if (!"running".equals(String.valueOf(inst.get("status")))) {
             throw new BizException("仅运行中的实例可以重置系统");
         }
+        String ns = "tenant-" + inst.get("tenant_id");
+        String pod = (String) inst.get("pod_name");
+        if (!k8s.delete(ns, pod)) {
+            throw new BizException("Pod 仍在删除中，请稍后重试");
+        }
+        // 数据盘 PVC 名字由 podName 派生，重建同名 Pod 会自动挂回同一块盘
+        k8s.create(ns, pod, ((Number) inst.get("gpu_count")).intValue(),
+                (String) inst.get("image_ref"), diskGbOf(inst),
+                db.isRealGpuNode((String) inst.get("node_id")));
         db.setStatus(instanceId, "resetting");
         db.notifyInstance((String) inst.get("tenant_id"), instanceId, "实例", "实例重置中",
-                "实例 " + instanceId + " 系统盘重置中，约数秒后恢复。数据盘不受影响。");
-        return Map.of("status", "resetting", "message", "系统盘重置中，数据盘数据不受影响");
+                "实例 " + instanceId + " 系统盘已按镜像重建，数据盘保留，就绪后恢复运行。");
+        return Map.of("status", "resetting", "message", "系统盘已按镜像重建，数据盘保留，就绪后恢复运行");
     }
 
     /** 克隆：按原规格与剩余时长开新实例（新订单、新计费），原实例不动 */

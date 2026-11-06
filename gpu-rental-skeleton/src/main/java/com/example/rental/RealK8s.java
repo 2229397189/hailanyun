@@ -107,9 +107,20 @@ public class RealK8s implements K8sClient, ClusterOps {
         ensureNamespace(namespace);
         String q = String.valueOf(gpuCount);
         List<io.fabric8.kubernetes.api.model.Volume> volumes = new ArrayList<>();
-        // 只有真实节点才申请并挂载 GPU：模拟台账节点没有物理卡，申请了会永远 Pending
+        // GPU 分两件事：
+        //  ① 挂载驱动库 / nvidia-smi：只要集群里真有 GPU，GPU 实例就应能看到卡（用户要能操控显卡）
+        //  ② 申请 nvidia.com/gpu 资源：只有登记在真实节点上的卡才申请，避免台账虚拟卡超卖导致 Pod Pending
         boolean hasGpu = gpuCount > 0;
-        boolean needGpu = hasGpu && realGpuNode;
+        boolean clusterHasGpu = false;
+        try {
+            clusterHasGpu = client.nodes().list().getItems().stream().anyMatch(n ->
+                    n.getStatus() != null && n.getStatus().getAllocatable() != null
+                            && n.getStatus().getAllocatable().containsKey("nvidia.com/gpu"));
+        } catch (Exception ignored) {
+            // 查不到节点能力时退回原逻辑，不影响建实例
+        }
+        boolean needGpu = hasGpu && (realGpuNode || clusterHasGpu);
+        boolean requestGpu = hasGpu && realGpuNode;
         // 用户选的镜像要真的跑起来：按 image.map 映射成可拉取地址，没配映射才用默认镜像
         String podImage = resolveImage(imageRef, hasGpu ? gpuImage : image);
         ContainerBuilder container = new ContainerBuilder()
@@ -121,7 +132,7 @@ public class RealK8s implements K8sClient, ClusterOps {
                 // 用户选的镜像写进容器环境，exec 进 Pod 就能核对「我选的是哪个」，不是只存在数据库里
                 .addToEnv(new EnvVarBuilder().withName("TOKENARK_IMAGE")
                         .withValue(imageRef == null ? "" : imageRef).build());
-        if (needGpu) {
+        if (requestGpu) {
             container.withNewResources()
                       .addToRequests("nvidia.com/gpu", new Quantity(q))
                       .addToLimits("nvidia.com/gpu", new Quantity(q))

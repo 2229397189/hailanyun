@@ -79,7 +79,7 @@
      align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:14px;padding:20px;width:440px;max-height:80vh;overflow:auto;
        box-shadow:0 18px 50px rgba(15,23,42,.28)">
-    <h3 style="margin:0 0 12px;font-size:15px">远程桌面 · 开发接入</h3>
+    <h3 id="accTitle" style="margin:0 0 12px;font-size:15px">远程桌面 · 开发接入</h3>
     <div id="accBody">加载中…</div>
     <div style="display:flex;justify-content:flex-end;margin-top:12px">
       <button class="sm ghost" onclick="closeAcc()">关闭</button>
@@ -268,6 +268,7 @@ function render() {
       act = b('关机', 'poweroff') + b('重启', 'restart') + b('续费', 'openRenew') + b('克隆', 'cloneInst')
         + b('重置', 'resetInst') + b('升降配', 'resizeInst') + b('定时关机', 'schedInst') + b('远程桌面', 'accessInst')
         + b('存镜像', 'saveImage') + b('数据集', 'datasetInst') + b('端口', 'exposePort')
+        + b('终端', 'openTerm')
         + b('释放', 'rel', 'danger');
     } else if (i.status === 'stopped') {
       act = b('开机', 'poweron') + b('释放', 'rel', 'danger');
@@ -534,7 +535,68 @@ function copyText(t) {
   navigator.clipboard.writeText(t).then(() => Biz.toast('已复制到剪贴板', 'ok'))
     .catch(() => Biz.toast('复制失败，请手动选中复制', 'err'));
 }
-function closeAcc() { $('#accModal').style.display = 'none'; }
+function closeAcc() {
+  $('#accModal').style.display = 'none';
+  const box = $('#accModal').firstElementChild;
+  if (box) box.style.width = '440px';
+  if ($('#accTitle')) $('#accTitle').textContent = '远程桌面 · 开发接入';
+}
+
+/* ---------- Web 终端：真在实例容器内执行命令（A-8 生命周期可操作） ---------- */
+let TERM_ID = null;
+const TERM_HISTORY = [];
+let TERM_HIDX = 0;
+function openTerm(id) {
+  TERM_ID = id;
+  const box = $('#accModal').firstElementChild;
+  if (box) box.style.width = '820px';
+  if ($('#accTitle')) $('#accTitle').textContent = '实例终端 · ' + id;
+  $('#accBody').innerHTML = `
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">
+      命令在该实例的容器内真实执行（等价于 kubectl exec）。快捷：
+      <button class="ghost sm" onclick="runTerm('nvidia-smi')">GPU 状态</button>
+      <button class="ghost sm" onclick="runTerm('df -h /data; free -h')">资源占用</button>
+      <button class="ghost sm" onclick="runTerm('ls -la /data')">查看数据盘</button>
+    </div>
+    <div id="termOut" style="background:#0f172a;color:#e2e8f0;border-radius:9px;padding:12px;
+         height:320px;overflow:auto;font:12px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap">已连接实例 ${id}。输入命令后回车执行。
+</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <span class="mono" style="color:#7c3aed;font-size:12px;padding-top:8px">$</span>
+      <input id="termIn" style="flex:1" placeholder="例如：nvidia-smi 或 python train.py --epochs 10"
+             onkeydown="termKey(event)">
+      <button class="sm" onclick="runTerm()">执行</button>
+    </div>`;
+  $('#accModal').style.display = 'flex';
+  setTimeout(() => { const el = $('#termIn'); if (el) el.focus(); }, 100);
+}
+function termKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); runTerm(); }
+  else if (e.key === 'ArrowUp' && TERM_HISTORY.length) {
+    TERM_HIDX = Math.max(0, TERM_HIDX - 1);
+    $('#termIn').value = TERM_HISTORY[TERM_HIDX] || '';
+  } else if (e.key === 'ArrowDown' && TERM_HISTORY.length) {
+    TERM_HIDX = Math.min(TERM_HISTORY.length, TERM_HIDX + 1);
+    $('#termIn').value = TERM_HISTORY[TERM_HIDX] || '';
+  }
+}
+async function runTerm(preset) {
+  const NL = String.fromCharCode(10);
+  const el = $('#termIn');
+  const cmd = preset || (el ? el.value.trim() : '');
+  if (!cmd || !TERM_ID) return;
+  const out = $('#termOut');
+  out.textContent += NL + '$ ' + cmd + NL;
+  if (el && !preset) { TERM_HISTORY.push(cmd); TERM_HIDX = TERM_HISTORY.length; el.value = ''; }
+  try {
+    const r = await post('/instances/' + TERM_ID + '/exec', {command: cmd});
+    out.textContent += (r.output || '(无输出)') + NL;
+    if (r.latencyMs) out.textContent += '[' + r.latencyMs + ' ms]' + NL;
+  } catch (e) {
+    out.textContent += 'ERROR: ' + e.message + NL;
+  }
+  out.scrollTop = out.scrollHeight;
+}
 
 /* ---------------- 续费 ---------------- */
 let renewing = null;
