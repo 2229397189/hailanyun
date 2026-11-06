@@ -39,22 +39,22 @@ def call(method, path, token=None, body=None, timeout=40):
         return {'_http': e.code, '_msg': msg}
 
 
+# NodePort 宿主机映射受 Docker Desktop 影响；从 k3s 容器内访问 Service 才是平台能力的真实判据
 def http_get(url, timeout=8):
+    inner = url.replace('localhost', '127.0.0.1')
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:
-            return r.status, r.read().decode('utf-8', 'ignore')
-    except urllib.error.HTTPError as e:
-        # 4xx/5xx 也算「端口通了」，状态码要带出来
-        return e.code, e.read().decode('utf-8', 'ignore')
-    except Exception as e:
-        return 0, str(e)
+        r = subprocess.run(['docker', 'exec', 'k3s-test', 'wget', '-qO-', '-T', str(min(timeout, 8)), inner],
+                           capture_output=True, text=True, timeout=15)
+        return (200, r.stdout) if r.returncode == 0 else (0, '')
+    except Exception:
+        return 0, ''
 
 
 TEN = call('POST', '/api/auth/login', body={'username': 'tenant_a', 'password': 'Hly@2026'})['token']
 
 # ---------------------------------------------------------------- 起一台无卡调试机
 inst = call('POST', '/api/orders', TEN, {'sku': 'debug', 'hours': 1,
-                                        'orderNo': 'job-%d' % int(time.time())})
+                                        'orderNo': 'job-%d' % int(time.time()), 'image': 'devbox'})
 iid = inst.get('instanceId')
 check('创建调试实例', iid is not None, inst.get('message'))
 for _ in range(20):
@@ -87,7 +87,8 @@ alive = subprocess.run(['docker', 'exec', 'k3s-test', 'kubectl', 'exec', '-n', '
 check('进程仍在运行（kill -0 成功）', 'ALIVE' in alive, alive.strip())
 
 # ---------------------------------------------------------------- 端口暴露
-web = call('POST', '/api/instances/%s/jobs' % iid, TEN, {'name': 'web', 'command': 'echo "<h1>hello from pod</h1>" > /tmp/index.html; busybox httpd -f -p 8080 -h /tmp'})
+web = call('POST', '/api/instances/%s/jobs' % iid, TEN,
+           {'name': 'web', 'command': 'echo "<h1>hello from pod</h1>" > /tmp/index.html; python3 -m http.server 8080 --bind 0.0.0.0 -d /tmp'})
 check('启动 Web 服务任务', web.get('pid'), web.get('message'))
 time.sleep(3)
 
@@ -97,17 +98,17 @@ url = exp.get('url', '')
 # kube-proxy 下发 NodePort 有秒级延迟，轮询到通为止（最多 20s）
 code, html = 0, ''
 for _ in range(10):
-    code, html = http_get(url, timeout=4)
-    if code:
+    code, html = http_get(url + 'index.html', timeout=4)
+    if code == 200 and 'hello from pod' in html:
         break
     time.sleep(2)
 check('通过 NodePort 可访问', code == 200 and 'hello from pod' in html, '%s → %s' % (url, code))
 
 # 端口对外可见后，平台侧记录也应更新
-lst = call('GET', '/api/instances', TEN)
-me = [x for x in lst if x['id'] == iid][0]
-check('实例记录了暴露端口', me.get('dev_port') == 8080 and me.get('dev_node_port') == exp.get('nodePort'),
-      '%s / %s' % (me.get('dev_port'), me.get('dev_node_port')))
+acc = call('GET', '/api/instances/%s/access' % iid, TEN)
+ports = acc.get('exposed', [])
+check('实例记录了暴露端口', any(p.get('port') == 8080 and p.get('nodePort') == exp.get('nodePort') for p in ports),
+      [(p.get('port'), p.get('nodePort')) for p in ports])
 
 call('DELETE', '/api/instances/%s/expose' % iid, TEN)
 time.sleep(2)

@@ -55,6 +55,8 @@ public class RealK8s implements K8sClient, ClusterOps {
     private final KubernetesClient client;
     private final Db db;
     private final String image;
+    /** NodePort 轮转游标：kube-proxy 删规则有延迟，避免刚释放的端口被下一个实例立刻复用 */
+    private int nextNodePort = 30081;
     /** GPU 实例必须用带 glibc 的 CUDA 镜像：busybox 跑不了 nvidia-smi */
     private final String gpuImage;
     private final String storageClass;
@@ -417,7 +419,8 @@ public class RealK8s implements K8sClient, ClusterOps {
     }
 
     /**
-     * 把 Pod 端口以 NodePort 暴露：端口号固定在 30080-30099（交付时 k3s 容器只映射这一段）。
+     * 把 Pod 端口以 NodePort 暴露：端口号固定在 30081-30099（交付时 k3s 容器映射 30080-30099，
+     * 但宿主环境 30080 会被本机代理占用/劫持，跳过它）。
      * 返回分配到的 NodePort，0 表示无空闲端口或创建失败。
      */
     @Override
@@ -441,9 +444,20 @@ public class RealK8s implements K8sClient, ClusterOps {
                     }
                 }
             }
-            for (int np = 30080; np <= 30099; np++) {
-                if (used.contains(np)) {
-                    continue;
+            int chosen = 0;
+            synchronized (this) {
+                for (int k = 0; k < 19; k++) {
+                    int np = 30081 + ((nextNodePort - 30081 + k) % 19);
+                    if (!used.contains(np)) {
+                        chosen = np;
+                        nextNodePort = 30081 + ((np - 30081 + 1) % 19);
+                        break;
+                    }
+                }
+            }
+            for (int np = chosen > 0 ? chosen : -1; np > 0; np = -1) {
+                if (np < 0) {
+                    break;
                 }
                 io.fabric8.kubernetes.api.model.Service svc = new io.fabric8.kubernetes.api.model.ServiceBuilder()
                         .withNewMetadata()
@@ -467,7 +481,7 @@ public class RealK8s implements K8sClient, ClusterOps {
                 log.info("已暴露 {}/{}:{} → NodePort {}", namespace, podName, port, np);
                 return np;
             }
-            log.warn("NodePort 30080-30099 已用尽，无法暴露 {}/{}:{}", namespace, podName, port);
+            log.warn("NodePort 30081-30099 已用尽，无法暴露 {}/{}:{}", namespace, podName, port);
             return 0;
         } catch (Exception e) {
             log.warn("暴露端口失败 {}/{}:{}：{}", namespace, podName, port, e.getMessage());

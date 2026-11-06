@@ -641,6 +641,11 @@ public class RentalService {
             db.setStatus(instanceId, "releasing");
             throw new BizException("Pod 仍在 Terminating，实例置为 releasing，等待巡检重试（不会丢卡，也不会重复计费）");
         }
+        // 释放时一并撤销端口暴露：否则 NodePort Service 会残留，后续实例复用同一端口时转发到空后端
+        for (Map<String, Object> p : db.instancePorts(instanceId)) {
+            k8s.removePort(namespace, podName, ((Number) p.get("port")).intValue());
+        }
+        db.deleteAllInstancePorts(instanceId);
         // 释放 = 数据一起销毁，这是和关机最大的区别
         k8s.deleteData(namespace, podName);
         return settleAndRelease(inst);

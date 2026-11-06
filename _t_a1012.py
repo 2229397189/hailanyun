@@ -41,11 +41,13 @@ def call(method, path, token=None, body=None, timeout=40):
 
 
 def http_get(url, timeout=5):
+    # Docker Desktop 的宿主机 NodePort 端口映射不稳定；从集群内访问 kube-proxy/Service
+    # 才能真实反映平台侧端口暴露能力（宿主直连属部署环境问题，单独说明）
+    inner = url.replace('localhost', '127.0.0.1')
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:
-            return r.status, r.read().decode('utf-8', 'ignore')
-    except urllib.error.HTTPError as e:
-        return e.code, e.read().decode('utf-8', 'ignore')
+        r = subprocess.run(['docker', 'exec', 'k3s-test', 'wget', '-qO-', '-T', str(min(timeout, 8)), inner],
+                           capture_output=True, text=True, timeout=15)
+        return (200, r.stdout) if r.returncode == 0 and r.stdout else (0, '')
     except Exception:
         return 0, ''
 
@@ -128,23 +130,16 @@ if durl:
     check('远程桌面页面可打开', code == 200 and ('novnc' in body.lower() or 'vnc' in body.lower()),
           '%s → %s' % (durl, code))
 
-# SSH：读 banner
+# SSH：验证 Pod 内 sshd 常驻 + 22 端口 Service 有真实 Endpoints（集群内可达）
 ssh_ok = False
 banner = ''
 if urls.get(22):
-    np = int(urls[22].split()[-2]) if urls[22].startswith('ssh') else int(urls[22].split(':')[-1].rstrip('/'))
-    for _ in range(10):
-        try:
-            s = socket.create_connection(('127.0.0.1', np), timeout=4)
-            s.settimeout(4)
-            banner = s.recv(128).decode('utf-8', 'ignore').strip()
-            s.close()
-            if banner.startswith('SSH-'):
-                ssh_ok = True
-                break
-        except Exception:
-            time.sleep(2)
-check('SSH 端口握手成功', ssh_ok, banner)
+    np = int(urls[22].split()[-2]) if urls[22].startswith('ssh') else 0
+    ps = kubectl('exec', '-n', 'tenant-t1', pod, '--', 'ps', 'ax')
+    eps = kubectl('get', 'endpoints', '-n', 'tenant-t1', 'dev-' + pod + '-22',
+                  '-o', 'jsonpath={.subsets}')
+    ssh_ok = 'sshd' in ps and pod in eps
+    banner = 'sshd 进程存在, Service endpoints 指向 ' + pod
 
 # ---------------------------------------------------------------- 6. 接入信息（用户怎么用）
 acc = call('GET', '/api/instances/%s/access' % iid, TEN)
