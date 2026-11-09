@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>B端裸金属 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/ref.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/ref.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
 </head>
 <body>
 
@@ -26,7 +27,7 @@
     </a>
     <nav class="navlinks">
       <a href="/index">首页</a>
-      <a href="/market">算力市场</a>
+      <a href="/portal">算力市场</a>
       <a href="/llm-api">大模型 API</a>
       <a href="/solutions">解决方案</a>
       <a href="/about">关于我们</a>
@@ -46,6 +47,9 @@
         <span class="bm-badge"><i></i>物理机资源池 · 现货充足</span>
         <h1 class="bm-title">赋能科研与创新的<br><em>高性能裸金属矩阵</em></h1>
         <p class="bm-lead">专为深度学习、大模型训练及企业级推理打造。告别虚拟化损耗，独享 RTX 5090 / H800 物理算力，秒级部署，即刻开跑。</p>
+        <p class="hint" style="margin-top:8px;font-size:12px;color:#8b93a1">
+          POC 阶段以「整机独占 8 卡」形态交付（同一节点独享整机，无需额外采购硬件即可开通）；真裸金属需硬件到位后提供，以合同为准，不在 POC 现场承诺。
+        </p>
       </div>
 
       <div class="bm-contact">
@@ -90,7 +94,7 @@
   </div>
 </footer>
 
-<script src="/biz.js?v19"></script>
+<script src="/biz.js?v46"></script>
 <script>
 /* 机型与价格全部来自 /api/catalog/baremetal，页面不存业务数据 */
 let ROWS = [];
@@ -195,6 +199,7 @@ function apply(model, zone) {
   });
 }
 </script>
-<script src="/nav.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/nav.js?v46"></script>
 </body>
 </html>

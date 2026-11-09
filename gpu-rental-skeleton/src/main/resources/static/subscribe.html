@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>订阅推送 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/console.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/console.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<link rel="stylesheet" href="/autodl.css?v46">
 <style>
 .ch{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #f1eef8;border-radius:11px;
   background:#fcfbff;margin-bottom:9px}
@@ -23,7 +25,7 @@
 .msg-row:last-child{border-bottom:none}
 </style>
 </head>
-<body data-active="subscribe">
+<body data-active="subscribe" class="adl console-page">
 
 <div class="console">
   <aside class="cs" id="cside"></aside>
@@ -66,8 +68,9 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v19"></script>
-<script src="/biz.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/console-nav.js?v46"></script>
+<script src="/biz.js?v46"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';

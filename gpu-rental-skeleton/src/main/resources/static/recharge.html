@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>在线充值 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/console.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/console.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<link rel="stylesheet" href="/autodl.css?v46">
 <style>
 .recharge{max-width:720px;margin:0 auto}
 .amt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -26,7 +28,7 @@
 .pay-btn{width:100%;height:44px;border-radius:11px;font-size:14px;font-weight:600;margin-top:6px}
 </style>
 </head>
-<body data-active="recharge">
+<body data-active="recharge" class="adl console-page">
 
 <div class="console">
   <aside class="cs" id="cside"></aside>
@@ -72,7 +74,8 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/console-nav.js?v46"></script>
 <script>
 const $ = s => document.querySelector(s);
 const fmt = n => (Number(n) || 0).toFixed(2);

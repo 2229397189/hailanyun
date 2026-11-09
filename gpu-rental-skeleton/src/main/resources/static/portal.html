@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>算力市场 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/ref.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/ref.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<link rel="stylesheet" href="/autodl.css?v46">
 </head>
-<body>
+<body class="adl">
 
 <header class="topnav">
   <div class="inner">
@@ -106,13 +108,6 @@
           </svg>
           <b id="refreshNum">5</b>
         </span>
-        <button class="rm-view card" type="button" id="viewToggle" aria-label="切换到列表视图"
-          title="切换到列表视图" onclick="toggleView()">
-          <span class="vic" aria-hidden="true">
-            <span class="vgrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-            <span class="vlist"><i></i><i></i><i></i></span>
-          </span>
-        </button>
       </div>
     </div>
 
@@ -242,7 +237,7 @@ document.addEventListener('click', () => { $('#umPop').classList.remove('on'); c
 /* ---------------- 状态 ---------------- */
 const S = {
   billing: 'on', zone: '全部', model: '全部', qty: 1,
-  sort: 'default', dir: 'asc', onlyStock: false, menu: null, view: 'card',
+  sort: 'default', dir: 'asc', onlyStock: false, menu: null, view: 'list',
   skus: [], cards: [], me: {}, tenants: [], overview: {}
 };
 
@@ -306,7 +301,6 @@ const MODELS = ['全部', 'CLOUD CPU2', 'CLOUD CPU4', 'CLOUD CPU', 'CLOUD CPU3',
   'H800', 'RTX 4080'];
 
 const PIN = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
-const BRAND_IMG = { amd: '/img/amd.svg', intel: '/img/intel.svg', nvidia: '/img/nvidia.svg' };
 
 /* lucide 图标：与参考站排序下拉完全一致 */
 const LV = `fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"`;
@@ -330,17 +324,17 @@ const SORTS = [
 
 function renderFilters() {
   $('#fBilling').innerHTML = BILLING.map(b =>
-    `<button class="rm-opt ${S.billing === b.k ? 'on' : ''} ${b.night ? 'night' : ''}"
+    `<button class="adl-seg ${S.billing === b.k ? 'on' : ''}"
       onclick="setBilling('${b.k}')">${b.t}</button>`).join('');
 
   $('#fZone').innerHTML = ZONES.map(z =>
-    `<button class="rm-opt ${S.zone === z ? 'on' : ''}" onclick="setZone('${z}')">${z}</button>`).join('');
+    `<button class="adl-seg ${S.zone === z ? 'on' : ''}" onclick="setZone('${z}')">${z}</button>`).join('');
 
   $('#fModel').innerHTML = MODELS.map(m =>
-    `<button class="rm-opt ${S.model === m ? 'on' : ''}" onclick="setModel('${m}')">${m}</button>`).join('');
+    `<button class="adl-seg ${S.model === m ? 'on' : ''}" onclick="setModel('${m}')">${m}</button>`).join('');
 
   $('#fQty').innerHTML = [1, 2, 4, 8].map(q =>
-    `<button class="rm-cnt ${S.qty === q ? 'on' : ''}" onclick="setQty(${q})">${q}</button>`).join('');
+    `<button class="adl-seg ${S.qty === q ? 'on' : ''}" onclick="setQty(${q})">${q}</button>`).join('');
 }
 
 function renderSortBar() {
@@ -382,104 +376,57 @@ function setQty(q) { S.qty = q; renderFilters(); renderProducts(); }
 function setSort(k) { S.sort = k; S.menu = null; renderSortBar(); renderProducts(); }
 function setDir(d) { S.dir = d; S.menu = null; renderSortBar(); renderProducts(); }
 function toggleStock() { S.onlyStock = !S.onlyStock; renderSortBar(); renderProducts(); }
-function toggleView() {
-  S.view = S.view === 'card' ? 'list' : 'card';
-  const b = $('#viewToggle'), toList = S.view === 'list';
-  b.classList.toggle('card', !toList);
-  b.classList.toggle('list', toList);
-  b.setAttribute('title', toList ? '切换到网格视图' : '切换到列表视图');
-  b.setAttribute('aria-label', toList ? '切换到网格视图' : '切换到列表视图');
-  renderProducts();
-}
 
 const SORTVAL = {
   price: d => d.hourly, vram: d => d.vram || 0, ram: d => Number(d.ram) || 0,
   cores: d => Number(d.vcpu) || 0
 };
 
-function marketCard(d) {
-  const sold = !!d.soldOut;
-  const num = v => (Math.round(Number(v) * 10) / 10).toLocaleString('en-US');
-  const title = d.vram ? `${d.model} / ${d.vram} GB` : d.model;
-  return `<div class="rm-card">
-    ${d.cpuBrand === 'intel' ? '<span class="rm-cpubadge"><img src="/img/intel-white.svg" alt="Intel"></span>' : ''}
-    <div class="rm-head">
-      <div class="rm-brand"><img src="${BRAND_IMG[d.brand] || BRAND_IMG.nvidia}" alt="${d.brand}"></div>
-      <div class="rm-hinfo">
-        <h3 class="rm-name">${title}</h3>
-        <span class="rm-zone">${PIN}${d.zone}</span>
-      </div>
-    </div>
-    <div class="rm-body">
-      <div class="rm-alloc"><span>${d.alloc}</span><i></i></div>
-      <div class="rm-specs">
-        <div><span>vCPU</span><b>${d.vcpu} 核心</b></div>
-        <div class="r"><span>内存</span><b>${d.ram} GB</b></div>
-        <div><span>系统盘</span><b>${d.sysDisk} GB</b></div>
-        <div class="r"><span>数据盘</span><b>${d.dataDisk}${d.dataExpand ? ' · ' + d.dataExpand : ''}</b></div>
-      </div>
-    </div>
-    <div class="rm-foot">
-      <div class="rm-price3">
-        <div><em>包日</em><b>¥${num(d.day)}</b></div>
-        <div><em>包周</em><b>¥${num(d.week)}</b></div>
-        <div><em>包月</em><b>¥${num(d.month)}</b></div>
-      </div>
-      <div class="rm-hr">
-        <em>按量</em>
-        <div><span class="p">¥${num(d.hourly)}</span><span class="u">/时</span></div>
-      </div>
-      <button class="rm-buy ${sold ? 'warn' : ''}" onclick="createInstance('${d.model}', ${sold})">
-        <span>${sold ? '到货' : '立即'}</span><span>${sold ? '提醒' : '创建'}</span>
-      </button>
-    </div>
-  </div>`;
+// 是否可真实下单：只有存在对应 SKU 的机型才允许「立即创建」，否则只能「申请开通」
+function sellableModel(m){ return (S.skus || []).some(s => s.model === m); }
+
+// 空闲/总量只认真实 SKU 的台账口径；没有 SKU 的预览机型不编数字
+function stockFor(model, qty) {
+  const skus = S.skus || [];
+  const hit = skus.find(s => s.model === model && Number(s.gpuCount) === Number(qty))
+    || skus.find(s => s.model === model && Number(s.gpuCount) === 1);
+  if (!hit) return null;
+  return { free: Number(hit.stock) || 0, total: Number(hit.stockTotal) || 0 };
 }
 
-function listCard(d) {
+function machineCard(d) {
   const sold = !!d.soldOut;
+  const sellable = sellableModel(d.model);
   const num = v => (Math.round(Number(v) * 10) / 10).toLocaleString('en-US');
-  const title = d.vram ? `${d.model} / ${d.vram} GB` : d.model;
-  const buy = (cls, txt) => `<button class="${cls} ${sold ? 'warn' : ''}" onclick="createInstance('${d.model}', ${sold})">${txt}</button>`;
-  const hour = `<span class="p">¥${num(d.hourly)}</span><span class="u">/时</span>`;
-  return `<div class="rm-lcard">
-    ${d.cpuBrand === 'intel' ? '<span class="rm-cpubadge"><img src="/img/intel-white.svg" alt="Intel"></span>' : ''}
-    <div class="rm-lhead">
-      <div class="rm-llogo">
-        <div class="rm-brand"><img src="${BRAND_IMG[d.brand] || BRAND_IMG.nvidia}" alt="${d.brand}"></div>
-      </div>
-      <div class="rm-linfo">
-        <div class="rm-ltitle">
-          <h3 class="rm-name">${title}</h3>
-          <span class="rm-zone">${PIN}${d.zone}</span>
-        </div>
-        <div class="rm-lbody">
-          <div class="rm-alloc"><span>${d.alloc}</span><i></i></div>
-          <div class="rm-lspecs">
-            <div><span>vCPU</span><b>${d.vcpu} 核心</b></div>
-            <div><span>内存</span><b>${d.ram} GB</b></div>
-            <div><span>系统盘<span class="ssd">（SSD）</span></span><b>${d.sysDisk} GB</b></div>
-            <div><span>数据盘<span class="ssd">（SSD）</span></span><b>${d.dataDisk}${d.dataExpand ? ' · ' + d.dataExpand : ''}</b></div>
-          </div>
-        </div>
+  const bg = (d.brand === 'amd' || d.brand === 'intel') ? d.brand : 'nvidia';
+  const buy = sellable
+    ? `<button class="gc-btn ${sold ? 'warn' : ''}" onclick="createInstance('${d.model}', ${sold})">${sold ? '到货提醒' : '立即创建'}</button>`
+    : `<button class="gc-btn ghost" onclick="applyModel('${d.model}')">申请开通</button>`;
+  const disk = Biz.esc(d.dataDisk || '—') + (d.dataExpand ? ' · ' + Biz.esc(d.dataExpand) : '');
+  return `<div class="adl-gcard">
+    <div class="gc-top">
+      <span class="gc-logo"><img src="/img/${bg}.svg" alt=""></span>
+      <div class="gc-title">
+        <h3>${Biz.esc(d.model)}${d.vram ? `<span class="gc-vram">${d.vram}G</span>` : ''}</h3>
+        <div class="gc-zone"><i>◉</i>${Biz.esc(d.zone)}</div>
       </div>
     </div>
-    <div class="rm-lside">
-      <div class="rm-lside-m">
-        <div class="rm-lhour-m"><span class="lb">按量计费</span>${hour}</div>
-        ${buy('rm-lbuy-m', sold ? '到货提醒' : '立即创建')}
+    <div class="gc-dash"></div>
+    <div class="gc-alloc">${Biz.esc(d.alloc || '1 x GPU 分配')}</div>
+    <div class="gc-grid">
+      <div><span>vCPU</span><b>${d.vcpu} 核心</b></div>
+      <div><span>内存</span><b>${d.ram} GB</b></div>
+      <div><span>系统盘</span><b>${d.sysDisk} GB</b></div>
+      <div><span>数据盘</span><b>${disk}</b></div>
+    </div>
+    <div class="gc-foot">
+      <div class="gc-periods">
+        <div><span>包日</span><b>¥${num(d.day)}</b></div>
+        <div><span>包周</span><b>¥${num(d.week)}</b></div>
+        <div><span>包月</span><b>¥${num(d.month)}</b></div>
       </div>
-      <div class="rm-lside-d">
-        <div style="flex:1;min-width:0">
-          <div class="rm-lhourline"><span class="lb">按量计费</span><div class="v">${hour}</div></div>
-          <div class="rm-price3">
-            <div><em>包日</em><b>¥${num(d.day)}</b></div>
-            <div><em>包周</em><b>¥${num(d.week)}</b></div>
-            <div><em>包月</em><b>¥${num(d.month)}</b></div>
-          </div>
-        </div>
-        ${buy('rm-buy rm-lbuy', `<span>${sold ? '到货' : '立即'}</span><span>${sold ? '提醒' : '创建'}</span>`)}
-      </div>
+      <div class="gc-now"><span>按量</span><b>${sellable ? '¥' + num(d.hourly) : '询价'}${sellable ? '<i>/时</i>' : ''}</b></div>
+      ${buy}
     </div>
   </div>`;
 }
@@ -488,16 +435,17 @@ function renderProducts() {
   let list = S.cards.slice();
   if (S.model !== '全部') list = list.filter(d => d.model === S.model);
   if (S.zone !== '全部') list = list.filter(d => d.zone === S.zone);
-  if (S.onlyStock) list = list.filter(d => !d.soldOut);
+  // 「只看有货」只认能真实下单且有货的机型，预览机型（无 SKU）不算有货
+  if (S.onlyStock) list = list.filter(d => sellableModel(d.model) && !d.soldOut);
   const val = SORTVAL[S.sort];
   if (val) {
     const sign = S.dir === 'asc' ? 1 : -1;
     list.sort((a, b) => (val(a) - val(b)) * sign);
   }
   const g = $('#productGrid');
-  g.classList.toggle('list', S.view === 'list');
+  g.classList.add('list');
   g.innerHTML = list.length
-    ? list.map(S.view === 'list' ? listCard : marketCard).join('')
+    ? list.map(machineCard).join('')
     : `<div class="rm-empty">当前筛选条件下没有可用规格，换个条件试试</div>`;
 }
 
@@ -520,14 +468,23 @@ setInterval(() => {
   if (n) n.textContent = tick;
 }, 1000);
 
-/* 立即创建 → 整页实例配置页（/create）；售罄 → 到货提醒弹窗。
-   无真实库存的预览机型也走 /create，由创建页内部再决定是否转商务需求。 */
+/* 有真实 SKU → /create 立即创建；售罄 → 到货提醒弹窗。
+   无真实 SKU 的预览机型不走这里，由 applyModel 转「申请开通」。 */
 function createInstance(model, soldOut) {
   if (soldOut) {
     subscribeAlert(model);
     return;
   }
   location.href = '/create?model=' + encodeURIComponent(model);
+}
+/* 预览机型（卡池里没有可直接下单的真实库存）→ 申请开通，不承诺立即创建 */
+function applyModel(model) {
+  const card = (S.cards || []).find(c => c.model === model) || {};
+  Biz.lead({
+    source: '市场预览机型咨询', title: '申请开通 ' + model,
+    desc: '该机型为市场预览配置，需商务按需求上架后再开通，暂不支持立即创建。',
+    note: '需求机型：' + model + (card.zone ? '（' + card.zone + '）' : '') + '\n台数：\n预计使用时长：'
+  });
 }
 /* 到货提醒：与参考站一致的三格摘要 + 阈值输入 + 微信绑定提示，真实落库 zone/qty */
 function subscribeAlert(model) {
@@ -839,6 +796,7 @@ async function submitPwd() {
 /* ---------------- 启动 ---------------- */
 route();
 </script>
-<script src="/biz.js?v19"></script>
-<script src="/nav.js?v19"></script></body>
+<script src="/biz.js?v46"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/nav.js?v46"></script></body>
 </html>

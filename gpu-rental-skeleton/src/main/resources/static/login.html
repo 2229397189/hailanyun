@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>登录 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
 <style>
 .field .eye{position:absolute;right:12px;bottom:12px;font-size:11px;color:#8a94a3;cursor:pointer;
   user-select:none;padding:2px 5px}
@@ -75,10 +76,7 @@
 
   <div class="login-right">
     <div class="login-box">
-      <div class="ltabs">
-        <button type="button" id="tabLogin" class="on" onclick="showTab('login')">账号登录</button>
-        <button type="button" id="tabReg" onclick="showTab('reg')">免费注册</button>
-      </div>
+      <h3 style="margin:0 0 14px">账号登录</h3>
 
       <div class="alert" id="alert"></div>
 
@@ -107,8 +105,6 @@
         </div>
         <button class="btn-primary btn-login" id="submit" type="submit">登 录</button>
       </form>
-
-      <div class="lswap">还没有账号？<a onclick="showTab('reg')">免费注册，立即开通租户</a></div>
 
       <details class="demo">
         <summary>演示账号（点击展开）</summary>
@@ -194,11 +190,10 @@ function showAlert(msg, ok){
 }
 
 function showTab(which){
-  const reg = which === 'reg';
-  $('#paneLogin').style.display = reg ? 'none' : '';
-  $('#paneReg').style.display = reg ? '' : 'none';
-  $('#tabLogin').classList.toggle('on', !reg);
-  $('#tabReg').classList.toggle('on', reg);
+  // 自助注册已下线：平台账号由管理员统一分配，只保留登录面板
+  $('#paneLogin').style.display = '';
+  const reg = $('#paneReg');
+  if(reg) reg.style.display = 'none';
   alertBox.className = 'alert';
   alertBox.textContent = '';
 }
@@ -343,15 +338,8 @@ $('#form').addEventListener('submit', async e => {
   }
 });
 
-/* 邀请链接进来：默认停在注册页，邀请码预填并校验有效性 */
-if(QS.get('tab') === 'register' || INVITE){
-  showTab('reg');
-  if(INVITE){
-    $('#rInvite').value = INVITE;
-    checkInvite(INVITE);
-  }
-  $('#rUser').focus();
-}else if(lastUser){
+/* 自助注册已下线：无论带什么参数都停在登录页 */
+if(lastUser){
   $('#password').focus();
 }
 </script>

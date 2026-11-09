@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>实例列表 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/console.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/console.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<link rel="stylesheet" href="/autodl.css?v46">
 </head>
-<body data-active="inst">
+<body data-active="inst" class="adl console-page">
 
 <div class="console">
   <aside class="cs" id="cside"></aside>
@@ -26,6 +28,10 @@
         <input id="kw" placeholder="搜索实例名称/ID" style="width:260px;height:32px;font-size:12px;margin-left:6px">
       </div>
 
+      <div class="hint" style="margin:-6px 0 14px;font-size:11.5px;color:#8b93a1">
+        数据保留：<b>关机</b>只停容器、数据盘保留；<b>释放 / 到期</b>会自动回收容器并删除数据盘。重要数据请及时下载，或用「存镜像」保存环境。
+      </div>
+
       <div class="filter-bar" style="border:none;padding:0;margin-bottom:16px">
         <label>状态</label>
         <select id="fStatus">
@@ -41,12 +47,12 @@
       </div>
 
       <div class="card" style="overflow:hidden">
-        <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid #f0f4f9;
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f4f9;
              font-size:11px;color:#8a94a3">
-          <span style="width:16px">□</span><span style="flex:1">实例名称 / ID</span>
-          <span style="width:110px">状态</span><span style="width:130px">规格</span>
-          <span style="width:90px">可用区</span><span style="width:190px">镜像 / 数据盘</span><span style="width:150px">创建时间</span>
-          <span style="width:480px;text-align:right">操作</span>
+          <span style="width:16px">□</span><span style="flex:1;min-width:170px">实例名称 / ID</span>
+          <span style="width:90px">状态</span><span style="width:110px">规格</span>
+          <span style="width:90px">可用区</span><span style="width:160px">镜像 / 数据盘</span><span style="width:130px">创建时间</span>
+          <span style="flex:1;min-width:330px;text-align:right">操作</span>
         </div>
         <div id="list"><div class="empty">加载中…</div></div>
       </div>
@@ -87,8 +93,9 @@
   </div>
 </div>
 
-<script src="/console-nav.js?v19"></script>
-<script src="/biz.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/console-nav.js?v46"></script>
+<script src="/biz.js?v46"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -265,8 +272,10 @@ function render() {
     const b = (label, fn, cls) => `<button class="sm ${cls || 'ghost'}" style="margin-left:4px" onclick="${fn}('${i.id}')">${label}</button>`;
     let act = '<span class="hint">—</span>';
     if (i.status === 'running') {
-      act = b('关机', 'poweroff') + b('重启', 'restart') + b('续费', 'openRenew') + b('克隆', 'cloneInst')
-        + b('重置', 'resetInst') + b('升降配', 'resizeInst') + b('定时关机', 'schedInst') + b('远程桌面', 'accessInst')
+      // JupyterLab 作为开发主入口放最前（智川云 / AutoDL 也是这种「实例页内一键进入」）
+      act = `<button class="sm" style="margin-left:4px;background:#2b6be6;color:#fff;border:none" onclick="openJupyter('${i.id}')">JupyterLab</button>`
+        + b('关机', 'poweroff') + b('重启', 'restart') + b('续费', 'openRenew') + b('克隆', 'cloneInst')
+        + b('重置', 'resetInst') + b('升降配', 'resizeInst') + b('扩容盘', 'expandDiskInst') + b('计费互转', 'convertPlanInst') + b('定时关机', 'schedInst') + b('远程桌面', 'accessInst')
         + b('存镜像', 'saveImage') + b('数据集', 'datasetInst') + b('端口', 'exposePort')
         + b('终端', 'openTerm')
         + b('释放', 'rel', 'danger');
@@ -275,24 +284,34 @@ function render() {
     } else if (i.status !== 'released') {
       act = b('释放', 'rel', 'danger');
     }
-    return `<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;
          border-bottom:1px solid #f8f5fc;font-size:12px">
       <span style="width:16px;color:#c3c8d4">□</span>
       <div style="flex:1">
         <b style="font-size:12.5px">${i.pod_name || i.id}</b>
         <div class="hint mono" style="font-size:10.5px">${i.id}</div>
       </div>
-      <span style="width:110px"><span class="pill ${s[1]}">${s[0]}</span></span>
-      <span style="width:130px">${specOf(i)}</span>
+      <span style="width:90px"><span class="pill ${s[1]}">${s[0]}</span></span>
+      <span style="width:110px">${specOf(i)}</span>
       <span style="width:90px">${i.node_id === 'n2' ? '可用区 B' : '可用区 A'}</span>
-      <span style="width:190px" class="hint mono" title="${Biz.esc(i.image_ref || '')}">${imgOf(i)}</span>
+      <span style="width:160px" class="hint mono" title="${Biz.esc(i.image_ref || '')}">${imgOf(i)}</span>
       <span style="width:120px" class="hint">${i.dev_node_port ? `<a href="http://localhost:${i.dev_node_port}" target="_blank" style="color:#2b6be6">:${i.dev_node_port}</a>` : '—'}</span>
-      <span style="width:150px" class="hint">${created}</span>
-      <span style="width:480px;text-align:right;white-space:nowrap">${act}</span>
+      <span style="width:130px" class="hint">${created}</span>
+      <span style="flex:1;min-width:300px;text-align:right;white-space:normal;line-height:2.2">${act}</span>
     </div>`;
   }).join('');
 }
 
+
+/* 平台内打开 JupyterLab（对齐智川云 / AutoDL）：由平台启动并暴露工具，再打开平台分配的访问地址。
+   用户主动点击才跳转，不在创建后自动弹出裸 Jupyter。 */
+async function openJupyter(id) {
+  try {
+    const t = await post('/instances/' + id + '/tools', { tool: 'jupyterlab' });
+    if (t && t.status === 'running' && t.url) window.open(t.url, '_blank');
+    else Biz.toast((t && t.detail) || 'JupyterLab 启动失败，请稍后重试', 'err');
+  } catch (e) { Biz.toast(e.message, 'err'); }
+}
 
 /* 自定义端口暴露（A-11）：Pod 里跑的服务直接对外，NodePort 由平台分配 */
 async function exposePort(id) {
@@ -390,6 +409,65 @@ async function doClone(id) {
     const el = $('#cloneErr');
     if (el) el.textContent = '克隆失败：' + e.message;
   }
+}
+
+/* A-9 运行中扩容数据盘：真实下发扩容 + 按剩余时长补收盘费 */
+function expandDiskInst(id) {
+  const i = ALL.find(x => x.id === id) || {};
+  const cur = Number(i.data_disk_gb) || 0;
+  Biz.modal({
+    title: '扩容数据盘',
+    okText: '确认扩容',
+    html: '<div class="biz-sum"><span class="hint">当前实例</span><b>' + Biz.esc(i.pod_name || id) +
+            ' · 当前数据盘 ' + cur + ' GB</b></div>' +
+          '<div class="field"><label>扩容到（GB）</label><input id="dkGb" type="number" min="' + (cur + 1) +
+            '" value="' + (cur + 50) + '"></div>',
+    tip: '按剩余时长比例补收增量盘费；扩容失败不改台账、不扣钱。',
+    onOk: async (box, close) => {
+      const gb = Number(box.querySelector('#dkGb').value);
+      if (!gb || gb <= cur) return box.showError('目标容量必须大于当前 ' + cur + ' GB');
+      box.busy(true);
+      try {
+        const j = await post('/instances/' + id + '/expand-disk', { targetGb: gb });
+        close(); Biz.toast(j.message || '扩容成功', 'ok'); load();
+      } catch (e) { box.showError(e.message); box.busy(false); }
+    }
+  });
+}
+
+/* A-9 按量 ↔ 包时长互转：切账期、多退少补 */
+function convertPlanInst(id) {
+  const i = ALL.find(x => x.id === id) || {};
+  const cur = i.billing_plan === 'package' ? 'package' : 'payg';
+  const target = cur === 'package' ? 'payg' : 'package';
+  Biz.modal({
+    title: '计费方式互转',
+    okText: '确认转换',
+    html: '<div class="biz-sum"><span class="hint">当前实例</span><b>' + Biz.esc(i.pod_name || id) +
+            ' · 当前 ' + (cur === 'package' ? '包时长' : '按量') + '</b></div>' +
+          '<div class="field"><label>转换为</label><select id="cvPlan">' +
+            '<option value="payg"' + (target === 'payg' ? ' selected' : '') + '>按量计费（按秒结算）</option>' +
+            '<option value="package"' + (target === 'package' ? ' selected' : '') + '>包时长（预扣整周期）</option>' +
+          '</select></div>' +
+          '<div class="field" id="cvHoursWrap" style="display:none"><label>包时长（小时）</label>' +
+            '<input id="cvHours" type="number" min="1" max="720" value="24"></div>',
+    tip: '转换时刻把账期切成两段：已用部分按旧价实结，剩余部分按新价重算，多退少补。',
+    onOk: async (box, close) => {
+      const plan = box.querySelector('#cvPlan').value;
+      const hours = plan === 'package' ? Number(box.querySelector('#cvHours').value) : 0;
+      if (plan === 'package' && (!hours || hours < 1 || hours > 720)) return box.showError('包时长需为 1~720 小时');
+      box.busy(true);
+      try {
+        const j = await post('/instances/' + id + '/convert-plan', { targetPlan: plan, packageHours: hours });
+        close(); Biz.toast(j.message || '转换完成', 'ok'); load();
+      } catch (e) { box.showError(e.message); box.busy(false); }
+    }
+  });
+  setTimeout(() => {
+    const sel = document.getElementById('cvPlan');
+    const wrap = document.getElementById('cvHoursWrap');
+    if (sel && wrap) sel.onchange = () => { wrap.style.display = sel.value === 'package' ? '' : 'none'; };
+  }, 0);
 }
 
 function resizeInst(id) {

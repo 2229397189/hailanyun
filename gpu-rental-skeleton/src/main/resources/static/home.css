@@ -1,0 +1,242 @@
+/* ============================================================
+   TokenArk 首页 · AutoDL 风格改版
+   亮蓝主视觉 / 白色极简导航 / 橙色公告条 / 右侧悬浮工具
+   仅在 body.home 生效，不影响控制台与其它内页
+   ============================================================ */
+
+body.home{
+  --h-blue:#2f6bff;
+  --h-blue-d:#1f56e0;
+  --h-blue-l:#5b86ff;
+  background:#fff;
+}
+
+/* ---------------- 顶部公告条 ---------------- */
+.ad-note{
+  background:linear-gradient(90deg,#ffb42e,#ff9c07);
+  color:#6b3a00;font-size:12px;line-height:1.65;
+  padding:8px 18px;text-align:center;letter-spacing:.01em;
+}
+.ad-note b{font-weight:600}
+
+/* ---------------- 白色极简导航 ---------------- */
+body.home .topnav{
+  background:#fff!important;border-bottom:1px solid #eef0f4!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+body.home .topnav .inner{height:62px!important;max-width:1280px;gap:34px}
+body.home .brand-mark{
+  background:linear-gradient(135deg,#2f6bff,#5b86ff)!important;
+  border-radius:9px!important;box-shadow:0 6px 16px -6px rgba(47,107,255,.55)!important;
+}
+body.home .brand-name{font-size:16px!important;color:#111!important;letter-spacing:-.01em}
+body.home .brand-name span{
+  color:#2f6bff!important;-webkit-text-fill-color:#2f6bff!important;
+  background:none!important;
+}
+body.home .brand-sub{color:#98a0ad!important;font-size:10px!important;letter-spacing:.06em}
+body.home .navlinks{gap:30px;font-size:14px!important;color:#3a4048!important;flex:1}
+body.home .navlinks a{padding:5px 0}
+body.home .navlinks a:hover{color:#2f6bff!important}
+body.home .navlinks a.on{color:#1b1f27!important;font-weight:600!important}
+body.home .navlinks a.on::after{display:none!important}
+body.home .nav-right{gap:12px}
+body.home .btn-console{
+  height:36px!important;padding:0 18px!important;border-radius:5px!important;
+  border:1px solid #d7dee9!important;color:#2b3442!important;font-size:13px!important;
+}
+body.home .btn-console:hover{
+  border-color:#2f6bff!important;color:#2f6bff!important;background:#fff!important;
+}
+
+/* ---------------- Hero ---------------- */
+.hero-adl{
+  position:relative;overflow:hidden;color:#fff;
+  background:linear-gradient(108deg,#2a63f5 0%,#356efc 42%,#5a85ff 100%);
+}
+.hero-adl::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(720px 460px at 76% 36%,rgba(255,255,255,.20),transparent 64%),
+    radial-gradient(520px 360px at 4% 2%,rgba(255,255,255,.13),transparent 68%),
+    radial-gradient(460px 320px at 98% 98%,rgba(126,175,255,.38),transparent 70%);
+}
+.hero-adl::after{
+  content:"";position:absolute;left:26px;top:22px;width:184px;height:112px;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.5) 1.3px,transparent 1.4px);
+  background-size:14px 14px;
+  -webkit-mask-image:linear-gradient(135deg,#000,transparent 76%);
+  mask-image:linear-gradient(135deg,#000,transparent 76%);
+}
+.hero-adl .dots-br{
+  position:absolute;right:22px;bottom:16px;width:176px;height:104px;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.42) 1.3px,transparent 1.4px);
+  background-size:14px 14px;
+  -webkit-mask-image:linear-gradient(315deg,#000,transparent 76%);
+  mask-image:linear-gradient(315deg,#000,transparent 76%);
+}
+.hero-adl-inner{
+  position:relative;z-index:2;max-width:1240px;margin:0 auto;
+  padding:66px 24px 70px;
+  display:grid;grid-template-columns:1.06fr .94fr;gap:52px;align-items:center;
+}
+.hero-adl-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;color:rgba(255,255,255,.78);letter-spacing:.06em;
+}
+.hero-adl-eyebrow::before{
+  content:"";width:18px;height:2px;border-radius:1px;background:rgba(255,255,255,.62);
+}
+.hero-adl h1{
+  margin-top:18px;font-size:50px;line-height:1.2;font-weight:700;
+  letter-spacing:-.025em;color:#fff;
+}
+.hero-adl h1 em{font-style:normal;color:#dbe8ff}
+.hero-adl p.lead{
+  margin-top:18px;font-size:14.5px;line-height:1.9;
+  color:rgba(255,255,255,.82);max-width:470px;
+}
+.hero-adl-actions{margin-top:30px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ha-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:44px;padding:0 34px;border-radius:4px;
+  border:1px solid rgba(255,255,255,.72);background:rgba(255,255,255,.05);
+  color:#fff;font-size:13.5px;font-weight:500;transition:.16s;
+}
+.ha-btn:hover{background:#fff;color:#2a63f5;border-color:#fff}
+.ha-btn.solid{background:#fff;color:#2a63f5;border-color:#fff;font-weight:600}
+.ha-btn.solid:hover{background:#eaf1ff;border-color:#eaf1ff}
+.hero-adl-metrics{display:flex;gap:42px;margin-top:44px}
+.hero-adl-metrics b{
+  display:block;font-size:26px;font-weight:700;letter-spacing:-.015em;color:#fff;
+}
+.hero-adl-metrics span{
+  display:block;font-size:11.5px;color:rgba(255,255,255,.68);margin-top:5px;
+}
+
+/* 右侧：毛玻璃实时资源面板 */
+.hero-adl-visual{position:relative}
+.hero-adl .tk-panel{
+  background:rgba(255,255,255,.13)!important;
+  border:1px solid rgba(255,255,255,.28)!important;
+  border-radius:14px!important;
+  box-shadow:0 34px 70px -34px rgba(8,28,84,.6)!important;
+  backdrop-filter:blur(16px) saturate(140%);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);
+}
+.hero-adl .tk-panel-head{
+  background:transparent!important;
+  border-bottom:1px solid rgba(255,255,255,.16)!important;
+  color:#fff!important;font-weight:600;font-size:13px!important;padding:12px 16px!important;
+}
+.hero-adl .tk-live{
+  background:rgba(255,255,255,.14)!important;color:#e3f1ff!important;
+  border:1px solid rgba(255,255,255,.2)!important;border-radius:20px;padding:2px 8px;
+}
+.hero-adl .tk-live i{background:#6ef2b0!important}
+.hero-adl .tk-panel-body{padding:6px 16px 10px!important}
+.hero-adl .tk-row{
+  border-bottom:1px solid rgba(255,255,255,.12)!important;
+  color:rgba(255,255,255,.9)!important;font-size:12px!important;padding:10px 0!important;
+}
+.hero-adl .tk-row-head{color:rgba(255,255,255,.55)!important;font-size:10.5px!important}
+.hero-adl .tk-row span:nth-child(4){color:#fff!important;font-weight:600}
+.hero-adl .tk-panel-foot{
+  background:transparent!important;
+  border-top:1px solid rgba(255,255,255,.16)!important;
+  color:rgba(255,255,255,.62)!important;font-size:11.5px!important;padding:10px 16px!important;
+}
+.hero-adl .tk-panel-foot a{color:#fff!important;font-weight:600}
+.hero-adl-chip{
+  position:absolute;z-index:3;display:inline-flex;align-items:center;gap:6px;
+  height:30px;padding:0 12px;border-radius:8px;
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  font-size:11.5px;color:#fff;box-shadow:0 12px 26px -14px rgba(8,28,84,.6);
+}
+.hero-adl-chip i{width:6px;height:6px;border-radius:50%;background:#6ef2b0;box-shadow:0 0 0 3px rgba(110,242,176,.18)}
+.hero-adl-chip.a{left:-20px;top:-14px}
+.hero-adl-chip.b{right:-10px;bottom:-16px}
+
+/* ---------------- Hero 下方四列入口 ---------------- */
+.quick-links{
+  max-width:1240px;margin:0 auto;padding:28px 24px 8px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:18px;
+}
+.quick-links a{text-align:center;padding:12px 8px;border-radius:8px;transition:.15s}
+.quick-links a:hover{background:#f7f9fd}
+.quick-links b{display:block;font-size:14px;font-weight:600;color:#1b1f27}
+.quick-links span{display:block;margin-top:7px;font-size:12px;line-height:1.7;color:#98a0ad}
+.quick-links a:hover b{color:#2f6bff}
+
+/* ---------------- 右侧悬浮工具 ---------------- */
+.side-dock{
+  position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:70;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.dock-coupon{
+  width:46px;padding:13px 0;border-radius:10px;
+  background:linear-gradient(180deg,#ff9a4d,#ff6f2c);
+  color:#fff;font-size:13px;font-weight:600;letter-spacing:3px;
+  writing-mode:vertical-rl;text-align:center;
+  box-shadow:0 14px 28px -12px rgba(255,111,44,.7);transition:.15s;
+}
+.dock-coupon:hover{transform:translateY(-2px);box-shadow:0 18px 34px -12px rgba(255,111,44,.82)}
+.dock-card{
+  width:46px;border-radius:10px;background:#fff;border:1px solid #eceef2;
+  box-shadow:0 14px 30px -16px rgba(16,24,40,.3);overflow:hidden;
+}
+.dock-card a{height:44px;display:flex;align-items:center;justify-content:center;color:#5b6472}
+.dock-card a+a{border-top:1px solid #f2f3f6}
+.dock-card a:hover{color:#2f6bff;background:#f7f9fd}
+.dock-card svg{width:19px;height:19px}
+
+/* ---------------- 首页其余区块统一亮蓝 ---------------- */
+body.home .btn-primary{
+  background:#2f6bff!important;border-color:#2f6bff!important;
+  box-shadow:0 12px 26px -12px rgba(47,107,255,.65)!important;
+}
+body.home .btn-primary:hover{background:#1f56e0!important;border-color:#1f56e0!important}
+body.home .btn-ghost{border-color:#d6e2f2!important;color:#3a4048!important}
+body.home .btn-ghost:hover{border-color:#2f6bff!important;color:#2f6bff!important}
+body.home .pill-link{color:#2f6bff!important}
+body.home .feat-ic{background:#eef4ff!important;color:#2f6bff!important}
+body.home .type-btn.line{color:#2b3442!important}
+body.home .type-btn.line:hover{border-color:#2f6bff!important;color:#2f6bff!important}
+body.home .badge-hot{background:#ff6f2c!important}
+body.home .blk-title{letter-spacing:-.02em}
+
+/* ---------------- 响应式 ---------------- */
+@media(max-width:1080px){
+  .hero-adl-inner{grid-template-columns:1fr;gap:34px;padding:46px 22px 52px}
+  .hero-adl h1{font-size:38px}
+  .hero-adl-visual{max-width:560px}
+  .hero-adl-chip.a{left:0}
+  .hero-adl-chip.b{right:0}
+  .quick-links{grid-template-columns:repeat(2,1fr);gap:10px;padding:22px 20px 6px}
+  .side-dock{display:none}
+}
+@media(max-width:640px){
+  .ad-note{font-size:11px;text-align:left;line-height:1.7}
+  body.home .topnav .inner{gap:16px;height:56px!important}
+  body.home .navlinks{display:none}
+  .hero-adl h1{font-size:30px}
+  .hero-adl p.lead{font-size:13.5px}
+  .hero-adl-metrics{gap:22px;margin-top:32px}
+  .hero-adl-metrics b{font-size:20px}
+  .ha-btn{padding:0 24px}
+  .quick-links{grid-template-columns:1fr}
+}
+
+/* 区块标题竖线与胶囊链接统一亮蓝 */
+body.home .blk-title::before{background:linear-gradient(180deg,#2f6bff,#7aa4ff)!important}
+body.home .pill-link{
+  background:#eef4ff!important;border-color:#d6e4ff!important;color:#2f6bff!important;
+}
+body.home .pill-link:hover{border-color:#a9c6ff!important;background:#e8f1ff!important}
+
+/* 深色 CTA 区块改品牌蓝，按钮反白 */
+.hero-cta-white{
+  background:#fff!important;border-color:#fff!important;color:#2f6bff!important;
+}
+.hero-cta-white:hover{background:#eaf1ff!important;border-color:#eaf1ff!important;color:#1f56e0!important}

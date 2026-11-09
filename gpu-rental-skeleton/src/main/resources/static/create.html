@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>创建实例 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/console.css?v19">
-<link rel="stylesheet" href="/ref.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/console.css?v46">
+<link rel="stylesheet" href="/ref.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
 <style>
   .ck-page { max-width: 1280px; margin: 0 auto; padding: 18px 24px 140px; }
   .ck-crumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 14px; }
@@ -249,7 +250,8 @@
   </div>
 </div>
 
-<script src="/biz.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/biz.js?v46"></script>
 <script>
 const $ = s => document.querySelector(s);
 const fmt = n => (Number(n) || 0).toFixed(2);
@@ -479,19 +481,25 @@ function billingRules() {
 
 // ---------- 卡数选择 ----------
 function renderCardChips() {
-  $('#cardChips').innerHTML = CARD_CODES.map(c => {
+  const cur = skuByCode(S.skuCode);
+  // 本机卡只有 1 张 GPU：卡数固定为 1，不显示 2/4/8（否则会串到 5090 的 SKU 上误判缺货）
+  const list = (cur && cur.local) ? [{ n: 1, code: cur.code }] : CARD_CODES;
+  $('#cardChips').innerHTML = list.map(c => {
     const sku = skuByCode(c.code);
     const stock = sku ? Number(sku.stock) : 0;
-    const oos = stock <= 0;
+    // 本机真实显卡是用户自己的机器，不受台账「空闲卡数」影响：即使被别的实例占用也要能直接创建，
+    // 不能因为自己的实例占着卡就把它判成「缺货·到货提醒」。
+    const oos = !sku || (!sku.local && stock <= 0);
     return '<button class="' + (S.cardN === c.n ? 'on' : '') + '" ' +
-      (oos ? 'onclick="cardOutOfStock(' + c.n + ')"' : 'onclick="setCard(' + c.n + ')"') + '>' +
+      (oos ? 'onclick="cardOutOfStock(' + c.n + ')"' : 'onclick="setCard(' + c.n + ', \'' + c.code + '\')"') + '>' +
       c.n + (oos ? '<span class="oos">缺货·到货提醒</span>' : '') + '</button>';
   }).join('');
 }
-function setCard(n) {
+function setCard(n, code) {
   const c = CARD_CODES.find(x => x.n === n);
-  if (!c || !skuByCode(c.code)) return;
-  S.cardN = n; S.skuCode = c.code;
+  const target = code || (c && c.code);
+  if (!target || !skuByCode(target)) return;
+  S.cardN = n; S.skuCode = target;
   renderHeader(); renderCardChips(); renderDisk(); renderCaps(); recalc();
 }
 function cardOutOfStock(n) {
@@ -594,10 +602,13 @@ function renderImg() {
     if (!rows.length) {
       verSel.innerHTML = '<option value="">（暂无镜像）</option>'; S.ref = '';
     } else {
-      verSel.innerHTML = rows.map(r =>
-        '<option value="' + Biz.esc(r.name) + '" ' + (S.ref === r.name ? 'selected' : '') + '>' +
-        Biz.esc(r.name) + ' · ' + Biz.esc(r.status || '') + ' · ' + Biz.esc(r.zone || '') + '</option>').join('');
-      if (!rows.find(r => r.name === S.ref)) { S.ref = rows[0].name; }
+      // 私有镜像用 base（= 推送后的真实镜像引用）作为下单 image 值，否则回落基础环境（A-16）
+      verSel.innerHTML = rows.map(r => {
+        const val = r.base || r.name;
+        return '<option value="' + Biz.esc(val) + '" ' + (S.ref === val ? 'selected' : '') + '>' +
+          Biz.esc(r.name) + ' · ' + Biz.esc(r.status || '') + ' · ' + Biz.esc(r.zone || '') + '</option>';
+      }).join('');
+      if (!rows.find(r => (r.base || r.name) === S.ref)) { S.ref = rows[0].base || rows[0].name; }
       verSel.value = S.ref;
     }
   }
@@ -743,7 +754,8 @@ async function submitCreate() {
     return;
   }
   const sku = skuByCode(S.skuCode);
-  if (!sku || Number(sku.stock) <= 0) {
+  // 本机卡（用户自己的机器）不受库存限制：点「立即创建」就该直接创建，不弹到货提醒
+  if (!sku || (!sku.local && Number(sku.stock) <= 0)) {
     alertStock(S.model, currentCard() ? currentCard().zone : '', S.cardN);
     return;
   }
@@ -756,8 +768,10 @@ async function submitCreate() {
       method: 'POST',
       body: { sku: S.skuCode, hours: cm.hours, orderNo, image: S.ref || '', dataDiskGb: extraGb() }
     });
+    // 像智川云 / AutoDL：创建后回到平台实例页，不自动弹出裸 JupyterLab。
+    // 实例就绪后在列表里点「JupyterLab」，由平台启动并打开访问地址；SSH / 桌面同理。
     Biz.toast('创建成功：实例 ' + (r.instanceId || '') + '，预扣 ¥' + fmt(r.prepaid) + '，约 3 秒后就绪', 'ok');
-    setTimeout(() => { location.href = '/instances'; }, 900);
+    setTimeout(() => { location.href = '/instances'; }, 800);
   } catch (e) {
     btn.disabled = false; btn.textContent = '立即创建';
     Biz.toast(e.message, 'err');

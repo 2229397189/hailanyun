@@ -5,14 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>主页看板 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/console.css?v19">
-<style>
-/* 主页看板专属：外壳样式统一在 console.css */
-.cbody{padding-top:22px}
-</style>
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/console.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<link rel="stylesheet" href="/autodl.css?v46">
 </head>
-<body data-active="main">
+<body data-active="main" class="adl console-page console-home">
 
 <div class="console">
   <aside class="cs" id="cside"></aside>
@@ -22,138 +20,93 @@
     <div class="ctabrow"></div>
 
     <div class="cbody">
+      <div class="adl-pagetitle">主页看板</div>
 
-      <!-- 欢迎卡 -->
-      <div class="dwelcome">
-        <div class="ava">🐶<span class="dot"></span></div>
-        <div class="wtxt">
-          <h1><span id="greet">早安</span>，<em>TokenArk <span id="wName">9469</span>同学</em>！ 开启一天的学术冲刺吧💪！</h1>
-          <div class="sub">今天也给自己的科研电量留一点余地 🔋。</div>
-        </div>
-        <div class="fortune">
-          <div class="t">今日 AI 运势</div>
-          <div class="b"><span class="ball">🔮</span>
-            <i>宜：检查环境</i><span class="dash">——</span>依赖齐全，运行顺滑</div>
-        </div>
-      </div>
+      <div class="adl-dash">
+        <!-- 左栏：容器实例 / 消费统计 / 帮助文档 -->
+        <div class="adl-stack">
+          <div class="adl-card">
+            <h3>容器实例
+              <span class="link-sm" onclick="location.href='/instances'">管理实例 &rsaquo;</span>
+            </h3>
+            <div class="adl-data4">
+              <div class="adl-kpi"><div class="k">全部实例</div><div class="num" id="kTotal">0</div></div>
+              <div class="adl-kpi"><div class="k">运行中</div><div class="num" id="kRun">0</div></div>
+              <div class="adl-kpi"><div class="k">即将到期</div><div class="num orange" id="kSoon">0</div></div>
+              <div class="adl-kpi"><div class="k">即将释放</div><div class="num orange" id="kRel">0</div></div>
+            </div>
+            <div style="margin-top:18px">
+              <button class="adl-createbtn" onclick="location.href='/portal'">＋ 创建实例</button>
+            </div>
+          </div>
 
-      <div class="crow">
-        <!-- 实例信息 -->
-        <div class="ccard">
-          <h3>实例信息
-            <span class="link-sm" onclick="location.href='/instances'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>
-              管理实例</span>
-          </h3>
-          <div class="dtiles">
-            <div class="dtile">
-              <div class="k"><span class="dti p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg></span>实例总数<span class="q" title="当前账号下全部实例数量">i</span></div>
-              <div class="v" id="kTotal">0</div>
+          <div class="adl-card">
+            <h3>消费统计
+              <span class="link-sm" onclick="location.href='/billing'">账单明细 &rsaquo;</span>
+            </h3>
+            <div class="adl-legend">
+              <span><i style="background:var(--adl-blue)"></i>GPU 消费（元）</span>
+              <span style="color:var(--adl-text3)">近 7 天 · 按结算日期汇总</span>
             </div>
-            <div class="dtile">
-              <div class="k"><span class="dti g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/></svg></span>运行中<span class="q" title="状态为运行中的实例数量">i</span></div>
-              <div class="v" id="kRun">0</div>
-            </div>
-            <div class="dtile">
-              <div class="k"><span class="dti a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>即将到期<span class="q" title="24 小时内到期的实例数量">i</span></div>
-              <div class="v" id="kSoon">0</div>
-            </div>
-            <div class="dtile">
-              <div class="k"><span class="dti r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>即将释放<span class="q" title="到期后待释放的实例数量">i</span></div>
-              <div class="v" id="kRel">0</div>
-            </div>
+            <div id="dashChart" style="display:flex;align-items:flex-end;gap:10px;height:170px"></div>
+          </div>
+
+          <div class="adl-card">
+            <h3>帮助文档
+              <span class="link-sm" onclick="Biz.assistant()">AI 问答 &rsaquo;</span>
+            </h3>
+            <a class="hrow" href="/instances">
+              <span class="hi b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span>
+              <span><b>快速开始</b><span>创建第一个实例</span></span>
+            </a>
+            <a class="hrow" href="/portal">
+              <span class="hi g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg></span>
+              <span><b>GPU选型</b><span>选择适合您的GPU</span></span>
+            </a>
+            <a class="hrow" href="/index#docs">
+              <span class="hi c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span>
+              <span><b>功能导览</b><span>查看平台功能</span></span>
+            </a>
           </div>
         </div>
 
-        <!-- 账户概览 -->
-        <div class="ccard">
-          <h3>账户概览
-            <span class="link-sm" onclick="location.href='/recharge'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
-              充值</span>
-          </h3>
-          <div class="dtiles">
-            <div class="dtile tint-p">
-              <div class="k">账户总余额<span class="q" title="现金余额 + 未使用代金券合计">i</span></div>
-              <div class="v" id="balTotal"><i>¥</i>0</div>
+        <!-- 右栏：账号信息 / 邀请赠送 -->
+        <div class="adl-stack">
+          <div class="adl-card">
+            <div class="adl-idhead"><span id="wName">—</span><span class="adl-badge green">租户</span></div>
+            <div style="font-size:13px;color:var(--adl-text3);margin-bottom:14px"><span id="greet">早安</span>，欢迎回来</div>
+            <div class="adl-balbox">
+              <div class="t"><span>账户总余额</span>
+                <button class="adl-recharge" onclick="location.href='/recharge'">充值</button></div>
+              <div id="balTotal"><i>¥</i>0</div>
             </div>
-            <div class="dtile">
-              <div class="k">现金余额<span class="q" title="可提现、可退款的充值余额">i</span></div>
-              <div class="v" id="balCash"><i>¥</i>0</div>
-            </div>
-            <div class="dtile">
-              <div class="k">模型调用消费<span class="q" title="大模型 API 按 Token 计量，直接从现金余额扣，没有独立模型钱包">i</span>
-                <span class="act" onclick="maasUsage()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                  调用明细</span></div>
-              <div class="v" id="balMaas"><i>¥</i>0</div>
-            </div>
-            <div class="dtile tint-a">
-              <div class="k">代金券余额<span class="q" title="活动与邀请赠送的代金券合计">i</span>
-                <span class="act" style="color:#d97706" onclick="location.href='/account'">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
-                  券包</span></div>
-              <div class="v" id="balCoupon"><i>¥</i>0</div>
-            </div>
+            <div class="adl-couponrow"><span>现金余额</span><b id="balCash"><i>¥</i>0</b></div>
+            <div class="adl-couponrow"><span>代金券余额 <span class="link-sm" onclick="location.href='/coupons'">券包</span></span><b id="balCoupon"><i>¥</i>0</b></div>
+            <div class="adl-couponrow"><span>模型调用消费 <span class="link-sm" onclick="maasUsage()">明细</span></span><b id="balMaas"><i>¥</i>0</b></div>
           </div>
-        </div>
-      </div>
 
-      <div class="crow">
-        <!-- 帮助文档 -->
-        <div class="ccard">
-          <h3>帮助文档
-            <span class="link-sm" onclick="Biz.assistant()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-              AI问答</span>
-          </h3>
-          <a class="hrow" href="/instances">
-            <span class="hi b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span>
-            <span><b>快速开始</b><span>创建第一个实例</span></span>
-          </a>
-          <a class="hrow" href="/market">
-            <span class="hi g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg></span>
-            <span><b>GPU选型</b><span>选择适合您的GPU</span></span>
-          </a>
-          <a class="hrow" href="/index#docs">
-            <span class="hi c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span>
-            <span><b>功能导览</b><span>查看平台功能</span></span>
-          </a>
-        </div>
-
-        <!-- 邀请赠送 -->
-        <div class="ccard">
-          <h3>
-            <span class="hd"><span class="em">🎁</span>邀请赠送
-              <button class="dpill orange" onclick="Biz.ticket({title:'联系客服',subject:'邀请活动咨询',extra:'客服会以工单形式回复，进度在「工单」页可查。'})">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h9a4 4 0 0 1 4 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 11V5a4 4 0 0 1 8 0"/><path d="M21 15h-2a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1"/></svg>
-                联系客服</button>
-              <button class="dpill green" onclick="Biz.ticket({title:'技术交流群',subject:'申请加入技术交流群',content:'希望加入技术交流群，接收镜像更新与活动通知。',extra:'提交后管理员会在工单里回复群二维码或邀请链接。'})">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-                技术交流群</button>
-            </span>
-            <span class="link-sm" onclick="inviteRecords()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              邀请记录</span>
-          </h3>
-          <div class="inv-hero" id="invHero">🎉 邀请好友注册并首充，双方都能拿到代金券</div>
-          <div class="notes" id="invNotes">
-            注意事项：<br>
-            1. 好友通过你的邀请码注册后，<span class="r">首次充值达标即自动发券</span>，无需人工领取。<br>
-            2. 被邀请人得 <span class="r" id="noteInvitee">5元</span>代金券，你得 <span class="r" id="noteInviter">3元</span>返券。<br>
-            3. 赠送代金券 <span class="r" id="noteDays">有效期三个月</span>，请及时使用。<br>
-            4. 如存在异常邀请行为，平台有权追回已发放的代金券。
-          </div>
-          <div class="codebox">
-            <div class="cw">
-              <div class="lbl">我的邀请码</div>
-              <div class="cd" id="invCode">————</div>
+          <div class="adl-card">
+            <h3>邀请赠送
+              <span class="link-sm" onclick="inviteRecords()">邀请记录 &rsaquo;</span>
+            </h3>
+            <div class="inv-hero" id="invHero">🎉 邀请好友注册并首充，双方都能拿到代金券</div>
+            <div class="codebox">
+              <div class="cw">
+                <div class="lbl">我的邀请码</div>
+                <div class="cd" id="invCode">————</div>
+              </div>
+              <button onclick="copyInvite()">复制邀请链接</button>
             </div>
-            <button onclick="copyInvite()">复制邀请链接</button>
+            <div class="notes" id="invNotes">
+              好友通过你的邀请码注册并首次充值达标即自动发券：被邀请人得 <span class="r" id="noteInvitee">5元</span>代金券，你得 <span class="r" id="noteInviter">3元</span>返券；代金券 <span class="r" id="noteDays">有效期三个月</span>，请及时使用。
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button class="dpill orange" onclick="Biz.ticket({title:'联系客服',subject:'邀请活动咨询',extra:'客服会以工单形式回复，进度在「工单」页可查。'})">联系客服</button>
+              <button class="dpill green" onclick="Biz.ticket({title:'技术交流群',subject:'申请加入技术交流群',content:'希望加入技术交流群，接收镜像更新与活动通知。',extra:'提交后管理员会在工单里回复群二维码或邀请链接。'})">技术交流群</button>
+            </div>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </div>
@@ -162,8 +115,9 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
 </button>
 
-<script src="/console-nav.js?v19"></script>
-<script src="/biz.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/console-nav.js?v46"></script>
+<script src="/biz.js?v46"></script>
 <script>
 const $ = s => document.querySelector(s);
 const TOKEN = localStorage.getItem('gu_token') || '';
@@ -277,8 +231,36 @@ function maasUsage() {
   });
 }
 
+/* ---------------- 消费统计 ----------------
+ * 近 7 天 GPU 结算金额，来自 /api/billing/daily（真库），无消费的日子显示为 0 而不是编造曲线 */
+async function loadDashChart() {
+  const box = $('#dashChart');
+  if (!box) return;
+  try {
+    const daily = await api('/billing/daily?tenantId=' + TENANT + '&days=7');
+    const byDay = {};
+    (daily || []).forEach(x => { byDay[String(x.d).slice(0, 10)] = Number(x.amount) || 0; });
+    const key = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const days = [];
+    for (let i = 6; i >= 0; i--) days.push(new Date(Date.now() - i * 86400000));
+    const max = Math.max(...days.map(d => byDay[key(d)] || 0), 1);
+    box.innerHTML = days.map(d => {
+      const k = key(d), v = byDay[k] || 0;
+      const h = v > 0 ? Math.max(6, Math.round(v / max * 120)) : 3;
+      return `<div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px">
+        <span style="font-size:11px;color:var(--adl-text3);height:15px">${v > 0 ? '¥' + v.toFixed(2) : ''}</span>
+        <div style="width:100%;max-width:46px;height:${h}px;border-radius:2px 2px 0 0;background:${v > 0 ? 'var(--adl-blue)' : 'var(--adl-line2)'}"></div>
+        <span style="font-size:11px;color:var(--adl-text3);height:15px">${k.slice(5)}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '<div style="color:var(--adl-text3);font-size:13px;align-self:center;margin:auto">消费数据加载失败</div>';
+  }
+}
+
 (async function () {
   loadInvite();
+  loadDashChart();
   try {
     const [list, tenants, coupons, usage] = await Promise.all([
       api('/instances?tenantId=' + TENANT), api('/tenants'), api('/coupons'), api('/maas/usage')

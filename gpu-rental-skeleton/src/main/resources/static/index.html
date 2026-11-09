@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TokenArk 创元方舟 · 弹性 GPU 算力云</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
-<link rel="stylesheet" href="/ref.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/ref.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<link rel="stylesheet" href="/home.css?v46">
+<link rel="stylesheet" href="/autodl.css?v46">
 </head>
-<body>
+<body class="adl home">
 
 <header class="topnav">
   <div class="inner">
@@ -26,7 +29,7 @@
     </a>
     <nav class="navlinks">
       <a class="on" href="/index">首页</a>
-      <a href="/market">算力市场</a>
+      <a href="/portal">算力市场</a>
       <a href="/llm-api">大模型 API</a>
       <a href="/solutions">解决方案</a>
       <a href="/about">关于我们</a>
@@ -39,55 +42,100 @@
   </div>
 </header>
 
-<section class="rh-hero">
-  <div class="rh-wrap">
-    <div class="rh-left">
-      <span class="rh-badge"><i class="dot"></i>算力资源池充足</span>
-      <h1 class="rh-title">
-        <span>释放科研想象力</span>
-        <span>让算力<span class="g-blue">川流</span><span class="g-pink">不息</span></span>
-      </h1>
-      <p class="rh-lead">专为高校科研与开发者打造的弹性 GPU 云平台，从“按量训练”到“弹性推理”，我们为您提供覆盖 AI 模型全生命周期的算力服务。</p>
-      <div class="rh-actions">
-        <a class="rh-btn-p" href="/login">立即开始使用</a>
-        <a class="rh-btn-g" href="#pricing">查看价格表</a>
+<section class="hero-adl">
+  <span class="dots-br" aria-hidden="true"></span>
+  <div class="hero-adl-inner">
+    <div class="hero-adl-copy">
+      <h1>面向 AIGC 的算力底座</h1>
+      <p class="lead">弹性部署，按秒计费，释放即停。GPU 实例、镜像与数据盘一体化交付。</p>
+      <div class="hero-adl-actions">
+        <a class="ha-btn" href="/solutions">了解详情</a>
       </div>
     </div>
+    <div class="hero-adl-visual">
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 520 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="heroGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(260 250) rotate(90) scale(150 205)">
+              <stop stop-color="#8CF0FF" stop-opacity=".55"/>
+              <stop offset="1" stop-color="#3760F4" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="heroRing" x1="80" y1="190" x2="440" y2="320" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#9BF6FF"/><stop offset=".5" stop-color="#4FB6FF"/><stop offset="1" stop-color="#2F7BFF"/>
+            </linearGradient>
+            <linearGradient id="heroCloud" x1="180" y1="150" x2="340" y2="240" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#BFDCFF"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="260" cy="252" rx="215" ry="88" fill="url(#heroGlow)"/>
+          <ellipse cx="260" cy="252" rx="198" ry="76" stroke="url(#heroRing)" stroke-width="1.4" opacity=".45"/>
+          <ellipse cx="260" cy="252" rx="164" ry="58" stroke="url(#heroRing)" stroke-width="2"/>
+          <ellipse cx="260" cy="252" rx="122" ry="41" stroke="#7FE3FF" stroke-width="1" opacity=".5"/>
+          <path d="M62 252h396" stroke="#8FF0FF" stroke-width="1" opacity=".28"/>
+          <g>
+            <ellipse cx="214" cy="196" rx="44" ry="38" fill="url(#heroCloud)" opacity=".95"/>
+            <ellipse cx="266" cy="180" rx="56" ry="48" fill="url(#heroCloud)"/>
+            <ellipse cx="316" cy="200" rx="40" ry="34" fill="url(#heroCloud)" opacity=".95"/>
+            <rect x="186" y="194" width="146" height="46" rx="23" fill="url(#heroCloud)"/>
+          </g>
+          <g fill="#B7F4FF" font-family="ui-monospace,Menlo,monospace" font-size="11" opacity=".8">
+            <text x="352" y="112">1</text><text x="368" y="92">0</text><text x="386" y="118">1</text>
+            <text x="340" y="140">0</text><text x="300" y="86">1</text>
+            <text x="130" y="120">0</text><text x="112" y="146">1</text>
+          </g>
+          <g fill="#8FF0FF">
+            <circle cx="96" cy="252" r="4"/><circle cx="424" cy="252" r="4"/>
+            <circle cx="178" cy="200" r="3" opacity=".7"/><circle cx="344" cy="204" r="3" opacity=".7"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <div class="rh-visual">
-      <span class="rh-ring r1"></span>
-      <span class="rh-ring r2"></span>
-      <span class="rh-glow"></span>
-      <span class="rh-tag t1"><b style="color:#eab308">⚡</b> TensorFlow</span>
-      <span class="rh-tag t2">✨ 多模态推理</span>
-      <span class="rh-tag t3">📊 数据预处理</span>
-      <span class="rh-tag t4"><b style="color:#2b6be6">🐍</b> PyTorch</span>
+<section class="quick-links">
+  <a href="/coupons">
+    <b>注册礼包</b>
+    <span>新用户开通即送体验额度，先跑通再付费</span>
+  </a>
+  <a href="/portal">
+    <b>GPU 选型</b>
+    <span>按显存、卡数与预算筛选合适机型</span>
+  </a>
+  <a href="/invoice">
+    <b>开具发票</b>
+    <span>消费后在线申请，电子发票快速开出</span>
+  </a>
+  <a href="/docs">
+    <b>新手入门</b>
+    <span>从创建实例到 JupyterLab 的五分钟指引</span>
+  </a>
+</section>
 
-      <div class="rh-flip" id="rhFlip">
-        <div class="rh-flipper">
-          <div class="rh-front">
-            <div class="rh-cardbar">
-              <span class="dots"><i></i><i></i><i></i></span>
-              <span class="searching"><i></i><em id="rhState" style="font-style:normal">正在搜索...</em></span>
-            </div>
-            <div class="rh-cardbody">
-              <div class="rh-logo"><img id="rhLogo" src="/img/amd.svg" alt="AMD"></div>
-              <h3 id="rhModel">CLOUD CPU4</h3>
-              <p id="rhSpec">30 核心 · 120 GB 内存</p>
-              <div class="rh-pricebox">
-                <span>预估价格</span>
-                <div>¥ <b id="rhPrice">0.62</b> <i>/小时</i></div>
-              </div>
-            </div>
-            <div class="rh-lock" onclick="rhLock()">👆 点击锁定配置</div>
-          </div>
-          <div class="rh-back">
-            <div class="ok">✓</div>
-            <h3>配置已锁定</h3>
-            <button onclick="goCreate()">立即创建实例</button>
-            <a href="#" onclick="rhUnlock();return false">重新选择</a>
-          </div>
-        </div>
+<section class="adl-live">
+  <div class="adl-live-inner">
+    <div class="adl-live-copy">
+      <h2>实时资源</h2>
+      <p>资源池每 5 秒同步一次，库存与价格以创建页为准。</p>
+      <div class="hero-adl-metrics">
+        <div><b id="tkMetricCards">—</b><span>可用 GPU 卡</span></div>
+        <div><b id="tkMetricNodes">—</b><span>在线节点</span></div>
+        <div><b id="tkMetricPrice">—</b><span>起价 / 卡时</span></div>
+      </div>
+    </div>
+    <div class="tk-panel">
+      <div class="tk-panel-head">
+        <span>实时资源</span>
+        <span class="tk-live"><i></i>实时</span>
+      </div>
+      <div class="tk-panel-body">
+        <div class="tk-row tk-row-head"><span>型号</span><span>显存</span><span>库存</span><span>单价</span></div>
+        <div id="tkStockList"></div>
+      </div>
+      <div class="tk-panel-foot">
+        <span id="tkStockSource">正在读取资源池</span>
+        <a href="/portal">前往算力市场 &rarr;</a>
       </div>
     </div>
   </div>
@@ -99,7 +147,7 @@
       <div class="blk-title">算力市场</div>
       <div class="blk-sub">灵活多样的算力选择，打破硬件门槛</div>
     </div>
-    <a class="pill-link" href="/market">查看所有实例 →</a>
+    <a class="pill-link" href="/portal">查看所有实例 →</a>
   </div>
 
   <div class="type-grid">
@@ -147,143 +195,68 @@
   </div>
 </section>
 
-<section class="section" id="features" style="padding-top:6px">
-  <div class="blk-head">
+<section class="adl-rank" id="rank">
+  <div class="rank-head">
+    <h2>GPU 算力排名</h2>
+    <p>仅以平台在售加速卡型号排名，算力取 NVIDIA 官方 Peak FP16 Tensor TFLOPs（FP32 Accumulate）口径</p>
+  </div>
+  <div class="rank-tabs"><span class="on">半精算力排名</span></div>
+  <div class="rank-card">
+      <div class="rank-row rank-th"><span>排名</span><span>GPU</span><span>半精算力</span><span></span><span>算力</span></div>
+      <div class="rank-row"><span class="rk g"><svg class="cr" viewBox="0 0 24 24" width="15" height="15"><path d="M3 8.5l4.2 2.8L12 4.6l4.8 6.7L21 8.5v9.1a1.4 1.4 0 0 1-1.4 1.4H4.4A1.4 1.4 0 0 1 3 17.6z" fill="currentColor"/></svg><b>1</b></span><span class="gpu">H800 / 80GB</span><span class="bar"><i style="width:100%"></i></span><span class="pct">100%</span><span class="val">756 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk s"><svg class="cr" viewBox="0 0 24 24" width="15" height="15"><path d="M3 8.5l4.2 2.8L12 4.6l4.8 6.7L21 8.5v9.1a1.4 1.4 0 0 1-1.4 1.4H4.4A1.4 1.4 0 0 1 3 17.6z" fill="currentColor"/></svg><b>2</b></span><span class="gpu">NVIDIA A100 SXM4 / 40GB</span><span class="bar"><i style="width:41%"></i></span><span class="pct">41%</span><span class="val">312 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk b"><svg class="cr" viewBox="0 0 24 24" width="15" height="15"><path d="M3 8.5l4.2 2.8L12 4.6l4.8 6.7L21 8.5v9.1a1.4 1.4 0 0 1-1.4 1.4H4.4A1.4 1.4 0 0 1 3 17.6z" fill="currentColor"/></svg><b>3</b></span><span class="gpu">NVIDIA A800 NVLINK / 80GB</span><span class="bar"><i style="width:41%"></i></span><span class="pct">41%</span><span class="val">312 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk "><b>4</b></span><span class="gpu">NVIDIA RTX 5090 / 32GB</span><span class="bar"><i style="width:28%"></i></span><span class="pct">28%</span><span class="val">210 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk "><b>5</b></span><span class="gpu">NVIDIA RTX 4090 / 24GB</span><span class="bar"><i style="width:22%"></i></span><span class="pct">22%</span><span class="val">165.2 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk "><b>6</b></span><span class="gpu">NVIDIA RTX 4090D / 24GB</span><span class="bar"><i style="width:19%"></i></span><span class="pct">19%</span><span class="val">147 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk "><b>7</b></span><span class="gpu">NVIDIA L20 / 48GB</span><span class="bar"><i style="width:16%"></i></span><span class="pct">16%</span><span class="val">119.5 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk "><b>8</b></span><span class="gpu">NVIDIA RTX 3090 / 24GB</span><span class="bar"><i style="width:9%"></i></span><span class="pct">9%</span><span class="val">71 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk "><b>9</b></span><span class="gpu">NVIDIA RTX 4080 / 32GB</span><span class="bar"><i style="width:6%"></i></span><span class="pct">6%</span><span class="val">48.7 Tensor TFLOPS</span></div>
+      <div class="rank-row"><span class="rk "><b>10</b></span><span class="gpu">NVIDIA RTX 4060 Laptop / 8GB</span><span class="bar"><i style="width:4%"></i></span><span class="pct">4%</span><span class="val">30 Tensor TFLOPS</span></div>
+  </div>
+</section>
+
+
+<footer class="adl-foot">
+  <div class="adl-foot-in">
     <div>
-      <div class="blk-title" style="font-size:24px">弹性算力服务</div>
-      <div class="blk-sub">按需动态伸缩，从「按量训练」到「弹性推理」</div>
+      <div class="ft-brand">TokenArk 创元方舟</div>
+      <div class="ft-sub">GPU 算力运营平台 · 私有化交付</div>
     </div>
-    <a class="pill-link" href="/solutions">了解方案 →</a>
-  </div>
-  <div class="feat-grid">
-    <div class="feat-card"><div class="feat-ic">⚡</div><div class="feat-t">极致弹性</div>
-      <div class="feat-d">秒级启动 / 分钟级扩容，轻松应对流量洪峰</div></div>
-    <div class="feat-card"><div class="feat-ic">¥</div><div class="feat-t">按需付费</div>
-      <div class="feat-d">按秒计费，用多少算多少，成本可控</div></div>
-    <div class="feat-card"><div class="feat-ic">◈</div><div class="feat-t">高可用保障</div>
-      <div class="feat-d">故障自动隔离与热迁移，SLA 99.9%</div></div>
-    <div class="feat-card"><div class="feat-ic">⚙</div><div class="feat-t">一键部署</div>
-      <div class="feat-d">预置主流框架镜像，环境开箱即用</div></div>
-  </div>
-</section>
-
-<section class="section" style="padding-top:6px">
-  <div class="blk-head"><div><div class="blk-title" style="font-size:22px">热门模型镜像</div>
-    <div class="blk-sub">预置环境，开箱即用 · 数据来自服务端镜像目录</div></div>
-    <a class="pill-link" href="/images">查看全部镜像 →</a></div>
-  <div class="mirror-strip"><div class="mirror-track" id="mirrorTrack"></div></div>
-</section>
-
-<section class="section" style="padding-top:6px">
-  <div style="text-align:center;margin-bottom:26px">
-    <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">全栈式 AI 基础设施服务</div>
-    <div class="hint" style="margin-top:8px">从硬件供应到模型部署，我们为您提供一站式企业级支持</div>
-  </div>
-  <div class="grid g2">
-    <div class="card panel">
-      <h3>NVIDIA 全线产品销售</h3>
-      <div class="hint">提供 NVIDIA 全系列 GPU 硬件，覆盖从数据中心到边缘计算的全场景需求。<br>
-        · RTX 5090 / 4090 消费级显卡<br>· A100 / H800 数据中心 GPU<br>· NVLink 整机与集群方案</div>
-    </div>
-    <div class="card panel">
-      <h3>算力集群建设与调优</h3>
-      <div class="hint">从硬件选型、集群组网到调度平台落地，交付可运营的算力底座。<br>
-        · K8s + GPU Operator 集群<br>· 多租户配额与计费<br>· 监控告警与巡检体系</div>
-    </div>
-    <div class="card panel">
-      <h3>项目运维与技术支持</h3>
-      <div class="hint">7×24 值守、故障响应与版本升级，保证集群长期稳定运行。<br>
-        · P0 15 分钟响应<br>· 驱动 / CUDA / 平台滚动升级<br>· 运维培训与最佳实践</div>
-    </div>
-    <div class="card panel">
-      <h3>大模型部署与推理服务</h3>
-      <div class="hint">主流开源模型一键部署，提供高吞吐、低延迟的推理服务。<br>
-        · vLLM / Ollama 推理加速<br>· 多模型灰度与弹性扩缩<br>· API 网关与用量计量</div>
-    </div>
-  </div>
-</section>
-
-<section class="section" style="padding-top:6px">
-  <div style="position:relative;border-radius:20px;overflow:hidden;padding:56px 40px;text-align:center;
-       background:linear-gradient(120deg,#141414,#312e81 42%,#335587 72%,#325283)">
-    <div style="position:absolute;inset:0;opacity:.28;
-         background-image:linear-gradient(rgba(255,255,255,.14) 1px,transparent 1px),
-                          linear-gradient(90deg,rgba(255,255,255,.14) 1px,transparent 1px);
-         background-size:56px 56px"></div>
-    <div style="position:relative;color:#fff">
-      <div style="font-size:32px;font-weight:800;letter-spacing:.06em">智算无疆　川流不息</div>
-      <div style="font-size:11px;letter-spacing:.34em;opacity:.62;margin-top:8px">INFINITE COMPUTE · FLOWING FUTURE</div>
-      <a class="btn-primary" href="/market" style="margin-top:22px">解锁 2026 AI 算力新篇章</a>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="pricing" style="padding-top:6px">
-  <div class="blk-head">
-    <div>
-      <div class="blk-title" style="font-size:22px">计费方式</div>
-      <div class="blk-sub">当前支持按量计费，包周期计费在规划中</div>
-    </div>
-  </div>
-  <div class="feat-grid">
-    <div class="feat-card" style="border-color:#d9e6fb;background:linear-gradient(180deg,#ffffff,#f5f8ff)">
-      <div class="between" style="margin-bottom:10px"><b style="font-size:14px">按量计费</b>
-        <span class="pill p-purple">已上线</span></div>
-      <div style="font-size:24px;font-weight:750">¥2.80<span style="font-size:11px;color:#8a94a3;font-weight:400"> / 卡 · 小时</span></div>
-      <div class="hint" style="margin-top:8px">按秒结算，释放时退回未使用部分</div>
-    </div>
-    <div class="feat-card">
-      <div class="between" style="margin-bottom:10px"><b style="font-size:14px">包日</b><span class="pill p-gray">规划中</span></div>
-      <div style="font-size:24px;font-weight:750;color:#a8b0bf">—</div>
-      <div class="hint" style="margin-top:8px">适合短周期压测与课程实验</div>
-    </div>
-    <div class="feat-card">
-      <div class="between" style="margin-bottom:10px"><b style="font-size:14px">包周 / 包月</b><span class="pill p-gray">规划中</span></div>
-      <div style="font-size:24px;font-weight:750;color:#a8b0bf">—</div>
-      <div class="hint" style="margin-top:8px">长期训练更划算，需预留资源</div>
-    </div>
-    <div class="feat-card">
-      <div class="between" style="margin-bottom:10px"><b style="font-size:14px">包夜</b><span class="pill p-gray">规划中</span></div>
-      <div style="font-size:24px;font-weight:750;color:#a8b0bf">—</div>
-      <div class="hint" style="margin-top:8px">夜间闲置资源折价，提升卡利用率</div>
-    </div>
-  </div>
-</section>
-
-<section class="section" style="padding-top:6px">
-  <div style="text-align:center;padding:44px 30px;border-radius:20px;
-       background:linear-gradient(120deg,#f0f6ff,#f2f6fd 60%,#fff);border:1px solid #e2eeff">
-    <span class="pill p-purple">从个人项目到企业级应用</span>
-    <div style="font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:14px">我们为您提供全力支持</div>
-    <div class="hint" style="margin-top:8px">7×24 技术支持 · 定制化解决方案 · 免费测试额度</div>
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:22px">
-      <a class="btn-primary" href="/login?tab=register">免费注册，领取测试额度</a>
-      <a class="btn-ghost" href="#" onclick="Biz.lead({source:'解决方案咨询',title:'咨询算力方案',desc:'留下机型、台数和使用时长，商务会给出配置方案和报价。',note:'业务场景：\n需要的机型 / 台数：\n预计使用时长：'});return false">咨询算力方案</a>
-    </div>
-  </div>
-</section>
-
-<footer style="border-top:1px solid #eef4fc;margin-top:10px;background:#fff">
-  <div class="wrap" style="padding:30px 24px;display:flex;justify-content:space-between;gap:20px;
-       flex-wrap:wrap;font-size:12px;color:#8a94a3">
-    <div>
-      <div style="font-weight:700;color:#141414;font-size:13px">TokenArk 创元方舟</div>
-      <div style="margin-top:6px">GPU 算力运营平台 · 私有化交付</div>
-    </div>
-    <div style="display:flex;gap:26px">
-      <a href="/market">算力市场</a><a href="/group">拼团</a>
+    <div class="ft-links">
+      <a href="/portal">算力市场</a><a href="/group">拼团</a>
       <a href="/baremetal">裸金属</a><a href="/about">关于我们</a>
     </div>
-    <div>© 2026 TokenArk · 演示环境 · 卡池 <b id="statPool">--</b> · <span id="statTime">--:--</span> 更新</div>
+    <div class="ft-copy">© 2026 TokenArk · 演示环境 · 卡池 <b id="statPool">--</b> · <span id="statTime">--:--</span> 更新</div>
   </div>
 </footer>
 
-<a href="#" onclick="Biz.assistant();return false" title="智能助手"
-   style="position:fixed;right:26px;bottom:26px;width:48px;height:48px;border-radius:50%;
-   background:linear-gradient(135deg,#2b6be6,#7fb0ff);color:#fff;display:flex;align-items:center;
-   justify-content:center;font-size:20px;box-shadow:0 14px 30px -10px rgba(43,107,230,.7);z-index:60">☁</a>
+<div class="side-dock">
+  <a class="dock-coupon" href="/coupons" title="领优惠券">领优惠券</a>
+  <div class="dock-card">
+    <a href="#" onclick="Biz.assistant();return false" title="智能客服">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+    </a>
+    <a href="#" onclick="Biz.lead({source:'首页工单',title:'提交工单',desc:'描述遇到的问题，值班同学会尽快回复。',note:'问题描述：\n实例 / 订单号：\n期望处理时间：'});return false" title="提交工单">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/>
+      </svg>
+    </a>
+    <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false" title="回到顶部">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+      </svg>
+    </a>
+  </div>
+</div>
 
-<script src="/biz.js?v19"></script>
+<script src="/biz.js?v46"></script>
 <script>
 /* 首页数据全部来自 Spring Boot：/api/catalog/home */
 (async function () {
@@ -310,61 +283,72 @@
 })();
 </script>
 <script>
-/* Hero 翻转卡：正面机型轮换 + 3D 翻转，对应参考站「正在搜索 / 配置已锁定」 */
+/* 首页实时资源面板：登录后读真实 SKU 库存；未登录读公开 catalog 的机型与挂牌价。
+   任何时候都不展示编造的库存数字 —— 无数据时该列显示「—」。 */
 (function () {
-  var configs = [
-    { logo: '/img/amd.svg',   alt: 'AMD',    model: 'CLOUD CPU4', spec: '30 核心 · 120 GB 内存', price: '0.62' },
-    { logo: '/img/nvidia.svg',alt: 'NVIDIA', model: 'RTX 4090D',  spec: '22 核心 · 100 GB 内存 · 24G 显存', price: '1.25' },
-    { logo: '/img/intel.svg', alt: 'Intel',  model: 'CLOUD CPU3', spec: '20 核心 · 80 GB 内存', price: '0.60' },
-    { logo: '/img/nvidia.svg',alt: 'NVIDIA', model: 'RTX 5090',   spec: '32 核心 · 160 GB 内存 · 32G 显存', price: '2.80' }
-  ];
-  var i = 0, flip = document.getElementById('rhFlip'), busy = false, locked = false;
-  var logo = document.getElementById('rhLogo'), model = document.getElementById('rhModel');
-  var spec = document.getElementById('rhSpec'), price = document.getElementById('rhPrice');
-
-  function apply(c) {
-    logo.src = c.logo; logo.alt = c.alt;
-    model.textContent = c.model;
-    spec.textContent = c.spec;
-    price.textContent = c.price;
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
-
-  window.rhLock = function () {
-    if (busy) return;
-    busy = true;
-    locked = true;
-    flip.classList.add('flipped');
-    document.getElementById('rhState').textContent = '配置已锁定';
-    setTimeout(function () { busy = false; }, 1000);
-  };
-  window.rhUnlock = function () {
-    flip.classList.remove('flipped');
-    locked = false;
-    document.getElementById('rhState').textContent = '正在搜索...';
-  };
-
-  /* 立即创建实例：进容器云下单页，带上锁定的机型做预选（未登录先去登录，登录后回跳） */
-  window.goCreate = function () {
-    const m = document.getElementById('rhModel').textContent.trim();
-    const next = '/portal' + (m ? '?model=' + encodeURIComponent(m) : '');
-    location.href = Biz.token() ? next : '/login?next=' + encodeURIComponent(next);
-  };
-
-  setInterval(function () {
-    if (busy || locked) return;
-    busy = true;
-    flip.classList.add('flipped');
-    setTimeout(function () {
-      i = (i + 1) % configs.length;
-      apply(configs[i]);
-    }, 900);
-    setTimeout(function () {
-      flip.classList.remove('flipped');
-      busy = false;
-    }, 3200);
-  }, 7000);
+  function row(s) {
+    var mem = Number(s.memGb) > 0 ? Number(s.memGb) + ' GB' : '—';
+    var stock = s.stock == null ? '—' : esc(s.stock);
+    var price = Number(s.unitPrice) > 0 ? '&yen;' + Number(s.unitPrice).toFixed(2) : '—';
+    return '<div class="tk-row"><span>' + esc(s.model) + '</span><span>' + mem +
+           '</span><span>' + stock + '</span><span>' + price + '</span></div>';
+  }
+  function render(list, source, cards) {
+    document.getElementById('tkStockList').innerHTML = list.length
+      ? list.slice(0, 4).map(row).join('')
+      : '<div class="tk-row"><span colspan="4">暂无可展示机型</span></div>';
+    document.getElementById('tkStockSource').textContent = source;
+    document.getElementById('tkMetricCards').textContent = cards == null ? '—' : cards;
+    document.getElementById('tkMetricNodes').textContent = '3';
+    var prices = list.map(function (s) { return Number(s.unitPrice) || 0; })
+                     .filter(function (p) { return p > 0; });
+    document.getElementById('tkMetricPrice').textContent =
+      prices.length ? '¥' + Math.min.apply(null, prices).toFixed(2) : '—';
+  }
+  // 公开 catalog：未登录也能看到真实机型与挂牌价，库存不编造
+  function fromCatalog(d) {
+    if (!Array.isArray(d)) throw new Error('bad');
+    // 首页优先展示 GPU 机型；GPU 不足 4 条时再用 CPU/调试机型补齐
+    var gpu = d.filter(function (x) { return Number(x.vram) > 0; });
+    var rest = d.filter(function (x) { return !(Number(x.vram) > 0); });
+    return gpu.concat(rest).slice(0, 4).map(function (x) {
+      return { model: x.model, memGb: Number(x.vram) || 0,
+               stock: null, unitPrice: Number(x.hourly) || 0 };
+    });
+  }
+  var token = (window.Biz && Biz.token) ? Biz.token() : '';
+  if (token) {
+    fetch('/api/skus', { headers: { Authorization: 'Bearer ' + token } })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (d) {
+        if (!Array.isArray(d) || !d.length) throw new Error('empty');
+        var one = d.filter(function (s) {
+          return Number(s.gpuCount) === 1 || Number(s.gpuCount) === 0;
+        });
+        // 2/4/8 卡规格是同一批卡的打包口径，只按单卡规格统计，避免重复计数
+        var cards = one.reduce(function (n, s) {
+          return n + (Number(s.gpuCount) === 1 && Number(s.stock) > 0 ? Number(s.stock) : 0);
+        }, 0);
+        render(one, '台账 · 实时库存', cards);
+      })
+      .catch(function () {
+        fetch('/api/catalog/market').then(function (r) { return r.json(); })
+          .then(function (d) { render(fromCatalog(d), '公开机型 · 挂牌价', null); })
+          .catch(function () { render([], '资源池暂不可用', null); });
+      });
+  } else {
+    fetch('/api/catalog/market').then(function (r) { return r.json(); })
+      .then(function (d) { render(fromCatalog(d), '公开机型 · 挂牌价', null); })
+      .catch(function () { render([], '资源池暂不可用', null); });
+  }
 })();
 </script>
-<script src="/nav.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/nav.js?v46"></script>
 </body>
 </html>

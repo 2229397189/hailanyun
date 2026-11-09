@@ -2,7 +2,7 @@
 (function () {
   var U = JSON.parse(localStorage.getItem('gu_user') || 'null') || { username: '未登录' };
   var active = document.body.dataset.active || 'main';
-  document.body.classList.add('theme-pink');
+  // 自有设计语言：不再启用参考站遗留的洋红主题变体（视觉统一由 brand.css 定义）
 
   var LV = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
   var SVG = {
@@ -19,28 +19,40 @@
     x: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M18 6 6 18M6 6l12 12"/></svg>',
     down: '<svg viewBox="0 0 24 24" ' + LV + '><path d="m6 9 6 6 6-6"/></svg>',
     robot: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
-    home: '<svg viewBox="0 0 24 24" ' + LV + '><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>'
+    home: '<svg viewBox="0 0 24 24" ' + LV + '><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+    display: '<svg viewBox="0 0 24 24" ' + LV + '><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+    folder: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
+    card: '<svg viewBox="0 0 24 24" ' + LV + '><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+    ticket: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>',
+    chart: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>',
+    coins: '<svg viewBox="0 0 24 24" ' + LV + '><circle cx="8" cy="8" r="5"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg>',
+    receipt: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>',
+    wallet: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5"/><path d="M18 12h.01"/></svg>',
+    user: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>',
+    users: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" ' + LV + '><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>'
   };
 
   var PAGES = {
-    main: { t: '主页看板', h: '/console', ic: '<span class="ci">🏠</span>' },
-    inst: { t: '实例列表', h: '/instances', ic: '<span class="ci">🖥️</span>' },
-    store: { t: '文件存储', h: '/storage', ic: '<span class="ci">📁</span>' },
-    img: { t: '我的镜像', h: '/images', ic: '<span style="color:#6366f1">' + SVG.box + '</span>' },
-    llm: { t: '大模型 API', h: '/llm-api', ic: '<span style="color:#0ea5e9">' + SVG.spark + '</span>' },
-    recharge: { t: '在线充值', h: '/recharge', ic: '<span class="ci">💳</span>' },
-    coupons: { t: '我的券包', h: '/coupons', ic: '<span class="ci">🎟️</span>' },
-    orders: { t: '我的订单', h: '/orders', ic: '<span class="ci">📋</span>' },
-    billing: { t: '消费账单', h: '/billing', ic: '<span class="ci">📊</span>' },
-    flow: { t: '收支明细', h: '/flow', ic: '<span class="ci">💰</span>' },
-    invoice: { t: '发票管理', h: '/invoice', ic: '<span class="ci">🧾</span>' },
+    main: { t: '主页看板', h: '/console', ic: '<span class="ci">' + SVG.home + '</span>' },
+    inst: { t: '实例列表', h: '/instances', ic: '<span class="ci">' + SVG.display + '</span>' },
+    store: { t: '文件存储', h: '/storage', ic: '<span class="ci">' + SVG.folder + '</span>' },
+    img: { t: '我的镜像', h: '/images', ic: '<span class="ci">' + SVG.box + '</span>' },
+    llm: { t: '大模型 API', h: '/llm-api', ic: '<span class="ci">' + SVG.spark + '</span>' },
+    recharge: { t: '在线充值', h: '/recharge', ic: '<span class="ci">' + SVG.card + '</span>' },
+    coupons: { t: '我的券包', h: '/coupons', ic: '<span class="ci">' + SVG.ticket + '</span>' },
+    orders: { t: '我的订单', h: '/orders', ic: '<span class="ci">' + SVG.doc + '</span>' },
+    billing: { t: '消费账单', h: '/billing', ic: '<span class="ci">' + SVG.chart + '</span>' },
+    flow: { t: '收支明细', h: '/flow', ic: '<span class="ci">' + SVG.coins + '</span>' },
+    invoice: { t: '发票管理', h: '/invoice', ic: '<span class="ci">' + SVG.receipt + '</span>' },
     /* 钱包仍在 /wallet 可达，只是不再进侧栏（费用管理已拆成上面 6 项） */
-    wallet: { t: '我的钱包', h: '/wallet', ic: '<span class="ci">👛</span>' },
-    msg: { t: '消息通知', h: '/notifications', ic: '<span class="ci">📣</span>' },
-    subscribe: { t: '订阅推送', h: '/subscribe', ic: '<span class="ci">🔔</span>' },
-    acc: { t: '个人资料', h: '/account', ic: '<span class="ci">👤</span>' },
-    sub: { t: '子账号', h: '/subaccounts', ic: '<span class="ci">👥</span>' },
-    apply: { t: '资源申请', h: '/apply', ic: '<span class="ci">📝</span>' }
+    wallet: { t: '我的钱包', h: '/wallet', ic: '<span class="ci">' + SVG.wallet + '</span>' },
+    msg: { t: '消息通知', h: '/notifications', ic: '<span class="ci">' + SVG.bell + '</span>' },
+    subscribe: { t: '订阅推送', h: '/subscribe', ic: '<span class="ci">' + SVG.bell + '</span>' },
+    acc: { t: '个人资料', h: '/account', ic: '<span class="ci">' + SVG.user + '</span>' },
+    sub: { t: '子账号', h: '/subaccounts', ic: '<span class="ci">' + SVG.users + '</span>' },
+    apply: { t: '资源申请', h: '/apply', ic: '<span class="ci">' + SVG.edit + '</span>' }
   };
   var cur = PAGES[active] || PAGES.main;
 
@@ -58,7 +70,7 @@
       '</a>' +
       '<nav class="navlinks">' +
         '<a href="/index">首页</a>' +
-        '<a href="/market">算力市场</a>' +
+        '<a href="/portal">算力市场</a>' +
         '<a href="/llm-api">大模型 API</a>' +
         '<a href="/solutions">解决方案</a>' +
         '<a href="/about">关于我们</a>' +
@@ -71,122 +83,8 @@
     '</div>';
   document.body.insertBefore(nav, document.body.firstChild);
 
-  /* ---------- 头像下拉：身份 / 余额 / 外观 / 退出 ---------- */
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-  var roleTxt = U.role === 'admin' ? '平台管理员' : U.role === 'ops' ? '值班运维' : '租户';
-  var drop = document.createElement('div');
-  drop.className = 'udrop';
-  drop.id = 'udrop';
-  drop.style.display = 'none';
-  drop.innerHTML =
-    '<div class="ud-card">' +
-      '<div class="ud-id">' +
-        '<span class="ud-ava">' + esc((U.username || 'U').slice(0, 1).toUpperCase()) + '</span>' +
-        '<div class="ud-nm">' +
-          '<div class="ud-name">' + esc(U.displayName || U.username) + ' <span class="ud-badge">' + roleTxt + '</span></div>' +
-          '<div class="ud-sub" id="udSub">' + esc(U.username) + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="ud-bal" id="udBal" style="display:none">' +
-        '<div class="ud-bal-top"><span>账户总余额 <i class="ud-q" title="余额来自平台账本，充值后实时更新">?</i></span>' +
-        '<button class="ud-btn" onclick="location.href=\'/recharge\'">充值</button></div>' +
-        '<div class="ud-bal-num" id="udBalNum">—</div>' +
-      '</div>' +
-      '<div class="ud-sec">' +
-        '<div class="ud-sec-t">外观 <span class="ud-sec-r" id="udThemeLbl">跟随系统</span></div>' +
-        '<div class="ud-themes">' +
-          '<button data-t="light" title="浅色">☀️</button>' +
-          '<button data-t="dark" title="深色">🌙</button>' +
-          '<button data-t="auto" title="跟随系统">✨</button>' +
-        '</div>' +
-      '</div>' +
-      '<div class="ud-out" id="udOut">退出登录</div>' +
-    '</div>';
-  document.body.appendChild(drop);
-
-  function themeMode() { return localStorage.getItem('gu_theme') || 'auto'; }
-  function themeResolved() {
-    var m = themeMode();
-    if (m === 'auto') {
-      return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-    }
-    return m;
-  }
-  function applyTheme() {
-    var m = themeMode();
-    document.documentElement.setAttribute('data-theme', themeResolved());
-    var lbl = document.getElementById('udThemeLbl');
-    if (lbl) lbl.textContent = m === 'light' ? '浅色' : m === 'dark' ? '深色' : '跟随系统';
-    drop.querySelectorAll('.ud-themes button').forEach(function (b) {
-      b.classList.toggle('on', b.dataset.t === m);
-    });
-  }
-  applyTheme();
-  if (window.matchMedia) {
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
-  }
-
-  function fillPanel() {
-    var uid = U.tenantId;
-    var balBox = document.getElementById('udBal');
-    if (!uid) {
-      balBox.style.display = 'none';
-      document.getElementById('udSub').textContent = '平台账号 · ' + U.username;
-      return;
-    }
-    var tk = localStorage.getItem('gu_token') || '';
-    fetch('/api/tenants', { headers: { Authorization: 'Bearer ' + tk } })
-      .then(function (r) { return r.json(); })
-      .then(function (list) {
-        var arr = Array.isArray(list) ? list : (list.items || []);
-        var own = arr.find(function (t) { return t.id === uid || t.tenantId === uid; }) || {};
-        document.getElementById('udSub').textContent = (own.name || '') + ' · ' + U.username;
-        if (own.balance_yuan == null) { balBox.style.display = 'none'; return; }
-        balBox.style.display = '';
-        var n = Number(own.balance_yuan);
-        document.getElementById('udBalNum').textContent =
-          '¥ ' + n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-      })
-      .catch(function () { balBox.style.display = 'none'; });
-  }
-
-  var ava = document.getElementById('navAva');
-  if (ava) {
-    ava.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var show = drop.style.display === 'none';
-      drop.style.display = show ? '' : 'none';
-      if (show) { fillPanel(); applyTheme(); }
-    });
-  }
-  document.addEventListener('click', function (e) {
-    if (drop.style.display !== 'none' && !drop.contains(e.target) && e.target !== ava) {
-      drop.style.display = 'none';
-    }
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') drop.style.display = 'none';
-  });
-  drop.querySelectorAll('.ud-themes button').forEach(function (b) {
-    b.addEventListener('click', function () {
-      localStorage.setItem('gu_theme', b.dataset.t);
-      applyTheme();
-    });
-  });
-  document.getElementById('udOut').addEventListener('click', function () {
-    var tk = localStorage.getItem('gu_token') || '';
-    fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + tk } })
-      .catch(function () {})
-      .finally(function () {
-        localStorage.removeItem('gu_token');
-        localStorage.removeItem('gu_user');
-        location.href = '/login';
-      });
-  });
+  /* 头像下拉（身份 / 余额 / 外观 / 退出）统一由 user-menu.js 接管，
+     本文件只建顶栏骨架，避免两套面板互相打架。 */
 
   /* ---------- 侧栏 ---------- */
   function item(k) {
@@ -213,9 +111,9 @@
     side.innerHTML =
       '<nav>' +
         ['main', 'inst', 'store', 'img', 'llm'].map(item).join('') +
-        group('bill', '<span style="color:#ef4444">🧧</span>', '费用管理',
+        group('bill', SVG.card, '费用管理',
           ['recharge', 'coupons', 'orders', 'billing', 'flow', 'invoice']) +
-        group('acct', '<span style="color:#3b82f6">🪪</span>', '账号管理',
+        group('acct', SVG.users, '账号管理',
           ['acc', 'sub', 'apply', 'msg', 'subscribe']) +
       '</nav>' +
       '<div class="foot">' +
@@ -259,8 +157,9 @@
     });
     var moonBtn = bar.querySelector('.ctool.dark');
     if (moonBtn) moonBtn.addEventListener('click', function () {
-      localStorage.setItem('gu_theme', themeResolved() === 'dark' ? 'light' : 'dark');
-      applyTheme();
+      if (window.TKTheme) {
+        window.TKTheme.set(window.TKTheme.resolved() === 'dark' ? 'light' : 'dark');
+      }
     });
   }
 
@@ -303,4 +202,7 @@
     md: function (v) { var s = this.at(v); return s.length > 16 ? s.slice(5, 16) : s; },
     raw: function (v) { return String(v).replace('T', ' ').slice(0, 16); }
   };
+
+  /* 顶栏骨架就绪后再挂账号菜单（user-menu.js 先于本文件加载） */
+  if (window.TKUserMenu) window.TKUserMenu.init();
 })();

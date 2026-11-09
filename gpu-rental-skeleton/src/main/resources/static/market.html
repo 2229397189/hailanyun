@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>算力市场 · TokenArk 创元方舟</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<link rel="stylesheet" href="/autodl.css?v46">
 </head>
-<body>
+<body class="adl home">
 
 <header class="topnav">
   <div class="inner">
@@ -25,7 +27,7 @@
     </a>
     <nav class="navlinks">
       <a href="/index">首页</a>
-      <a class="on" href="/market">算力市场</a>
+      <a class="on" href="/portal">算力市场</a>
       <a href="/llm-api">大模型 API</a>
       <a href="/solutions">解决方案</a>
       <a href="/about">关于我们</a>
@@ -38,146 +40,205 @@
   </div>
 </header>
 
-<main class="grid-bg">
-  <div class="wrap" style="padding-top:44px;padding-bottom:70px">
-    <div class="blk-head">
-      <div>
-        <div class="blk-title" style="font-size:30px">算力市场</div>
-        <div class="blk-sub">灵活多样的算力选择，打破硬件门槛</div>
-      </div>
-      <a class="pill-link" href="/portal">查看所有实例 →</a>
+<main class="rm-page">
+
+  <div class="rm-hblock">
+    <h1 class="rm-title">算力市场</h1>
+    <p class="rm-desc">弹性 GPU 与 CPU 算力，按量计费、秒级交付。支持包日 / 包周 / 包月，实例释放时未使用的部分按秒退回。</p>
+  </div>
+
+  <div class="rm-filter">
+    <div class="rm-frow first"><label class="rm-flabel">计费方式</label><div class="rm-opts" id="fBilling"></div></div>
+    <div class="rm-frow"><label class="rm-flabel">选择地区</label><div class="rm-opts" id="fZone"></div></div>
+    <div class="rm-frow"><label class="rm-flabel">GPU型号</label><div class="rm-opts" id="fModel"></div></div>
+    <div class="rm-frow last"><label class="rm-flabel">资源类型</label><div class="rm-opts" id="fKind"></div></div>
+  </div>
+
+  <div class="rm-toolbar">
+    <div class="rm-tool-left">
+      <span class="market-count" id="mCount">正在读取资源池…</span>
+      <span class="rm-divider"></span>
+      <button class="rm-trigger rm-stock" type="button" id="onlyStock" onclick="toggleStock()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+        <span>只看有货</span>
+      </button>
     </div>
-
-    <div class="type-grid">
-
-      <div class="type-card">
-        <div class="type-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.2 9.2 3.9 3.9 0 0 0 7 19h10.5Z"/>
-          </svg>
-        </div>
-        <div class="type-title">容器云实例</div>
-        <div class="type-desc">无需配置环境，秒级启动，适合 JupyterLab 直连、作业提交与论文复现。</div>
-        <div class="spec-box">
-          <span class="k">RTX5090-32G</span>
-          <span class="p">¥2.80<small> / 卡 · 时</small></span>
-        </div>
-        <a class="type-btn line" href="/portal" style="text-decoration:none">立即创建</a>
-      </div>
-
-      <div class="type-card">
-        <span class="badge-hot" style="background:linear-gradient(135deg,#059669,#0f9d76)">闲时 5 折</span>
-        <div class="type-icon" style="color:#059669;background:linear-gradient(135deg,#e6f6f1,#edf4ff)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-               stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>
-          </svg>
-        </div>
-        <div class="type-title">闲时算力卡</div>
-        <div class="type-desc">平台空闲时段自动调度，同等 RTX 5090 算力，价格低至 5 折，适合离线训练与批处理。</div>
-        <div class="spec-box">
-          <span class="k">RTX5090-32G · 闲时</span>
-          <span class="p">¥1.40<small> / 卡 · 时</small></span>
-        </div>
-        <a class="type-btn line" href="/portal" style="text-decoration:none">立即创建</a>
-      </div>
-
-      <div class="type-card">
-        <div class="type-icon" style="color:#2b6be6;background:linear-gradient(135deg,#ecf4ff,#edf4ff)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 9l-4 4 4 4"/><path d="M16 9l4 4-4 4"/><path d="M13 7l-2 10"/>
-          </svg>
-        </div>
-        <div class="type-title">无卡调试</div>
-        <div class="type-desc">CPU-only 开发容器（4C8G），调试代码与流程，按需挂卡升级，每小时仅 1 毛钱。</div>
-        <div class="spec-box">
-          <span class="k">CPU · 4C8G</span>
-          <span class="p">¥0.10<small> / 时</small></span>
-        </div>
-        <a class="type-btn line" href="/portal" style="text-decoration:none">立即创建</a>
-      </div>
-
-      <div class="type-card">
-        <span class="badge-hot">热门</span>
-        <div class="type-icon" style="color:#5f93ff;background:linear-gradient(135deg,#eaf2fd,#edf4ff)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-        </div>
-        <div class="type-title">拼团卡 · 团购</div>
-        <div class="type-desc">多人团购一整机，显存共享或切分，大幅降低大显存卡使用门槛。</div>
-        <div class="spec-box">
-          <span class="k">RTX5090-32G</span>
-          <span class="p">¥1,280<small> / 月 · 卡</small></span>
-        </div>
-        <a class="type-btn btn-primary" href="/group" style="text-decoration:none">去拼团</a>
-      </div>
-
-      <div class="type-card">
-        <div class="type-icon" style="color:#2b6be6;background:linear-gradient(135deg,#edf3fe,#edf4ff)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-               stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="6" rx="2"/>
-            <rect x="2" y="15" width="20" height="6" rx="2"/>
-            <path d="M6 6h.01M6 18h.01"/>
-          </svg>
-        </div>
-        <div class="type-title">B端裸金属</div>
-        <div class="type-desc">无虚拟化损耗，整机独占，提供极致性能，适合长时间大规模训练。</div>
-        <div class="spec-box">
-          <span class="k">RTX5090 × 8 整机</span>
-          <span class="p">¥5,500<small> / 月</small></span>
-        </div>
-        <a class="type-btn line" href="/baremetal" style="text-decoration:none">查看配置</a>
-      </div>
-
-    </div>
-
-    <div class="feat-grid" style="margin-top:34px">
-      <div class="feat-card">
-        <div class="feat-ic">⚡</div>
-        <div class="feat-t">秒级交付</div>
-        <div class="feat-d">下单即调度，Pod 秒级拉起，无需等待人工开通</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-ic">¥</div>
-        <div class="feat-t">按秒计费</div>
-        <div class="feat-d">预扣 + 按实际秒数结算，差额自动退回</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-ic">◈</div>
-        <div class="feat-t">卡级可视</div>
-        <div class="feat-d">每张卡的温度、显存、占用与故障一目了然</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-ic">⛨</div>
-        <div class="feat-t">私有化部署</div>
-        <div class="feat-d">全内网运行，数据不出机房，镜像本地仓库</div>
-      </div>
+    <div class="rm-tool-right">
+      <div class="adl-sorts" id="fSort"></div>
     </div>
   </div>
+
+  <div class="rm-grid" id="productGrid">
+    <div class="rm-empty">正在加载机型…</div>
+  </div>
+
 </main>
 
-<footer style="border-top:1px solid #eef4fc;background:#fff">
-  <div class="wrap" style="padding:26px 24px;display:flex;justify-content:space-between;gap:20px;
-       flex-wrap:wrap;font-size:12px;color:#8a94a3">
+<footer class="adl-foot">
+  <div class="wrap adl-foot-in">
     <div>
-      <div style="font-weight:700;color:#141414;font-size:13px">TokenArk 创元方舟</div>
-      <div style="margin-top:6px">GPU 算力运营平台 · 私有化交付</div>
+      <div class="ft-brand">TokenArk 创元方舟</div>
+      <div class="ft-sub">GPU 算力运营平台 · 私有化交付</div>
     </div>
-    <div style="display:flex;gap:26px">
-      <a href="/market">算力市场</a><a href="/group">拼团</a>
+    <div class="ft-links">
+      <a href="/portal">算力市场</a><a href="/group">拼团</a>
       <a href="/baremetal">裸金属</a><a href="/about">关于我们</a>
     </div>
-    <div>© 2026 TokenArk · 演示环境</div>
+    <div class="ft-copy">© 2026 TokenArk · 演示环境</div>
   </div>
 </footer>
 
-<script src="/nav.js?v19"></script>
+<script src="/user-menu.js?v46"></script>
+<script src="/nav.js?v46"></script>
+<script>
+(function () {
+  'use strict';
+
+  var BILLING = [
+    { k: 'hour', t: '按量计费', key: 'hourly', unit: '/时' },
+    { k: 'day',  t: '包日',     key: 'day',    unit: '/日' },
+    { k: 'week', t: '包周',     key: 'week',   unit: '/周' },
+    { k: 'month',t: '包月',     key: 'month',  unit: '/月' }
+  ];
+  var S = { billing: 'hour', zone: '全部', model: '全部', kind: '全部', onlyStock: false, sort: 'default' };
+  var ALL = [];
+  var ZONES = [], MODELS = [];
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function num(v) {
+    var n = Number(v);
+    if (!isFinite(n) || n <= 0) return '—';
+    return n % 1 === 0 ? n.toFixed(0) : n.toFixed(2).replace(/0$/, '');
+  }
+  function billing() {
+    for (var i = 0; i < BILLING.length; i++) if (BILLING[i].k === S.billing) return BILLING[i];
+    return BILLING[0];
+  }
+
+  function seg(id, list, cur, fn) {
+    document.getElementById(id).innerHTML = list.map(function (x) {
+      var val = typeof x === 'string' ? x : x.k;
+      var txt = typeof x === 'string' ? x : x.t;
+      return '<button class="adl-seg' + (val === cur ? ' on' : '') + '" type="button" ' +
+             'onclick="MKT.' + fn + "('" + val + "')" + '">' + txt + '</button>';
+    }).join('');
+  }
+
+  function renderFilters() {
+    seg('fBilling', BILLING, S.billing, 'setBilling');
+    seg('fZone', ['全部'].concat(ZONES), S.zone, 'setZone');
+    seg('fModel', ['全部'].concat(MODELS), S.model, 'setModel');
+    seg('fKind', ['全部', 'GPU', 'CPU'], S.kind, 'setKind');
+    document.getElementById('fSort').innerHTML = [
+      { k: 'default', t: '综合排序' },
+      { k: 'price', t: '价格' },
+      { k: 'vram', t: '显存' }
+    ].map(function (x) {
+      return '<button class="adl-sort' + (S.sort === x.k ? ' on' : '') + '" type="button" ' +
+             'onclick="MKT.setSort(\'' + x.k + '\')">' + x.t + '</button>';
+    }).join('');
+  }
+
+  function card(d) {
+    var sold = !!d.soldOut;
+    var bg = (d.brand === 'amd' || d.brand === 'intel') ? d.brand : 'nvidia';
+    var disk = esc(d.dataDisk || '—') + (d.dataExpand ? ' · ' + esc(d.dataExpand) : '');
+    var buy = sold
+      ? '<button class="gc-btn warn" type="button" onclick="MKT.notify(\'' + esc(d.model) + '\')">到货提醒</button>'
+      : '<button class="gc-btn" type="button" onclick="location.href=\'/portal\'">立即创建</button>';
+
+    return '<div class="adl-gcard">' +
+      '<div class="gc-top">' +
+        '<span class="gc-logo"><img src="/img/' + bg + '.svg" alt=""></span>' +
+        '<div class="gc-title">' +
+          '<h3>' + esc(d.model) + (d.vram ? '<span class="gc-vram">' + d.vram + 'G</span>' : '') + '</h3>' +
+          '<div class="gc-zone"><i>◉</i>' + esc(d.zone) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="gc-dash"></div>' +
+      '<div class="gc-alloc">' + esc(d.alloc || '1 x GPU 分配') + '</div>' +
+      '<div class="gc-grid">' +
+        '<div><span>vCPU</span><b>' + esc(d.vcpu) + ' 核心</b></div>' +
+        '<div><span>内存</span><b>' + esc(d.ram) + ' GB</b></div>' +
+        '<div><span>系统盘</span><b>' + esc(d.sysDisk) + ' GB</b></div>' +
+        '<div><span>数据盘</span><b>' + disk + '</b></div>' +
+      '</div>' +
+      '<div class="gc-foot">' +
+        '<div class="gc-periods">' +
+          '<div><span>包日</span><b>¥' + num(d.day) + '</b></div>' +
+          '<div><span>包周</span><b>¥' + num(d.week) + '</b></div>' +
+          '<div><span>包月</span><b>¥' + num(d.month) + '</b></div>' +
+        '</div>' +
+        '<div class="gc-now"><span>按量</span><b>¥' + num(d.hourly) + '<i>/时</i></b></div>' +
+        buy +
+      '</div>' +
+    '</div>';
+  }
+
+  function render() {
+    var list = ALL.slice();
+    if (S.zone !== '全部') list = list.filter(function (d) { return d.zone === S.zone; });
+    if (S.model !== '全部') list = list.filter(function (d) { return d.model === S.model; });
+    if (S.kind !== '全部') list = list.filter(function (d) { return d.kind === S.kind; });
+    if (S.onlyStock) list = list.filter(function (d) { return !d.soldOut; });
+
+    if (S.sort === 'price') {
+      var key = billing().key;
+      list.sort(function (a, b) { return (Number(a[key]) || 0) - (Number(b[key]) || 0); });
+    } else if (S.sort === 'vram') {
+      list.sort(function (a, b) { return (Number(b.vram) || 0) - (Number(a.vram) || 0); });
+    }
+
+    document.getElementById('mCount').innerHTML =
+      '共 <b>' + list.length + '</b> 个规格 · 数据来自资源池实时目录';
+    document.getElementById('productGrid').innerHTML = list.length
+      ? list.map(card).join('')
+      : '<div class="rm-empty">当前筛选条件下没有可用规格，换个条件试试</div>';
+  }
+
+  function load() {
+    fetch('/api/catalog/market')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (d) {
+        ALL = Array.isArray(d) ? d : [];
+        var zs = {}, ms = {};
+        ALL.forEach(function (x) { if (x.zone) zs[x.zone] = 1; if (x.model) ms[x.model] = 1; });
+        ZONES = Object.keys(zs);
+        MODELS = Object.keys(ms);
+        renderFilters();
+        render();
+      })
+      .catch(function () {
+        document.getElementById('mCount').textContent = '资源池暂不可用';
+        document.getElementById('productGrid').innerHTML =
+          '<div class="rm-empty">资源池暂时不可用，请稍后刷新</div>';
+      });
+  }
+
+  window.MKT = {
+    setBilling: function (v) { S.billing = v; renderFilters(); render(); },
+    setZone: function (v) { S.zone = v; renderFilters(); render(); },
+    setModel: function (v) { S.model = v; renderFilters(); render(); },
+    setKind: function (v) { S.kind = v; renderFilters(); render(); },
+    setSort: function (v) { S.sort = v; renderFilters(); render(); },
+    notify: function (model) {
+      alert(model + ' 当前已售罄。可以先到「控制台 → 资源申请」提交需求，到货后优先通知你。');
+    }
+  };
+
+  window.toggleStock = function () {
+    S.onlyStock = !S.onlyStock;
+    var b = document.getElementById('onlyStock');
+    b.classList.toggle('on', S.onlyStock);
+    render();
+  };
+
+  load();
+})();
+</script>
 </body>
 </html>

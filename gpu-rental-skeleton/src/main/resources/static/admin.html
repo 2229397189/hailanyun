@@ -5,7 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TokenArk 创元方舟 · 管理控制台</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/app.css?v19">
+<link rel="stylesheet" href="/app.css?v46">
+<link rel="stylesheet" href="/brand.css?v46">
+<style>
+/* ===== 管理端极简浅色主题（对齐参考控制台：白卡 + 1px 细边框 + 少量强调色） ===== */
+.content{background:#f7f8fa}
+.card{box-shadow:none!important;border:1px solid #e5e8ef!important;border-radius:8px!important}
+.card.panel{padding:16px 18px!important}
+.card.panel h3{font-size:13.5px!important;font-weight:600!important;color:#1f2733!important}
+.kpi{box-shadow:none!important;border:1px solid #e5e8ef!important;border-radius:8px!important;
+  padding:14px 16px!important;background:#fff!important}
+.kpi::after{display:none!important}                 /* 去掉右上装饰圆，保持干净 */
+.kpi .k{font-size:12px!important;color:#8b93a1!important;margin-bottom:8px!important}
+.kpi .v{font-size:26px!important;font-weight:700!important;color:#1f2733!important;letter-spacing:-.02em}
+.kpi .v small{font-size:11px!important;color:#8b93a1!important}
+.kpi .sub{font-size:11px!important;color:#9aa2b1!important;margin-top:4px}
+.sec-h{font-size:13px;font-weight:600;color:#1f2733;margin:4px 0 10px;padding-left:9px;position:relative}
+.sec-h::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:2px;background:#2b6be6}
+.node-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.node-grid>div{margin-bottom:0!important}
+.topbar{background:#fff!important;backdrop-filter:none!important}
+table{font-size:12.5px}
+th{font-weight:600!important;color:#6b7280!important;background:#fafbfc!important}
+td,th{border-color:#eef1f5!important}
+</style>
 </head>
 <body>
 <div class="layout">
@@ -89,7 +112,10 @@
             <span class="hint">控制面组件健康检测中…</span>
           </div>
         </div>
-        <div class="grid g6 mb10" id="ovKpi"></div>
+        <div class="sec-h">集群概览</div>
+        <div class="grid mb10" id="ovKpiA" style="grid-template-columns:repeat(5,1fr)"></div>
+        <div class="sec-h">业务总量</div>
+        <div class="grid mb10" id="ovKpiB" style="grid-template-columns:repeat(4,1fr)"></div>
         <div class="grid g21 mb10">
           <div class="card panel">
             <h3>GPU 利用率（近 30 分钟）<span class="s" id="utilLabel"></span></h3>
@@ -125,7 +151,7 @@
         <div class="card panel">
           <h3><span>节点列表 <span class="s">点击显卡格子可标记故障 / 修复</span></span>
             <button class="sm" onclick="addNodePrompt()">接入节点</button></h3>
-          <div id="nodeList"></div>
+          <div id="nodeList" class="node-grid"></div>
         </div>
       </div>
 
@@ -476,7 +502,9 @@
 
       <!-- 7 智能巡检 -->
       <div class="page" id="page-inspections">
-        <div class="card panel mb10">
+        <div class="sec-h">巡检概览</div>
+        <div class="grid mb10" id="insKpi" style="grid-template-columns:repeat(4,1fr)"></div>
+        <div class="card panel">
           <div class="between">
             <h3 style="margin:0">巡检报告 <span class="s">基于当前集群真实状态生成</span></h3>
             <button onclick="runInspection()">立即巡检</button>
@@ -1254,15 +1282,30 @@ async function loadOverview(){
   const utilSrc = ov.gpuUtilizationSource === 'dcgm'
     ? '利用率 ' + ov.gpuUtilization + '% (DCGM 实测)'
     : '出租率 ' + (ov.gpuRentalRate ?? ov.gpuUtilization) + '%';
-  $('#ovKpi').innerHTML = [
-    ['节点', ov.nodeReady + '/' + ov.nodeTotal, 'Ready / 总数' + (ov.dataSource === 'ledger' ? ' · 台账' : ' · 集群实测')],
-    ['GPU 总数', ov.gpuTotal, ov.gpuCapacity != null ? '集群实测 ' + ov.gpuCapacity + ' 卡' : '台账可售池'],
-    ['已分配', ov.gpuStatus.occupied + '/' + ov.gpuTotal, utilSrc],
+  const kpiCard = (label, val, sub) =>
+    `<div class="card kpi"><div class="k">${label}</div><div class="v">${val}</div><div class="sub">${sub}</div></div>`;
+  // 集群概览：硬件与资源面。显存 / CPU 核数 / 内存 由各节点台账汇总，不编造
+  let vramGb = 0, cpuCores = 0, memGb = 0;
+  (nodes || []).forEach(n => {
+    (n.gpus || []).forEach(g => { vramGb += Number(g.mem_gb ?? g.memGb ?? 0); });
+    cpuCores += Number(n.cpuCores ?? n.cpu_cores ?? 0);
+    memGb += Number(n.memGb ?? n.mem_gb ?? 0);
+  });
+  const capText = gb => gb >= 1024 ? (gb / 1024).toFixed(1) + ' TB' : Math.round(gb) + ' GB';
+  $('#ovKpiA').innerHTML = [
+    ['节点数', ov.nodeReady + '/' + ov.nodeTotal, 'Ready / 总数' + (ov.dataSource === 'ledger' ? ' · 台账' : ' · 集群实测')],
+    ['GPU 卡总数', ov.gpuTotal, ov.gpuCapacity != null ? '集群实测 ' + ov.gpuCapacity + ' 卡' : '台账可售池'],
+    ['显存总量', capText(vramGb), '各卡合计'],
+    ['CPU 总核数', cpuCores, '核'],
+    ['内存总量', capText(memGb), '各节点合计'],
+  ].map(k => kpiCard(k[0], k[1], k[2])).join('');
+  // 业务总量：经营面
+  $('#ovKpiB').innerHTML = [
     ['运行实例', ov.runningInstances, '个'],
     ['活跃租户', ov.tenantActive, '个'],
     ['今日收入', '¥' + fmt(ov.todayRevenue), '已结算'],
     ['本月收入', '¥' + fmt(ov.monthRevenue), '自然月累计'],
-  ].map(k => `<div class="card kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join('');
+  ].map(k => kpiCard(k[0], k[1], k[2])).join('');
 
   if (m.gpuUtil && m.gpuUtil.length) {
     $('#utilLabel').textContent = '平均 ' + m.baseUtil + '% · 峰值 ' + Math.max(...m.gpuUtil) + '%'
@@ -1983,32 +2026,60 @@ async function diagAlert(id){
 }
 
 /* ---------- 7 巡检 ---------- */
+let INS_LIST = [];
 async function loadInspections(){
   const d = await api('/admin/inspections');
-  $('#insList').innerHTML = d.inspections.map(i=>`
-    <div style="border:1px solid var(--line);border-radius:9px;padding:13px;margin-bottom:10px">
-      <div class="between" style="margin-bottom:8px">
-        <div class="flex">
-          <b>健康度 ${i.health_score}</b>
-          <span class="pill ${i.total_issues===0?'p-green':(i.total_issues>2?'p-amber':'p-blue')}">${i.total_issues} 项问题</span>
-          <span class="hint">${new Date(i.run_at).toLocaleString('zh-CN',{hour12:false})}</span>
-        </div>
-        <span class="hint mono">${i.id}</span>
-      </div>
-      <div class="hint mb10">${i.summary||''}</div>
-      <div class="mb10">
-        <button class="sm ghost" onclick="diagIns('${i.id}')">AI 诊断</button>
-        <button class="sm ghost" style="margin-left:4px" onclick="insTicket('${i.id}')">转工单</button>
-      </div>
-      ${(i.items||[]).length ? `<table>
-        <thead><tr><th>级别</th><th>检查项</th><th>对象</th><th>建议 / 诊断</th><th>状态</th></tr></thead>
-        <tbody>${i.items.map(it=>`<tr>
-          <td><span class="pill ${it.level==='P0'?'p-red':(it.level==='P1'?'p-amber':'p-gray')}">${it.level}</span></td>
-          <td>${it.item}</td><td class="mono">${it.target}</td>
-          <td class="hint">${it.suggestion}${it.diagnosis?`<div class="mt6" style="color:var(--blue)">▸ ${it.diagnosis}</div>`:''}</td>
-          <td><span class="pill ${it.fixed?'p-green':'p-amber'}">${it.fixed?'已处理':'待处理'}</span>${it.ticket_id?`<div class="hint mt6 mono">工单 ${it.ticket_id}</div>`:''}</td>
-        </tr>`).join('')}</tbody></table>` : '<div class="hint">本次巡检未发现问题</div>'}
-    </div>`).join('') || '<div class="empty">还没有巡检记录</div>';
+  const list = d.inspections || [];
+  INS_LIST = list;
+  // 巡检概览统计（对齐参考站：累计次数 / 健康率 / 累计问题 / 最近一次）
+  const total = list.length;
+  const healthy = list.filter(i => Number(i.total_issues) === 0).length;
+  const totalIssues = list.reduce((a,i) => a + Number(i.total_issues || 0), 0);
+  const lastRun = list.reduce((a,i) => (!a || new Date(i.run_at) > new Date(a)) ? i.run_at : a, null);
+  const rate = total ? Math.round(healthy * 100 / total) : 0;
+  const kpiCard = (label, val, sub) =>
+    `<div class="card kpi"><div class="k">${label}</div><div class="v">${val}</div><div class="sub">${sub}</div></div>`;
+  $('#insKpi').innerHTML = [
+    ['累计巡检次数', total, '次'],
+    ['健康率', rate + '%', healthy + ' / ' + total + ' 次无问题'],
+    ['累计发现问题', totalIssues, '项'],
+    ['最近一次巡检', lastRun ? new Date(lastRun).toLocaleString('zh-CN',{hour12:false}) : '—', ''],
+  ].map(k => kpiCard(k[0], k[1], k[2])).join('');
+
+  // 简洁列表（详情才展开问题项）
+  $('#insList').innerHTML = list.length ? `<table>
+    <thead><tr><th>标题</th><th>健康度</th><th>问题数</th><th>触发方式</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>${list.map(i=>`<tr>
+      <td>巡检报告</td>
+      <td><span class="pill ${Number(i.health_score)>=90?'p-green':(Number(i.health_score)>=70?'p-blue':'p-amber')}">${i.health_score}</span></td>
+      <td>${i.total_issues}</td>
+      <td class="hint">—</td>
+      <td class="hint">${new Date(i.run_at).toLocaleString('zh-CN',{hour12:false})}</td>
+      <td>
+        <a href="#" onclick="insDetail('${i.id}');return false" style="color:#2b6be6">详情</a>
+        <a href="#" onclick="diagIns('${i.id}');return false" style="color:#2b6be6;margin-left:8px">AI 诊断</a>
+        <a href="#" onclick="insTicket('${i.id}');return false" style="color:#2b6be6;margin-left:8px">转工单</a>
+      </td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">还没有巡检记录</div>';
+}
+/* 巡检详情：复用页面抽屉，纯文本列出问题项（简洁） */
+function insDetail(id){
+  const i = (INS_LIST || []).find(x => x.id === id);
+  if(!i) return;
+  const lines = [
+    '巡检报告 ' + i.id,
+    '健康度 ' + i.health_score + ' · ' + i.total_issues + ' 项问题',
+    '时间 ' + new Date(i.run_at).toLocaleString('zh-CN',{hour12:false}),
+    ''
+  ];
+  (i.items || []).forEach(it => {
+    lines.push('[' + it.level + '] ' + it.item + '  ' + (it.target || '')
+      + '  ' + (it.suggestion || '') + (it.diagnosis ? '  ▸ ' + it.diagnosis : '')
+      + (it.fixed ? '  ✓已处理' : ''));
+  });
+  $('#drawerTitle').textContent = '巡检详情 · ' + i.id;
+  $('#drawerBody').textContent = lines.join('\n');
+  $('#drawer').style.display = 'block';
 }
 async function runInspection(){
   try{ const r = await post('/admin/inspections/run'); toast(`巡检完成：健康度 ${r.healthScore}，${r.summary}`, true); loadInspections(); }
@@ -2880,7 +2951,7 @@ function saFulfill(id){
 /* ---------- 启动 ---------- */
 api('/runtime').then(r => {
   const b = $('#k8sBadge');
-  b.textContent = r.real ? '真集群 · k3s' : '模拟运行时';
+  b.textContent = r.local ? '本机实卡 · Docker' : (r.real ? '真集群 · k3s' : '模拟运行时');
   b.className = 'pill ' + (r.real ? 'p-green' : 'p-amber');
 }).catch(() => { $('#k8sBadge').textContent = '运行时未知'; });
 
@@ -2890,5 +2961,6 @@ api('/admin/overview').then(renderSideFoot).catch(() => renderSideFoot(null));
 loadOverview();
 setInterval(()=>{ if($('#page-overview').classList.contains('on')) loadOverview(); }, 8000);
 </script>
+<script src="/user-menu.js?v46"></script>
 </body>
 </html>
