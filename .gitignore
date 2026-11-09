@@ -38,3 +38,16 @@ req.txt
 _bill.png
 _test_out.txt
 _checklist_extract.txt
+
+# 现场排查产物（不入库）
+k8s-demo/kubeconfig-container
+c_drive_scan_report*.txt
+c_stale_report*.txt
+scan_cdrive.ps1
+scan_stale.ps1
+a9_conv*.json
+a9_iid.txt
+a10_iid.txt
+_snapshot_settings.json
+shots-new/
+output/

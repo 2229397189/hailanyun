@@ -16,7 +16,7 @@ def check(name, cond, detail=''):
     print(('PASS ' if cond else 'FAIL ') + name + ('  ' + str(detail) if detail else ''))
 
 
-def req(method, path, token=None, body=None):
+def req(method, path, token=None, body=None, timeout=30):
     data = json.dumps(body).encode('utf-8') if body is not None else None
     r = urllib.request.Request(BASE + '/api' + path, data=data, method=method)
     if token:
@@ -24,7 +24,7 @@ def req(method, path, token=None, body=None):
     if body is not None:
         r.add_header('Content-Type', 'application/json')
     try:
-        with urllib.request.urlopen(r, timeout=30) as resp:
+        with urllib.request.urlopen(r, timeout=timeout) as resp:
             txt = resp.read().decode('utf-8')
             return json.loads(txt) if txt else {}
     except urllib.error.HTTPError as e:
@@ -168,7 +168,7 @@ check('旧实例已释放', old and old['status'] == 'released')
 check('新实例 2 卡', new2 and int(new2.get('gpu_count')) == 2)
 
 # 存镜像 / 分享 / 扫描
-m1 = req('POST', '/instances/%s/save-image' % iR, TA, {'name': 'venv-mind-h 快照'})
+m1 = req('POST', '/instances/%s/save-image' % iR, TA, {'name': 'venv-mind-h 快照'}, timeout=300)
 img_id = m1.get('id')
 check('存镜像落库', bool(img_id), m1)
 req('POST', '/images/%s/share' % img_id, TA)
