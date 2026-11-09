@@ -257,6 +257,9 @@ public class RentalService {
             List<String> gpuIds;
             String nodeId;
             String model = modelOfSku(sku);
+            // 本机真实显卡（local4060）跑在用户自己的机器上，不独占台账卡位：
+            // 同一张卡允许开多个实例（共享），否则「自己的实例占着卡」会导致再也创建不了。
+            boolean sharedLocal = false;
             if ("debug".equals(sku)) {
                 gpuIds = List.of();
                 nodeId = null;
@@ -268,6 +271,18 @@ public class RentalService {
                 }
                 nodeId = (String) node.get("node_id");
                 gpuIds = db.freeGpuIdsOfNode(nodeId, gpuCount);
+            } else if ("local4060".equals(sku)) {
+                // 本机真实显卡：直接取本机登记的那张卡，不看台账空闲状态，也不独占占卡。
+                // 用户自己的机器，点「立即创建」就该直接可用，不该被「缺货/到货提醒」拦住。
+                Map<String, Object> g = db.one(
+                        "SELECT id, node_id FROM gpus WHERE model='RTX 4060 Laptop' "
+                                + "AND node_id IN (SELECT id FROM nodes WHERE labels LIKE '%gpu.real=true%') LIMIT 1");
+                if (g == null) {
+                    throw new BizException("本机未登记可用的 RTX 4060 Laptop，无法创建");
+                }
+                gpuIds = List.of(String.valueOf(g.get("id")));
+                nodeId = String.valueOf(g.get("node_id"));
+                sharedLocal = true;
             } else {
                 gpuIds = db.pickSingleGpuIds(gpuCount, model);
                 if (gpuIds.size() < gpuCount) {
@@ -276,8 +291,9 @@ public class RentalService {
                 nodeId = (String) db.one("SELECT node_id FROM gpus WHERE id=?", gpuIds.get(0)).get("node_id");
             }
 
-            // 占卡用条件更新（status='free'），并发下不会把同一张卡卖给两个人
-            if (!gpuIds.isEmpty()) {
+            // 占卡用条件更新（status='free'），并发下不会把同一张卡卖给两个人。
+            // 本机卡（sharedLocal）共享同一个物理 GPU，不做独占占卡。
+            if (!gpuIds.isEmpty() && !sharedLocal) {
                 int rows = db.occupy(gpuIds, instanceId);
                 if (rows != gpuCount) {
                     throw new BizException("资源被并发占用，请重试");
@@ -288,6 +304,11 @@ public class RentalService {
             db.insertInstance(instanceId, orderId, tenantId, nodeId, String.join(",", gpuIds),
                     gpuCount, podName,
                     new Timestamp(System.currentTimeMillis() + hours * 3600_000L), imageRef, dataDiskGb);
+            // A-9：下单即开「按量」计费段，后续 convert-plan 才能把账期切成两段可追溯
+            db.update("INSERT INTO billing_segments(instance_id, plan, unit_price, seconds, amount, "
+                            + "started_at, closed_reason) VALUES (?,?,?,?,?,?,?)",
+                    instanceId, "payg", unitPrice, 0L, BigDecimal.ZERO,
+                    new Timestamp(System.currentTimeMillis()), null);
             db.deductBalance(tenantId, amount);
 
             Map<String, Object> m = new LinkedHashMap<>();
@@ -692,6 +713,10 @@ public class RentalService {
             List<String> models = db.q("SELECT DISTINCT model FROM gpus WHERE instance_id=?", instanceId)
                     .stream().map(r -> String.valueOf(r.get("model"))).toList();
 
+            // A-9：释放时关闭仍在计的账段，保证分段账与实结金额闭环
+            db.update("UPDATE billing_segments SET closed_at=?, closed_reason='release' "
+                    + "WHERE instance_id=? AND closed_at IS NULL",
+                    new Timestamp(System.currentTimeMillis()), instanceId);
             db.markReleased(instanceId);
             db.releaseByInstance(instanceId);
             db.notifyInstance(tenantId, instanceId, "账单", "实例已释放",

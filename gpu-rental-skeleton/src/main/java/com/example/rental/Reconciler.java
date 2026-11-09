@@ -27,11 +27,13 @@ public class Reconciler {
     private final Db db;
     private final K8sClient k8s;
     private final RentalService rental;
+    private final PlatformExtService platformExt;
 
-    public Reconciler(Db db, K8sClient k8s, RentalService rental) {
+    public Reconciler(Db db, K8sClient k8s, RentalService rental, PlatformExtService platformExt) {
         this.db = db;
         this.k8s = k8s;
         this.rental = rental;
+        this.platformExt = platformExt;
     }
 
     @Scheduled(fixedDelay = TICK_SECONDS * 1000L, initialDelay = 2000)
@@ -44,6 +46,12 @@ public class Reconciler {
         forcePowerOffArrears();
         expireStopped();
         finishResetting();
+        // A-7：竞价市场价超过出价上限时发通知并（宽限期后）强制回收
+        try {
+            platformExt.checkSpotInterruptions();
+        } catch (Exception e) {
+            log.warn("竞价巡检异常：{}", e.getMessage());
+        }
     }
 
     /** 定时关机：到点的 pending 计划，对运行中实例执行关机并完结计划 */
@@ -132,6 +140,19 @@ public class Reconciler {
         for (Map<String, Object> inst : db.instancesByStatus("running")) {
             String id = (String) inst.get("id");
             db.addUsedSeconds(id, TICK_SECONDS);
+            // A-9：当前开放的计费段同步累计秒数与金额，分段账随时可核对
+            try {
+                int units = Math.max(1, ((Number) inst.get("gpu_count")).intValue());
+                db.update("UPDATE billing_segments SET seconds = seconds + ? "
+                        + "WHERE instance_id=? AND closed_at IS NULL", TICK_SECONDS, id);
+                // 用更新后的 seconds 重算金额，避免 SET 子句引用旧值导致少算一个 tick
+                db.update("UPDATE billing_segments SET amount = "
+                                + "ROUND((unit_price * ? * seconds / 3600.0)::numeric, 2) "
+                                + "WHERE instance_id=? AND closed_at IS NULL",
+                        units, id);
+            } catch (Exception e) {
+                log.debug("计费段累计跳过 {}：{}", id, e.getMessage());
+            }
 
             Timestamp expire = (Timestamp) inst.get("expire_at");
             if (expire != null && now > expire.getTime()) {

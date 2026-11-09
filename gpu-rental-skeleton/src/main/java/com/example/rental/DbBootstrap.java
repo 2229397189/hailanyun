@@ -120,6 +120,12 @@ public class DbBootstrap implements ApplicationRunner {
         } catch (Exception e) {
             log.warn("unit_price 加宽跳过：{}", e.getMessage());
         }
+        // 工具台账 status 需容纳 missing_dependency（18 字符），老库 VARCHAR(16) 会超长报错
+        try {
+            jdbc.execute("ALTER TABLE instance_tools ALTER COLUMN status TYPE VARCHAR(32)");
+        } catch (Exception e) {
+            log.warn("instance_tools.status 加宽跳过：{}", e.getMessage());
+        }
         // 老租户没有邀请码：一次性补齐 8 位码（已有的不覆盖），控制台「邀请赠送」才有真码可复制
         try {
             for (Map<String, Object> r : jdbc.queryForList("SELECT id FROM tenants WHERE invite_code IS NULL")) {

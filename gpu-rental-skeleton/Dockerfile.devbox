@@ -1,0 +1,60 @@
+# TokenArk DevBox：预装开发工具镜像
+# 依据业界做法（AutoDL / Packet.ai / Runcrate）：GPU 实例镜像内预装
+# JupyterLab、code-server、TensorBoard、SSH、轻量桌面，而不是运行时临时安装。
+#
+# 构建：docker build --no-cache -f Dockerfile.devbox -t tokenark/devbox:1.0 .
+# 使用：RENTAL_LOCAL_GPU_IMAGE=tokenark/devbox:1.0（docker-compose.local.yml）
+#
+# 说明：基础镜像 tokenark/devbox:1.0 已含 apt 系统依赖（python3/openssh-server/
+# x11vnc/xvfb/openbox/curl，来自首次成功构建）。当前外网 Ubuntu apt 源
+# （archive.ubuntu.com）在本环境返回 502，故此处直接在该基础镜像上补齐 pip 工具
+# 与 code-server，避免再次 apt。若需从零构建，请将 FROM 换回
+# nvidia/cuda:12.4.0-base-ubuntu22.04 并改用可达的 apt 镜像源（如
+# mirrors.tuna.tsinghua.edu.cn）。
+FROM tokenark/devbox:1.0
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TOKENARK_DEVBOX=1
+
+# Python 侧开发工具：JupyterLab（不是经典 Notebook 6.4）、TensorBoard
+# Ubuntu 22.04 自带 pip 22 不支持 --break-system-packages 且未启用 PEP 668，
+# 直接 pip install 即可装到 /usr/local/bin。jupyter 是核心工具，缺失则构建直接失败。
+RUN set -e; \
+    for i in 1 2 3 4 5; do \
+      python3 -m pip install --no-cache-dir \
+        jupyterlab tensorboard ipykernel && break \
+      || { echo "pip 第 $i 次失败，5s 后重试"; sleep 5; }; \
+    done; \
+    command -v jupyter >/dev/null 2>&1 || { echo "jupyter 未安装，构建失败"; exit 1; }
+
+# code-server（VS Code Web）：官方安装脚本；加重试
+# 非核心：装不上不阻断构建，运行时平台会按 missing_dependency 如实提示
+RUN set -e; \
+    for i in 1 2 3 4 5; do \
+      curl -fsSL https://code-server.dev/install.sh | sh && break \
+      || { echo "code-server 第 $i 次失败，5s 后重试"; sleep 5; }; \
+    done; \
+    command -v code-server >/dev/null 2>&1 || echo "code-server 未安装（运行时将按需安装或标 missing）"
+
+# SSH 运行时目录与免密 root 登录所需的配置（密钥由平台 SSH Key 台账注入）
+RUN mkdir -p /var/run/sshd /tmp/jobs /data \
+    && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# GPU 可见性：nvidia-smi 指向 WSL2 GPU-PV 驱动侧二进制。local 模式运行时由
+# LocalDockerK8s 挂 /usr/lib/wsl；此前镜像里残留 0 字节 /usr/bin/nvidia-smi 占位，
+# 裸敲 nvidia-smi 报 exec format error，导致「Web 终端看真实显卡」假失败。
+RUN rm -f /usr/bin/nvidia-smi && ln -s /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi
+
+# 自检：信息性输出，缺了立刻能看见（不阻断构建）
+RUN echo "== DevBox 工具清单 =="; \
+    (command -v jupyter && jupyter lab --version) || echo "jupyter 缺失"; \
+    (command -v tensorboard && tensorboard --version) || echo "tensorboard 缺失"; \
+    (command -v code-server && code-server --version) || echo "code-server 缺失"; \
+    command -v sshd || echo "sshd 缺失"; \
+    command -v x11vnc || echo "x11vnc 缺失"
+
+# 默认保持容器存活；工具由平台 /api/instances/{id}/tools 按需启停
+WORKDIR /data
+EXPOSE 22 6080 8080 8888 6006
+CMD ["sleep", "3600"]

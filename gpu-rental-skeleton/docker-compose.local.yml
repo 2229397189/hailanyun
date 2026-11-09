@@ -1,0 +1,22 @@
+# 本机真实 GPU 模式叠加文件（默认不加载）
+#
+# 用法：docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build app
+# 关掉：docker compose -f docker-compose.yml up -d app   （回到 fake）
+#
+# 效果：用户下单「本机 RTX 4060」后，平台通过 Docker Engine API 在宿主机创建
+#       带 --gpus all 的真实 CUDA 容器；关机/重启/释放真的删除/重建容器。
+#
+# ⚠️ 安全边界：挂 /var/run/docker.sock 等于把宿主机 Docker 控制权交给 app 容器。
+#    仅限本地演示/受信任网络，生产环境禁止这样部署（应换独立物理机 + K8s + device-plugin）。
+services:
+  app:
+    environment:
+      RENTAL_K8S_MODE: local
+      # GPU 实例镜像：必须带 glibc 且能跑 nvidia-smi，busybox 不行
+      RENTAL_K8S_IMAGE: nvidia/cuda:12.4.0-base-ubuntu22.04
+      RENTAL_LOCAL_GPU_IMAGE: tokenark/devbox:1.3
+    volumes:
+      # Docker Engine API 通道（Java 21 Unix Domain Socket 直连）。
+      # app 容器本身不需要 /usr/lib/wsl：它只是发 API 请求，创建 GPU 容器时
+      # Binds 里的 /usr/lib/wsl 由 Engine 在宿主机侧解析并挂进新容器。
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -258,6 +258,37 @@ public class RealK8s implements K8sClient, ClusterOps {
         return "data-" + podName;
     }
 
+    /**
+     * 运行中扩容数据盘：直接 patch PVC 的 storage request。
+     * 前提是 StorageClass 支持 allowVolumeExpansion（k3s 默认 local-path 支持）；
+     * 不支持时 API 会拒绝，这里返回 false 让上层不改台账、不扣钱。
+     */
+    @Override
+    public boolean expandData(String namespace, String podName, int fromGb, int toGb) {
+        String claim = dataClaim(podName);
+        try {
+            PersistentVolumeClaim pvc = client.persistentVolumeClaims()
+                    .inNamespace(namespace).withName(claim).get();
+            if (pvc == null) {
+                log.warn("扩容失败：PVC {}/{} 不存在", namespace, claim);
+                return false;
+            }
+            client.persistentVolumeClaims().inNamespace(namespace).withName(claim)
+                    .edit(p -> new PersistentVolumeClaimBuilder(p)
+                            .editSpec()
+                            .editResources()
+                            .addToRequests("storage", new Quantity(toGb + "Gi"))
+                            .endResources()
+                            .endSpec()
+                            .build());
+            log.info("数据盘 PVC {}/{} 已由 {}Gi 扩至 {}Gi", namespace, claim, fromGb, toGb);
+            return true;
+        } catch (Exception e) {
+            log.warn("数据盘扩容失败 {}/{}：{}", namespace, claim, e.getMessage());
+            return false;
+        }
+    }
+
     @Override
     public boolean ready(String namespace, String podName) {
         Pod p = client.pods().inNamespace(namespace).withName(podName).get();

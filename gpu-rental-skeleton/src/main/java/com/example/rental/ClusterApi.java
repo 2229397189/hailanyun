@@ -221,7 +221,11 @@ public class ClusterApi {
         return out;
     }
 
-    /** 本机 host agent 上报的真实 GPU 作为节点列出（dataSource=host-agent，前端单独标注） */
+    /**
+     * 本机 host agent 上报的真实整机/GPU 数据。
+     * 若台账里已有同 hostname 的节点（如本机 n1），直接合并进那一条并标记 dataSource=host-agent，
+     * 避免管理端出现两条同名节点；只有台账没有对应主机时才新增一条。
+     */
     private void appendAgentNode(List<Map<String, Object>> out) {
         for (Map<String, Object> h : db.agentHosts()) {
             String hostname = String.valueOf(h.get("hostname"));
@@ -230,7 +234,7 @@ public class ClusterApi {
                 continue;
             }
             Map<String, Object> s = snap.get(0);
-            List<Map<String, Object>> cards = new ArrayList<>();
+            List<Map<String, Object>> agentCards = new ArrayList<>();
             for (Map<String, Object> g : db.agentGpus(String.valueOf(s.get("id")))) {
                 Map<String, Object> c = new LinkedHashMap<>();
                 c.put("id", "ag-" + g.get("idx"));
@@ -242,16 +246,59 @@ public class ClusterApi {
                 c.put("util", g.get("util"));
                 c.put("power_w", g.get("power_w"));
                 c.put("status", "free");
-                cards.add(c);
+                agentCards.add(c);
             }
-            Map<String, Object> n = new LinkedHashMap<>();
-            n.put("id", "agent-" + hostname);
-            n.put("name", hostname);
-            n.put("hostname", hostname);
-            n.put("ip", "本机实采");
+
+            // 找同 hostname 的台账节点并合并
+            Map<String, Object> n = null;
+            for (Map<String, Object> existing : out) {
+                if (hostname.equals(String.valueOf(existing.get("hostname")))) {
+                    n = existing;
+                    break;
+                }
+            }
+            if (n == null) {
+                n = new LinkedHashMap<>();
+                n.put("id", "agent-" + hostname);
+                n.put("name", hostname);
+                n.put("hostname", hostname);
+                n.put("ip", "本机实采");
+                n.put("role", "host-agent");
+                n.put("poolId", "p1");
+                n.put("podCount", 0);
+                n.put("gpus", agentCards);
+                out.add(n);
+            } else {
+                // 台账 GPU 补实时 util / 温度，保留 status / instance_id / id（占用与实例对应关系不丢）
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> ledgerCards = (List<Map<String, Object>>) n.get("gpus");
+                if (ledgerCards != null && !ledgerCards.isEmpty()) {
+                    for (int i = 0; i < ledgerCards.size(); i++) {
+                        Map<String, Object> card = ledgerCards.get(i);
+                        Map<String, Object> ac = null;
+                        for (Map<String, Object> x : agentCards) {
+                            if (String.valueOf(x.get("idx")).equals(String.valueOf(card.get("idx")))) {
+                                ac = x;
+                                break;
+                            }
+                        }
+                        if (ac == null && i < agentCards.size()) {
+                            ac = agentCards.get(i); // idx 对不上时按顺序兜底
+                        }
+                        if (ac != null) {
+                            card.put("util", ac.get("util"));
+                            card.put("temp_c", ac.get("temp_c"));
+                            card.put("power_w", ac.get("power_w"));
+                            card.put("mem_gb", ac.get("mem_gb"));
+                            card.put("mem_used_gb", ac.get("mem_used_gb"));
+                        }
+                    }
+                } else {
+                    n.put("gpus", agentCards);
+                }
+            }
+
             n.put("status", "Ready");
-            n.put("role", "host-agent");
-            n.put("poolId", "p1");
             n.put("dataSource", "host-agent");
             // 整机实时参数（agent 每 10s 上报一次，前端本机详情卡直接读这些字段）
             n.put("cpuModel", s.get("cpu_model"));
@@ -264,12 +311,11 @@ public class ClusterApi {
             n.put("os", s.get("os"));
             n.put("osVersion", s.get("os_version"));
             n.put("uptimeSeconds", s.get("uptime_seconds"));
-            n.put("podCount", 0);
-            n.put("gpuCount", cards.size());
-            n.put("gpuLedger", cards.size());
-            n.put("gpus", cards);
             n.put("lastSeen", s.get("collected_at"));
-            out.add(n);
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> cards = (List<Map<String, Object>>) n.get("gpus");
+            n.put("gpuCount", cards == null ? 0 : cards.size());
+            n.put("gpuLedger", cards == null ? 0 : cards.size());
         }
     }
 

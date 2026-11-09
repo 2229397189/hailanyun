@@ -761,10 +761,23 @@ public class TenantExtApi {
         if (name.isBlank()) {
             throw new RentalService.BizException("镜像名称不能为空");
         }
+        if (!"running".equals(String.valueOf(inst.get("status")))) {
+            throw new RentalService.BizException("仅运行中的实例可以保存镜像");
+        }
+        String tenantId = String.valueOf(inst.get("tenant_id"));
+        String pod = String.valueOf(inst.get("pod_name"));
         String imageId = newId("img");
-        db.insertSavedImage(imageId, String.valueOf(inst.get("tenant_id")), name,
-                "自定义快照（演示）", new BigDecimal("30"), id);
-        return Map.of("id", imageId, "message", "镜像保存中（演示模式秒级完成），可在镜像页私有列表查看");
+        // 真实链路：commit 容器 → push 本地私有仓库 → 记录可直接拉起实例的镜像引用（A-16）
+        String repo = "localhost:5000/tk/" + tenantId.toLowerCase();
+        String tag = imageId;
+        String ref = k8s.commitAndPush("tenant-" + tenantId, pod, repo, tag);
+        if (ref == null || ref.isBlank()) {
+            throw new RentalService.BizException(
+                    "镜像保存失败：运行时未确认 commit/push 成功（需本机私有仓库 localhost:5000 可写）");
+        }
+        db.insertSavedImage(imageId, tenantId, name, ref, new BigDecimal("2.1"), id);
+        return Map.of("id", imageId, "ref", ref,
+                "message", "镜像已保存并推送：" + ref + "，可在创建页选择该镜像拉起新实例");
     }
 
     @PostMapping("/images/{id}/share")

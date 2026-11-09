@@ -28,12 +28,14 @@ public class Api {
         this.fakeProvider = fakeProvider;
     }
 
-    /** 当前运行时模式，前端用来显示“模拟 / 真集群”徽章 */
+    /** 当前运行时模式，前端用来显示“模拟 / 真集群 / 本机实卡”徽章 */
     @GetMapping("/runtime")
     public Map<String, Object> runtime() {
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("k8sMode", k8s.mode());
-        out.put("real", "real".equals(k8s.mode()));
+        String mode = k8s.mode();
+        out.put("k8sMode", mode);
+        out.put("real", "real".equals(mode) || "local".equals(mode));
+        out.put("local", "local".equals(mode));
         return out;
     }
 
@@ -123,6 +125,20 @@ public class Api {
                   SELECT COUNT(*) AS c FROM gpus WHERE status='free' AND model='RTX 5090' GROUP BY node_id
                 ) x
                 """).stream().mapToInt(r -> ((Number) r.get("m")).intValue()).sum();
+        // 总量口径与空闲一致：台账里该型号的全部卡（含已占用），市场页「空闲 x / 总量 y」用真实数字
+        int total5090 = db.q("SELECT COUNT(*) AS c FROM gpus WHERE model='RTX 5090'")
+                .stream().mapToInt(r -> ((Number) r.get("c")).intValue()).sum();
+        int realTotal = db.q("""
+                SELECT COUNT(*) AS c FROM gpus WHERE model='RTX 4060 Laptop'
+                  AND node_id IN (SELECT id FROM nodes WHERE labels LIKE '%gpu.real=true%')
+                """).stream().mapToInt(r -> ((Number) r.get("c")).intValue()).sum();
+        int wholeTotal = db.q("""
+                SELECT COALESCE(MAX(c),0) AS m FROM (
+                  SELECT COUNT(*) AS c FROM gpus WHERE model='RTX 5090' GROUP BY node_id
+                ) x
+                """).stream().mapToInt(r -> ((Number) r.get("m")).intValue()).sum();
+        Map<String, Integer> stockTotals = Map.of("1", total5090, "2", total5090 / 2, "4", total5090 / 4,
+                "whole", wholeTotal, "offpeak", total5090, "local4060", realTotal, "debug", 999);
 
         List<Map<String, Object>> out = new java.util.ArrayList<>();
         out.add(sku("1", "RTX 5090", 1, 32, free5090,
@@ -136,7 +152,7 @@ public class Api {
                 "同节点 4 张卡，适合数据并行训练"));
         out.add(sku("whole", "RTX 5090", 8, 256, wholeStock,
                 "128 核", "AMD EPYC 7513*2", "512 GB", "480G SSD", "3.84TB NVMe",
-                "同一节点 8 张卡，适合分布式训练、多卡并行"));
+                "整机独占 8 卡（同节点独享整机），适合分布式训练、多卡并行"));
         Map<String, Object> offpeak = sku("offpeak", "RTX 5090 · 闲时卡", 1, 32, free5090,
                 "16 核", "AMD EPYC 7513*2", "64 GB", "50G SSD", "200G NVMe",
                 "22:00-08:00 包夜时段半价，适合离线训练、批量跑分");
@@ -154,14 +170,17 @@ public class Api {
                 "不开 GPU 仅 CPU，约 0.1 元/时，用于调代码、传数据、装环境");
         debug.put("debug", true);
         out.add(debug);
-        // 库存口径徽章：真实集群=台账与集群对账，演示模式=台账模拟
-        String source = "real".equals(k8s.mode()) ? "台账 · 集群对账" : "台账 · 演示";
+        // 库存口径徽章：真集群=台账与集群对账 / 本机实卡=台账与本机容器对账 / 演示=台账模拟
+        String mode = k8s.mode();
+        String source = "real".equals(mode) ? "台账 · 集群对账"
+                : "local".equals(mode) ? "台账 · 本机实卡" : "台账 · 演示";
         Map<String, Object> tenant = authTenant == null ? null : db.tenant(authTenant);
         for (Map<String, Object> m : out) {
             m.put("stockSource", source);
+            String code = String.valueOf(m.get("code"));
+            m.put("stockTotal", stockTotals.getOrDefault(code, 0));
             // unitPrice 仍是该 SKU 的挂牌价（含闲时/调试/本机自己的特价），租户实付价走 priceBoard，
             // 市场卡片展示挂牌价、创建页按 priceBoard 结算，两边各自语义不混
-            String code = String.valueOf(m.get("code"));
             m.put("unitPrice", rental.unitPriceFor(code, 1, (Map<String, Object>) null));
             m.put("priceBoard", rental.priceBoard(code, tenant));
         }

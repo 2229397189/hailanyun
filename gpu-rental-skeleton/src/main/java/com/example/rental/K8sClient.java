@@ -64,6 +64,15 @@ public interface K8sClient {
         return "";
     }
 
+    /**
+     * 在 Pod 内真正后台（detach）启动一个长驻进程，调用方应自行用 setsid+nohup 保证存活，
+     * 并通过 PID 文件自行校验。默认退化为普通 exec；LocalDockerK8s 重写以走 Docker 的 Detach:true，
+     * 否则 docker exec 会话结束时后台进程会被一起回收，造成「假 running」。
+     */
+    default void execDetached(String namespace, String podName, String... command) {
+        exec(namespace, podName, command);
+    }
+
     /** 把 Pod 的某个端口以 NodePort 暴露出去，返回分配到的 NodePort；0 表示失败 */
     default int exposePort(String namespace, String podName, int port) {
         return 0;
@@ -76,5 +85,29 @@ public interface K8sClient {
     /** 把源实例数据盘内容完整拷贝到目标实例数据盘（克隆用），返回是否成功 */
     default boolean cloneData(String namespace, String srcPodName, String dstPodName) {
         return false;
+    }
+
+    /**
+     * 回收前自动存档 checkpoint：把容器当前文件系统提交为镜像（含事先打包进容器的 /data）。
+     * 返回镜像引用（repo:tag），空串表示运行时未实现或失败。fake 模式返回空串。
+     */
+    default String snapshot(String namespace, String podName, String repo) {
+        return "";
+    }
+
+    /**
+     * 保存镜像：把容器 commit 成 repo:tag 并 push 到镜像仓库，返回可直接拉起实例的镜像引用。
+     * 空串表示运行时未实现或失败。fake 模式返回空串。
+     */
+    default String commitAndPush(String namespace, String podName, String repo, String tag) {
+        return "";
+    }
+
+    /**
+     * 运行中扩容数据盘：把实例挂载的数据盘由 fromGb 扩到 toGb（只允许扩，不允许缩），
+     * 返回 true 表示运行时已确认新容量。fake 模式默认返回 true（台账演示）。
+     */
+    default boolean expandData(String namespace, String podName, int fromGb, int toGb) {
+        return true;
     }
 }
